@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmb.py,v 1.8 2003-03-08 13:14:14 miketeo Exp $
+# $Id: nmb.py,v 1.9 2003-04-19 09:44:43 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # nmb.py - NetBIOS library
@@ -29,7 +29,7 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.8 $'
+CVS_REVISION = '$Revision: 1.9 $'
 
 # Taken from socket module reference
 INADDR_ANY = ''
@@ -374,7 +374,7 @@ class NetBIOSSession:
         try:
             self.__sock.connect(( remote_host, sess_port ))
             self.__request_session(host_type)
-        except socket.error, ex2:
+        except ( socket.error, NetBIOSError ), ex2:
             try:
                 self.__sock.close()
             except socket.error, ex:
