@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmb.py,v 1.4 2001-10-01 15:48:22 miketeo Exp $
+# $Id: nmb.py,v 1.5 2001-11-10 14:39:50 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # nmb.py - NetBIOS library
@@ -29,7 +29,7 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.4 $'
+CVS_REVISION = '$Revision: 1.5 $'
 
 # Taken from socket module reference
 INADDR_ANY = ''
@@ -51,11 +51,13 @@ TYPE_UNKNOWN = 0x01
 TYPE_WORKSTATION = 0x00
 TYPE_CLIENT = 0x03
 TYPE_SERVER = 0x20
+TYPE_DOMAIN_MASTER = 0x1B
 TYPE_MASTER_BROWSER = 0x1D
 TYPE_BROWSER = 0x1E
 
 NAME_TYPES = { TYPE_UNKNOWN: 'Unknown', TYPE_WORKSTATION: 'Workstation', TYPE_CLIENT: 'Client',
-               TYPE_SERVER: 'Server', TYPE_MASTER_BROWSER: 'Master Browser', TYPE_BROWSER: 'Browser Server' }
+               TYPE_SERVER: 'Server', TYPE_MASTER_BROWSER: 'Master Browser', TYPE_BROWSER: 'Browser Server',
+               TYPE_DOMAIN_MASTER: 'Domain Master' }
 
 
 
