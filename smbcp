@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbcp,v 1.7 2002-08-03 05:44:39 miketeo Exp $
+# $Id: smbcp,v 1.8 2002-08-03 05:45:32 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smbcp - file transfer program between local machine and remote SMB machines
@@ -27,7 +27,7 @@
 import os, os.path, sys, stat, string, re, getopt, getpass
 import smb, nmb
 
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 
 USER_HOST_PATH_PATTERN = re.compile('(\w+)@([\w\.]+):/*([^/]+)(/.*)')
 HOST_PATH_PATTERN = re.compile(r"([\w\.]+):/*([^/]+)(/*.*)")
