@@ -1,4 +1,22 @@
 
+pysmb-0.4.2, 03 Aug 2002
+========================
+
+- Add new methods to SharedFile instances, get_mtime_epoch, get_atime_epoch
+  and get_ctime_epoch. These methods will return the mtime, atime and ctime in
+  epoch time rather than SMB time.
+- Remove debugging printout in smb.py which has been released accidentally
+  with the last release.
+- Fix a bug in smbcp which causes to local to remote copy to fail
+
+pysmb-0.4.1, 22 Jun 2002
+========================
+
+- Fix a bug in smb.py which does not return the correct file size for files 
+  with their archive bits turned off. This results in these files not being 
+  retrieved or sent properly.
+- Fix some typo error in the documentations
+
 pysmb-0.4.0, 17 Apr 2002
 ========================
 
