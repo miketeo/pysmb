@@ -1,5 +1,5 @@
 
-pysmb version 0.1.0
+pysmb version 0.1.1
 Copyright (C) 2001 Michael Teo <michaelteo@@bigfoot.com>
 
 This program is a free software with ABSOLUTELY NO WARRANTY!
@@ -53,6 +53,9 @@ useful.
 - smbcp
   Performs files/directory copy to/from your local machine and the remote SMB 
   machine. 
+
+- smblistshare
+  List the available share devices on the remote SMB machine.
 
 
 How To Install
