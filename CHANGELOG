@@ -1,5 +1,12 @@
 
-pysmb-0.4.3, 22 Feb 2002
+pysmb-0.4.4, 12 Jan 2004
+========================
+
+- Add in support for AMK's Python Cryptography Toolkit which will be used
+  for DES password hashing. If AMK's pycrypto is found, it will be used 
+  instead of mxCrypto.
+
+pysmb-0.4.3, 22 Feb 2003
 ========================
 
 - Fix a bug which fails to close the socket in nmb.py on socket exception
