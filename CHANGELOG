@@ -1,4 +1,12 @@
 
+pysmb-0.1.3, 03 Sep 2001
+========================
+
+- Fix a bug in smblistshare and smbdu which fails to catch the nmb.NetBIOSError raised when session
+  setup fails.
+- Fix a bug in smb.SMB that arises from the change in nmb.NetBIOSSession which sends
+  the session port number as the remote host type.
+
 pysmb-0.1.2, 01 Sep 2001
 ========================
 
