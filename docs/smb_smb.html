@@ -1,5 +1,5 @@
 <!doctype html public "-//w3c/dtd html 3.2//en"><html>
-<!-- $Id: smb_smb.html,v 1.3 2001-09-03 13:04:09 miketeo Exp $ -->
+<!-- $Id: smb_smb.html,v 1.4 2001-11-10 06:34:15 miketeo Exp $ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
 <link rev="made" href="mailto:michaelteo@bigfoot.com">
@@ -18,12 +18,12 @@
 
 <dl>
   <dt><b>is_login_required()</b> -> int</dt>
-  <dd>Returns non-zero if login is required before any other operations. Otherwise, zero.</dd>
+  <dd>Returns non-zero if login is required before any other operations. Otherwise, zero. Note that public services and services which are in share mode are still visible even if login is not performed. However, services which are in user mode are disallowed.</dd>
 </dl>
 
 <dl>
   <dt><b>login(name, password, domain = '', timeout = None)</b></dt>
-  <dd>Login into the remote machine using name and password. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs during login or login fails.</dd>
+  <dd>Login into the remote machine using name and password. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs during login or login fails. Note that this login procedure only logins into user-shared services. For services which are in share mode, refer to the specific file operations for more details.</dd>
 </dl>
 
 <dl>
@@ -32,54 +32,54 @@
 </dl>
 
 <dl>
-  <dt><b>list_path(service, path = '*', timeout = None)</b> -> [ &lt;smb.SharedFile instance&gt; ... ]</dt>
-  <dd>Returns a list of smb.SharedFile instances containing the shared files in the path. service is shared name returned in the list_shared() call. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+  <dt><b>list_path(service, path = '*', password = None, timeout = None)</b> -> [ &lt;smb.SharedFile instance&gt; ... ]</dt>
+  <dd>Returns a list of smb.SharedFile instances containing the shared files in the path. service is shared name returned in the list_shared() call. password is the authentication info required for access if this service is in share mode and is protected. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
 <dl>
-  <dt><b>retr_file(service, filename, callback, mode = SMB_O_OPEN, offset = 0, timeout = None)</b>
-  <dd>Retrieve a file of filename in service and writes the content using the callback function. filename should be a fully-qualified path name of the file (excluding the service component). offset is used to indicate the offset to start reading the file. The callback function should be able to take a string argument which is the data read from the remote file. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+  <dt><b>retr_file(service, filename, callback, mode = SMB_O_OPEN, offset = 0, password = None, timeout = None)</b>
+  <dd>Retrieve a file of filename in service and writes the content using the callback function. filename should be a fully-qualified path name of the file (excluding the service component). offset is used to indicate the offset to start reading the file. password is the authentication info required for access if this service is in share mode and is protected. The callback function should be able to take a string argument which is the data read from the remote file. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
 <dl>
   <dt><b>stor_file(service, filename, callback, mode = SMB_O_CREAT | SMB_O_TRUNC, offset = 0, timeout = None)</b>
-  <dd>Store a file of filename in service by reading from the callback function. filename should be a fully-qualified path name of the file (excluding the service component). offset is used to indicate where to start writing. The callback function should be able to take an int argument which indicates how many bytes to return as the file data. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+  <dd>Store a file of filename in service by reading from the callback function. filename should be a fully-qualified path name of the file (excluding the service component). offset is used to indicate where to start writing. password is the authentication info required for access if this service is in share mode and is protected. The callback function should be able to take an int argument which indicates how many bytes to return as the file data. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
 <dl>
-  <dt><b>copy(src_service, src_path, dest_service, dest_path, callback = None, write_mode = SMB_O_CREAT | SMB_O_TRUNC, timeout = None)</b></dt>
-  <dd>Copy a file of src_path in src_service to dest_path in dest_service. Both src_path and dest_path should be a fully-qualified path name of the file (excluding the service component). The callback function should be able to take in 2 int arguments which are the number of bytes copied and the total number of bytes to copy respectively. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+  <dt><b>copy(src_service, src_path, dest_service, dest_path, callback = None, write_mode = SMB_O_CREAT | SMB_O_TRUNC, src_password = None, dest_password = None, timeout = None)</b></dt>
+  <dd>Copy a file of src_path in src_service to dest_path in dest_service. Both src_path and dest_path should be a fully-qualified path name of the file (excluding the service component). The callback function should be able to take in 2 int arguments which are the number of bytes copied and the total number of bytes to copy respectively. src_password and dest_password are the authentication info required for access if the src_service and/or dest_service are in share mode and are protected. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
 <dl>
-  <dt><b>check_dir(service, path, timeout = None)</b></dt>
-  <dd>This is used to check whether a path exists or has been changed since SMB has no concept of current working directory. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if path does not exist or an error has occurred.</dd>
+  <dt><b>check_dir(service, path, password = None, timeout = None)</b></dt>
+  <dd>This is used to check whether a path exists or has been changed since SMB has no concept of current working directory. password is the authentication info required for access if this service is in share mode and is protected. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if path does not exist or an error has occurred.</dd>
 </dl>
 
 <dl>
-  <dt><b>remove(service, path, timeout = None)</b></dt>
-  <dd>Used to delete a path in service. The path should be a fully-qualified path (excluding the service component). Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+  <dt><b>remove(service, path, password = None, timeout = None)</b></dt>
+  <dd>Used to delete a path in service. The path should be a fully-qualified path (excluding the service component). password is the authentication info required for access if this service is in share mode and is protected. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
 <dl>
-  <dt><b>rmdir(service, path, timeout = None)</b></dt>
-  <dd>Used to delete a directory in service. The directory must be empty for the operation to work. The path should be a fully-qualified path (excluding the service component). Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+  <dt><b>rmdir(service, path, password = None, timeout = None)</b></dt>
+  <dd>Used to delete a directory in service. The directory must be empty for the operation to work. The path should be a fully-qualified path (excluding the service component). password is the authentication info required for access if this service is in share mode and is protected. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
 <dl>
-  <dt><b>mkdir(service, path, timeout = None)</b></dt>
-  <dd>Create a directory of path in service. The path must not have existed and should be a fully-qualified path (excluding the service component). Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+  <dt><b>mkdir(service, path, password = None, timeout = None)</b></dt>
+  <dd>Create a directory of path in service. The path must not have existed and should be a fully-qualified path (excluding the service component). password is the authentication info required for access if this service is in share mode and is protected. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
       
 <dl>
-  <dt><b>rename(service, old_path, new_path, timeout = None)</b></dt>
-  <dd>Rename a file of old_path to new_path in service. Both old_path and new_path must be a fully-qualified path (excluding the service component) and new_path must not exist. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+  <dt><b>rename(service, old_path, new_path, password = None, timeout = None)</b></dt>
+  <dd>Rename a file of old_path to new_path in service. Both old_path and new_path must be a fully-qualified path (excluding the service component) and new_path must not exist. password is the authentication info required for access if this service is in share mode and is protected. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
 <div align="right"><a href="smb.html">smb Module<img src="return.gif" width=39 height=46 border=0 alt="smb"></a></div>      
 <br clear=all>
 <hr noshade>
 <!-- hhmts start -->
-Last modified: Mon Sep  3 21:03:31 SGT 2001
+<i>Last modified on Sat, Nov 10 2001</i>
 <!-- hhmts end -->
 </body></html>
