@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.13 2002-06-22 08:35:57 miketeo Exp $
+# $Id: smb.py,v 1.14 2002-08-03 05:46:24 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -40,7 +40,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-CVS_REVISION = '$Revision: 1.13 $'
+CVS_REVISION = '$Revision: 1.14 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -175,11 +175,20 @@ class SharedFile:
     def get_ctime(self):
         return self.__ctime
 
+    def get_ctime_epoch(self):
+        return self.__convert_smbtime(self.__ctime)
+
     def get_mtime(self):
         return self.__mtime
 
+    def get_mtime_epoch(self):
+        return self.__convert_smbtime(self.__mtime)
+
     def get_atime(self):
         return self.__atime
+
+    def get_atime_epoch(self):
+        return self.__convert_smbtime(self.__atime)
 
     def get_filesize(self):
         return self.__filesize
@@ -222,6 +231,12 @@ class SharedFile:
 
     def __repr__(self):
         return '<SharedFile instance: shortname="' + self.__shortname + '", longname="' + self.__longname + '", filesize=' + str(self.__filesize) + '>'
+
+    def __convert_smbtime(self, t):
+        x = t >> 32
+        y = t & 0xffffffffL
+        geo_cal_offset = 11644473600.0  # = 369.0 * 365.25 * 24 * 60 * 60 - (3.0 * 24 * 60 * 60 + 6.0 * 60 * 60)
+        return ((x * 4.0 * (1 << 30) + (y & 0xfff00000L)) * 1.0e-7 - geo_cal_offset)
 
 
 
@@ -805,7 +820,6 @@ class SMB:
 
             #if not datasize:
             datasize = self.__query_file_info(tid, fid)
-            print datasize
 
             if self.__can_read_raw:
                 self.__raw_retr_file(tid, fid, offset, datasize, callback)
