@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbcp,v 1.2 2001-08-23 15:40:18 miketeo Exp $
+# $Id: smbcp,v 1.3 2001-08-24 15:25:00 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smbcp - file transfer program between local machine and remote SMB machines
@@ -27,7 +27,7 @@
 import os, os.path, sys, stat, string, re, getopt, getpass
 import smb, nmb
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 USER_HOST_PATH_PATTERN = re.compile('(\w+)@([\w\.]+):/*([^/]+)(/.*)')
 HOST_PATH_PATTERN = re.compile(r"([\w\.]+):/*([^/]+)(/*.*)")
@@ -44,12 +44,14 @@ def parse_path(path):
 
 
 def print_usage_screen():
-    print 'Usage:', sys.argv[0], '[-n] [-r] [-B bcast addr] src ... [<user>@]<nbname>:/share/path'
-    print '      ', sys.argv[0], '[-n] [-r] [-B bcast addr] [<user>@]<nbname>:/share/path dest'
+    print 'Usage: smbcp [options] src ... [<user>@]<nbname>:/share/path'
+    print '       smbcp [options] [<user>@]<nbname>:/share/path dest'
     print
+    print 'Options:'
     print '  -n                    show what would have been transferred without doing it'
     print '  -r                    recurse into directories'
     print '  -B broadcast addr     the address to use for broadcasts'
+    print '  -I remote IP addr     connect to this IP address for remote host'
     print '  --version             show version and exit'
     print
     
@@ -61,7 +63,8 @@ def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir):
     try:
         info = src.list_path(src_service, src_path)
         is_src_dir = info[0].is_directory()
-    except smb.SessionError:
+    except smb.SessionError, ex:
+        print ex[0], ':', smb.strerror(ex[1], ex[2])[1]
         return
 
     if is_src_dir:
@@ -142,9 +145,10 @@ dry_run = 0
 def main():
     global recursive, dry_run
 
+    remote_ip_addr = None
     netbios = nmb.NetBIOS()
     try:
-        optlist, args = getopt.getopt(sys.argv[1:], 'rnB:', [ 'version' ])
+        optlist, args = getopt.getopt(sys.argv[1:], 'rnB:I:', [ 'version' ])
         for k, v in optlist:
             if k == '-r':
                 recursive = 1
@@ -152,6 +156,8 @@ def main():
                 dry_run = 1
             elif k == '-B':
                 netbios.set_broadcastaddr(v)
+            elif k == '-I':
+                remote_ip_addr = v
             elif k == '--version':
                 print 'smbcp version', VERSION, '(smb:', smb.CVS_REVISION, 'and nmb:', nmb.CVS_REVISION, ')'
                 return
@@ -170,19 +176,26 @@ def main():
     if dest_info:
         user, dest_name, dest_service, dest_path = dest_info
 
-        try:
-            addrs = netbios.gethostbyname(dest_name)
-            if not addrs:
+        if not remote_ip_addr:
+            try:
+                addrs = netbios.gethostbyname(dest_name)
+                if not addrs:
+                    print 'Warning: No such host,', dest_name
+                    return
+            except nmb.NetBIOSTimeout:
+                print 'Warning: Cannot resolve', dest_name
                 return
-        except nmb.NetBIOSTimeout:
-            print 'Warning: Cannot resolve', dest_name
-            return
-        except nmb.NetBIOSError, ex:
-            print 'Warning: Error resolving', dest_name
-            print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
-            return
-        
-        remote = smb.SMB(dest_name, addrs[0].get_ip())
+            except nmb.NetBIOSError, ex:
+                print 'Warning: Error resolving', dest_name
+                print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
+                return
+
+            print 'Connecting to remote,', dest_name, 'using', addrs[0].get_ip()
+            remote = smb.SMB(dest_name, addrs[0].get_ip())
+        else:
+            print 'Connecting to remote,', dest_name, 'using', remote_ip_addr
+            remote = smb.SMB(dest_name, remote_ip_addr)
+            
         if remote.is_login_required():
             if not user:
                 user = getpass.getuser()
@@ -223,17 +236,26 @@ def main():
 
             user, src_name, src_service, src_path = src_info
 
-            try:
-                addrs = netbios.gethostbyname(src_name)
-                if not addrs:
+            if not remote_ip_addr:
+                try:
+                    addrs = netbios.gethostbyname(src_name)
+                    if not addrs:
+                        print 'Warning: No such host,', dest_name
+                        return
+                except nmb.NetBIOSTimeout:
+                    print 'Warning: Cannot resolve', src_name
                     return
-            except nmb.NetBIOSTimeout:
-                print 'Warning: Cannot resolve', src_name
-            except nmb.NetBIOSError, ex:
-                print 'Warning: Error resolving', src_name
-                print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
+                except nmb.NetBIOSError, ex:
+                    print 'Warning: Error resolving', src_name
+                    print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
+                    return
 
-            src = smb.SMB(src_name, addrs[0].get_ip())
+                print 'Connecting to remote,', src_name, 'using', addrs[0].get_ip()
+                src = smb.SMB(src_name, addrs[0].get_ip())
+            else:
+                print 'Connecting to remote,', src_name, 'using', remote_ip_addr
+                src = smb.SMB(src_name, remote_ip_addr)
+
             if src.is_login_required():
                 if not user:
                     user = getpass.getuser()
