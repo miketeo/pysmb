@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.2 2001-08-22 15:06:21 miketeo Exp $
+# $Id: smb.py,v 1.3 2001-08-23 15:26:30 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -24,14 +24,14 @@
 #
 
 import os, sys, socket, string, re, select, errno
+import nmb
 from random import randint
 from struct import *
-from nmb import *
 
 
 
-VERSION = '0.1.0'
-CVS_REVISION = '$Revision: 1.2 $'
+VERSION = '0.1.1'
+CVS_REVISION = '$Revision: 1.3 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -201,7 +201,7 @@ class SharedFile:
 # Represents a SMB session
 class SMB:
 
-    def __init__(self, remote_name, remote_host, my_name = None, sess_port = NETBIOS_SESSION_PORT):
+    def __init__(self, remote_name, remote_host, my_name = None, sess_port = nmb.NETBIOS_SESSION_PORT):
         # The uid attribute will be set when the client calls the login() method
         self.__uid = 0
         self.__remote_name = remote_name
@@ -209,7 +209,7 @@ class SMB:
         if not my_name:
             my_name = 'PYSMB' + str(randint(1, 10000))
             
-        self.__sess = NetBIOSSession(my_name, remote_name, remote_host, sess_port)
+        self.__sess = nmb.NetBIOSSession(my_name, remote_name, remote_host, sess_port)
         _, self.__login_required, self.__max_transmit_size, rawmode = self.__neg_session()
         self.__can_read_raw = rawmode & 0x01
         self.__can_write_raw = rawmode & 0x02
