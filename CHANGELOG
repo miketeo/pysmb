@@ -1,0 +1,16 @@
+
+pysmb-0.1.1, 25 Aug 2001
+========================
+
+- Change nmb's NetBIOS and NetBIOSSession class such that they raise a NetBIOSError 
+  with a tuple of ( err_msg, err_class, err_code )
+- Add a function strerror() in both smb and nmb to return human readable messages
+  for error codes.
+- Fix a bug in smbcp which fails to print an error message and terminate when the 
+  remote source path is not found.
+- Add in another utility, smblistshare.
+
+pysmb-0.1.0, 20 Aug 2001
+========================
+
+- First public release
