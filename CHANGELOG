@@ -1,4 +1,13 @@
 
+pysmb-0.1.2, 01 Sep 2001
+========================
+
+- Fix a bug in nmb.NetBIOSSession which specifies a TYPE_WORKSTATION for remote host instead of TYPE_SERVER.
+- Minor change to nmb.NetBIOSSession constructor API.
+- Fix a bug in smbdu which raises OverflowError when printing long file size values.
+- Fix a bug in smbcp which does not handle the destination path correctly when
+  the source file is copied to a different filename.
+
 pysmb-0.1.1, 25 Aug 2001
 ========================
 
