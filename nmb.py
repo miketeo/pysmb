@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmb.py,v 1.5 2001-11-10 14:39:50 miketeo Exp $
+# $Id: nmb.py,v 1.6 2003-02-22 07:39:13 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # nmb.py - NetBIOS library
@@ -29,7 +29,7 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.5 $'
+CVS_REVISION = '$Revision: 1.6 $'
 
 # Taken from socket module reference
 INADDR_ANY = ''
@@ -155,17 +155,12 @@ class NetBIOS:
     # All queries will be sent through the servport.
     def __init__(self, servport = NETBIOS_NS_PORT):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        has_bind = 0
-        for i in range(0, 10):
-            # We try to bind to a port for 10 tries
-            try:
-                s.bind(( INADDR_ANY, randint(10000, 60000) ))
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-                has_bind = 1
-            except socket.error, ex:
-                pass
-        if not has_bind:
-            raise NetBIOSError, ( 'Cannot bind to a good UDP port', ERRCLASS_OS, errno.EAGAIN )
+        try:
+            s.bind(( INADDR_ANY, 0 ))
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        except socket.error, ex:
+            s.close()
+            raise NetBIOSError, ex
 
         self.__sock = s
         self.__servport = NETBIOS_NS_PORT
