@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbcp,v 1.6 2001-11-10 06:32:41 miketeo Exp $
+# $Id: smbcp,v 1.7 2002-08-03 05:44:39 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smbcp - file transfer program between local machine and remote SMB machines
@@ -131,7 +131,7 @@ def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir, pa
                         remote.mkdir(dest_service, dest_path + '/' + os.path.basename(src_path), password)
                     except smb.SessionError:
                         pass
-                    local2remote_copy(remote, dest_service, dest_path + '/' + os.path.basename(src_path), os.path.join(src_path, f), is_dest_dir)
+                    local2remote_copy(remote, dest_service, dest_path + '/' + os.path.basename(src_path), os.path.join(src_path, f), is_dest_dir, password)
         else:
             print 'Warning:', src_path, 'is a directory but -r is not set.'
     else:
