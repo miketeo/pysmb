@@ -1,5 +1,5 @@
 
-pysmb version 0.1.3
+pysmb version 0.2.0
 Copyright (C) 2001 Michael Teo <michaelteo@@bigfoot.com>
 
 This program is a free software with ABSOLUTELY NO WARRANTY!
@@ -23,16 +23,18 @@ It can run on Python 1.5.2 and Python 2.1. I have already tested them on
 my machines. 
 Since the whole library is written in pure Python, it should be able to run 
 on any Python-supported platforms. 
-It can upload/download/copy/rename/remove/list files and directories. 
+It can upload/download/copy/rename/remove/list files and directories that are
+shared in user mode.
+From version 0.2.0, pysmb also supports encrypted authentication in DES.
+However, you can turn off encrypted authentication on these machines by
+using these registry files (Win95, Win98, Win2000, NT4) in the extra directory
 
 
 What It Can't Do
 ================
 
 Note that this is only a client library. It does not share files. 
-Currently it does not support encrypted authentication when connecting to some 
-Windows machines. You can turn off encrypted authentication on these machines by
-using these registry files (Win95, Win98, Win2000, NT4) in the extra directory
+File access in share mode remains untested.
 
 
 Utilities
