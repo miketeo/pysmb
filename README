@@ -1,6 +1,6 @@
 
-pysmb version 0.3.1
-Copyright (C) 2001 Michael Teo <michaelteo@@bigfoot.com>
+pysmb version 0.4.0
+Copyright (C) 2001,2002 Michael Teo <michaelteo@@bigfoot.com>
 
 This program is a free software with ABSOLUTELY NO WARRANTY!
 You can redistribute/modify/use it under certain conditions.
@@ -19,8 +19,7 @@ It is an experimental SMB/CIFS library written in Python.
 What It Can Do
 ==============
 
-It can run on Python 1.5.2 and Python 2.1. I have already tested them on
-my machines. 
+It can run on Python 2.1 and 2.2. I have already tested them on my machines. 
 Since the whole library is written in pure Python, it should be able to run 
 on any Python-supported platforms. 
 It can upload/download/copy/rename/remove/list files and directories that are
@@ -30,7 +29,9 @@ However, you can turn off encrypted authentication on these machines by
 using these registry files (Win95, Win98, Win2000, NT4) in the extra directory
 From version 0.3.0, pysmb allows operations on services in share mode. Previous
 versions only support services in user mode.
-
+From version 0.4.0, pysmb uses NT LM0.12 dialect to communicate with the SMB 
+server. Note that this is only a partial implementation, so it might fail on
+some systems
 
 What It Can't Do
 ================
