@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smblistshare,v 1.1 2001-08-24 16:02:31 miketeo Exp $
+# $Id: smblistshare,v 1.2 2001-08-24 16:03:48 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smblistshare - list the shared devices on a SMB machine
@@ -71,6 +71,10 @@ def main():
             elif k == '-h':
                 raise getopt.error
     except getopt.error:
+        print_usage_screen()
+        return
+
+    if not args:
         print_usage_screen()
         return
        
