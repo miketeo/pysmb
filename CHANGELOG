@@ -1,4 +1,11 @@
 
+pysmb-0.3.1, 12 Nov 2001
+========================
+
+- Fix a problem with some Windows server where an UID is required when server is in share mode.
+  Now, pysmb calls login() with empty authentication information when server is in share mode.
+- Add TYPE_DOMAIN_MASTER constant and description to nmb.py.
+
 pysmb-0.3.0, 10 Nov 2001
 ========================
 
