@@ -3,6 +3,8 @@ pysmb-0.4.3, 22 Feb 2002
 ========================
 
 - Fix a bug which fails to close the socket in nmb.py on socket exception
+- Fix a bug which fails to close the NetBIOSSession in smb.py if the session 
+  has not been properly established yet.
 
 pysmb-0.4.2, 03 Aug 2002
 ========================
