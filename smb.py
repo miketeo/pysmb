@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.6 2001-09-03 13:02:11 miketeo Exp $
+# $Id: smb.py,v 1.7 2001-10-01 15:50:51 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -30,7 +30,7 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.6 $'
+CVS_REVISION = '$Revision: 1.7 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -206,12 +206,18 @@ class SMB:
         self.__remote_name = remote_name
         
         if not my_name:
-            my_name = 'PYSMB' + str(randint(1, 10000))
+            my_name = socket.gethostname()
+            i = string.find(my_name, '.')
+            if i > -1:
+                my_name = my_name[:i]
             
         self.__sess = nmb.NetBIOSSession(my_name, remote_name, remote_host, host_type, sess_port)
         _, self.__login_required, self.__max_transmit_size, rawmode = self.__neg_session()
         self.__can_read_raw = rawmode & 0x01
         self.__can_write_raw = rawmode & 0x02
+
+    def __del__(self):
+        self.__sess.close()
 
     def __decode_smb(self, data):
         _, cmd, err_class, _, err_code, flags1, flags2, _, tid, pid, uid, mid, wcount = unpack('<4sBBBHBH12sHHHHB', data[:33])
@@ -235,7 +241,7 @@ class SMB:
         self.__sess.send_packet(pack('<4sBLBH12sHHHHB', '\xffSMB', cmd, status, flags, flags2, '\0' * 12, tid, os.getpid(), self.__uid, mid, wordcount / 2) + params + pack('<H', len(data)) + data)
 
     def __neg_session(self, timeout = None):
-        self.__send_smb_packet(SMB_COM_NEGOTIATE, 0, 0, 0, 0, 0, data = '\x02PC NETWORK PROGRAM 1.0\x00\x02MICROSOFT NETWORKS 1.03\x00\x02MICROSOFT NETWORKS 3.0\x00\x02LANMAN1.0\x00')
+        self.__send_smb_packet(SMB_COM_NEGOTIATE, 0, 0, 0, 0, 0, data = '\x02PC NETWORK PROGRAM 1.0\x00\x02MICROSOFT NETWORKS 3.0\x00\x02LANMAN1.0\x00\x02LM1.2X002\x00')
 
         while 1:
             data = self.__sess.recv_packet(timeout)
