@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.14 2002-08-03 05:46:24 miketeo Exp $
+# $Id: smb.py,v 1.15 2003-02-22 08:03:19 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -40,7 +40,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-CVS_REVISION = '$Revision: 1.14 $'
+CVS_REVISION = '$Revision: 1.15 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -346,12 +346,15 @@ class SMB:
             self.login('', '')
 
     def __del__(self):
-        try:
-            if self.__uid > 0:
+        if self.__uid > 0:
+            try:
                 self.__logoff()
-                self.__uid = 0
+            except:
+                pass
+            self.__uid = 0
+        try:
             self.__sess.close()
-        except AttributeError:
+        except:
             pass
 
     def __decode_smb(self, data):
