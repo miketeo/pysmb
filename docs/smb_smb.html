@@ -1,5 +1,5 @@
 <!doctype html public "-//w3c/dtd html 3.2//en"><html>
-<!-- $Id: smb_smb.html,v 1.5 2001-11-10 13:27:09 miketeo Exp $ -->
+<!-- $Id: smb_smb.html,v 1.6 2002-04-17 14:48:19 miketeo Exp $ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
 <link rev="made" href="mailto:michaelteo@bigfoot.com">
@@ -15,6 +15,21 @@
 </dl>
 
 <p>smb.SMB objects have the following methods.
+
+<dl>
+  <dt><b>get_server_os()</b> -> string</dt>
+  <dd>Returns the OS of the SMB server</dd>
+</dl>
+
+<dl>
+  <dt><b>get_server_lanman()</b> -> string</dt>
+  <dd>Returns the LAN manager name of the SMB server</dd>
+</dl>
+
+<dl>
+  <dt><b>get_server_domain()</b> -> string</dt>
+  <dd>Returns the domain name of the SMB server</dd>
+</dl>
 
 <dl>
   <dt><b>is_login_required()</b> -> int</dt>
@@ -90,6 +105,6 @@
 <br clear=all>
 <hr noshade>
 <!-- hhmts start -->
-<i>Last modified on Sat, Nov 10 2001</i>
+<i>Last modified on Wed, Apr 17 2002</i>
 <!-- hhmts end -->
 </body></html>
