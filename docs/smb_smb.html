@@ -1,5 +1,5 @@
 <!doctype html public "-//w3c/dtd html 3.2//en"><html>
-<!-- $Id: smb_smb.html,v 1.6 2002-04-17 14:48:19 miketeo Exp $ -->
+<!-- $Id: smb_smb.html,v 1.7 2002-04-27 14:20:50 miketeo Exp $ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
 <link rev="made" href="mailto:michaelteo@bigfoot.com">
@@ -92,12 +92,12 @@
 </dl>
 
 <dl>
-  <dt><b>get_domains(timeout = None)</b> -> [ &lt;string instance&gt; ... ]</dt>
+  <dt><b>browse_domains(timeout = None)</b> -> [ &lt;string instance&gt; ... ]</dt>
   <dd>Return a list of string containing the available domain names. Note that the remote host must be at least a Domain Master Browse Server for this operation to succeed. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
 <dl>
-  <dt><b>get_servers_for_domain(timeout = None)</b> -> [ &lt;smb.SMBMachine instance&gt; ... ]</dt>
+  <dt><b>browse_servers_for_domain(timeout = None)</b> -> [ &lt;smb.SMBMachine instance&gt; ... ]</dt>
   <dd>Return a list of smb.SMBMachine instances containing the information about the registered SMB servers for the domain. Note that the remote machine has to be at least a Master Browse Server for this operation to succeed. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
       
@@ -105,6 +105,6 @@
 <br clear=all>
 <hr noshade>
 <!-- hhmts start -->
-<i>Last modified on Wed, Apr 17 2002</i>
+<i>Last modified on Sat, Apr 27 2002</i>
 <!-- hhmts end -->
 </body></html>
