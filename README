@@ -1,5 +1,5 @@
 
-pysmb version 0.2.0
+pysmb version 0.3.0
 Copyright (C) 2001 Michael Teo <michaelteo@@bigfoot.com>
 
 This program is a free software with ABSOLUTELY NO WARRANTY!
@@ -28,13 +28,14 @@ shared in user mode.
 From version 0.2.0, pysmb also supports encrypted authentication in DES.
 However, you can turn off encrypted authentication on these machines by
 using these registry files (Win95, Win98, Win2000, NT4) in the extra directory
+From version 0.3.0, pysmb allows operations on services in share mode. Previous
+versions only support services in user mode.
 
 
 What It Can't Do
 ================
 
 Note that this is only a client library. It does not share files. 
-File access in share mode remains untested.
 
 
 Utilities
