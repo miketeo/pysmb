@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbcp,v 1.5 2001-09-03 13:10:44 miketeo Exp $
+# $Id: smbcp,v 1.6 2001-11-10 06:32:41 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smbcp - file transfer program between local machine and remote SMB machines
@@ -27,7 +27,7 @@
 import os, os.path, sys, stat, string, re, getopt, getpass
 import smb, nmb
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 USER_HOST_PATH_PATTERN = re.compile('(\w+)@([\w\.]+):/*([^/]+)(/.*)')
 HOST_PATH_PATTERN = re.compile(r"([\w\.]+):/*([^/]+)(/*.*)")
@@ -57,11 +57,11 @@ def print_usage_screen():
     
 
 
-def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir):
+def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir, password):
     global recursive, dry_run
 
     try:
-        info = src.list_path(src_service, src_path)
+        info = src.list_path(src_service, src_path, password = password)
         is_src_dir = info[0].is_directory()
     except smb.SessionError, ex:
         print ex[0], ':', smb.strerror(ex[1], ex[2])[1]
@@ -79,20 +79,20 @@ def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir):
                 except:
                     pass
         
-            for f in src.list_path(src_service, src_path + '/*'):
+            for f in src.list_path(src_service, src_path + '/*', password = password):
                 name = f.get_longname()
                 if name == '.' or name == '..':
                     continue
 
                 if f.is_directory():
-                    remote2local_copy(src, src_service, src_path + '/' + name, os.path.join(dest_path, os.path.basename(src_path)), is_dest_dir)
+                    remote2local_copy(src, src_service, src_path + '/' + name, os.path.join(dest_path, os.path.basename(src_path)), is_dest_dir, password)
                 else:
                     print src_path + '/' + name,
                     print '=>', os.path.join(dest_path, os.path.basename(src_path), name)
                     if not dry_run:
                         fh = open(os.path.join(dest_path, os.path.basename(src_path), name), 'wb')
                         try:
-                            src.retr_file(src_service, src_path + '/' + name, fh.write)
+                            src.retr_file(src_service, src_path + '/' + name, fh.write, password = password)
                         finally:
                             fh.close()
                         
@@ -110,13 +110,13 @@ def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir):
             else:
                 fh = open(dest_path, 'wb')
             try:
-                src.retr_file(src_service, src_path, fh.write)
+                src.retr_file(src_service, src_path, fh.write, password = password)
             finally:
                 fh.close()
                 
     
 
-def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir):
+def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir, password):
     global recursive, dry_run
 
     if os.path.isdir(src_path):
@@ -128,7 +128,7 @@ def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir):
             for f in os.listdir(src_path):
                 if f != '.' and f != '..':
                     try:
-                        remote.mkdir(dest_service, dest_path + '/' + os.path.basename(src_path))
+                        remote.mkdir(dest_service, dest_path + '/' + os.path.basename(src_path), password)
                     except smb.SessionError:
                         pass
                     local2remote_copy(remote, dest_service, dest_path + '/' + os.path.basename(src_path), os.path.join(src_path, f), is_dest_dir)
@@ -147,9 +147,9 @@ def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir):
             fh = open(src_path, 'rb')
             try:
                 if is_dest_dir:
-                    remote.stor_file(dest_service, dest_path + '/' + os.path.basename(src_path), fh.read)
+                    remote.stor_file(dest_service, dest_path + '/' + os.path.basename(src_path), fh.read, password = password)
                 else:
-                    remote.stor_file(dest_service, dest_path, fh.read)
+                    remote.stor_file(dest_service, dest_path, fh.read, password = password)
             finally:
                 fh.close()
 
@@ -217,10 +217,13 @@ def main():
                 user = getpass.getuser()
             password = getpass.getpass('Password for ' + user + '@' + dest_name + ': ')
             remote.login(user, password)
+            password = None
+        else:
+            password = getpass.getpass('Password for ' + dest_service + ': ')
                 
         is_dest_dir = 0
         try:
-            remote.check_dir(dest_service, dest_path)
+            remote.check_dir(dest_service, dest_path, password)
             is_dest_dir = 1
         except smb.SessionError:
             pass
@@ -237,7 +240,7 @@ def main():
                 print 'Warning: You have specified a remote=>remote copy. We can only do local=>remote or remote=>local copy.'
             else:
                 source = os.path.normpath(source)
-                local2remote_copy(remote, dest_service, dest_path, source, is_dest_dir)
+                local2remote_copy(remote, dest_service, dest_path, source, is_dest_dir, password)
     else:
         is_dest_dir = os.path.isdir(dest)
         if len(sources) > 1 and not is_dest_dir:
@@ -281,11 +284,14 @@ def main():
                     password = getpass.getpass('Password for ' + user + '@' + src_name + ': ')
                     passwords[( user, src_name )] = password
                 src.login(user, password)
-
+                password = None
+            else:
+                password = getpass.getpass('Password for ' + src_service + ': ')
+                 
             if src_path and src_path[-1] == '/':
                 src_path = src_path[:-1]
 
-            remote2local_copy(src, src_service, src_path, dest, is_dest_dir)
+            remote2local_copy(src, src_service, src_path, dest, is_dest_dir, password)
             
     
 

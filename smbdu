@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbdu,v 1.4 2001-09-01 07:01:41 miketeo Exp $
+# $Id: smbdu,v 1.5 2001-11-10 06:32:41 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smbdu - summarize disk usage of each SMB path recursively
@@ -27,7 +27,7 @@
 import os, sys, string, re, getopt, getpass
 import smb, nmb
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 
 
@@ -80,7 +80,7 @@ def parse_path(path):
 
 
 
-def query_path(s, share, path, depth):
+def query_path(s, share, path, depth, password):
     global show_all, blocksize, spaces, max_depth, separate_dirs
     
     count = 1L
@@ -90,14 +90,14 @@ def query_path(s, share, path, depth):
         else:
             output = 0
     
-        listings = s.list_path(share, path + '/*')
+        listings = s.list_path(share, path + '/*', password = password)
         for f in listings:
             if f.get_longname() != '.' and f.get_longname() != '..':
                 if f.is_directory():
                     if separate_dirs:
-                        query_path(s, share, path + '/' + f.get_longname(), depth + 1)
+                        query_path(s, share, path + '/' + f.get_longname(), depth + 1, password)
                     else:
-                        count = count + query_path(s, share, path + '/' + f.get_longname(), depth + 1)
+                        count = count + query_path(s, share, path + '/' + f.get_longname(), depth + 1, password)
                 else:
                     count = count + f.get_filesize()
                     if output and show_all:
@@ -202,8 +202,13 @@ def main():
                 s.login(user, password)
                 print 'Authentication passed'
 
+                password = None
+            else:
+                password = getpass.getpass('Password for ' + share + ': ')
+                password_lists[( share + ':' + path, nbname )] = password
+
             print 
-            count = query_path(s, share, path, 0)
+            count = query_path(s, share, path, 0, password)
             print
             
         except smb.SessionError, ex:
