@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbcp,v 1.4 2001-09-01 07:48:12 miketeo Exp $
+# $Id: smbcp,v 1.5 2001-09-03 13:10:44 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smbcp - file transfer program between local machine and remote SMB machines
@@ -292,6 +292,9 @@ def main():
 if __name__ == '__main__':
     try:
         main()
+    except nmb.NetBIOSError, ex:
+        _, err_msg = nmb.strerror(ex[1], ex[2])
+        print ex[0], ':', err_msg
     except smb.SessionError, ex:
         _, err_msg = smb.strerror(ex[1], ex[2])
         print ex[0], ':', err_msg
