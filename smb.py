@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.10 2001-11-10 06:30:26 miketeo Exp $
+# $Id: smb.py,v 1.11 2001-11-12 15:10:09 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -37,7 +37,7 @@ except ImportError:
 
 
 
-CVS_REVISION = '$Revision: 1.10 $'
+CVS_REVISION = '$Revision: 1.11 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -245,6 +245,12 @@ class SMB:
         # We use the self.__enc_key to determine whether encryption is needed
         if auth & SMB.SECURITY_AUTH_MASK == SMB.SECURITY_AUTH_PLAINTEXT:
             self.__enc_key = None
+
+        # Call login() without any authentication information to setup a session.
+        # Some Windows servers require a session setup to set the UID field for further
+        # operations
+        if not self.is_login_required():
+            self.login('', '')
 
     def __del__(self):
         try:
