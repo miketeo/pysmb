@@ -1,4 +1,9 @@
 
+pysmb-0.3.0, 10 Nov 2001
+========================
+
+- Add support for services in share mode. Minor changes to smb.SMB class API.
+
 pysmb-0.2.0, 04 Oct 2001
 ========================
 
