@@ -1,5 +1,5 @@
 <!doctype html public "-//w3c/dtd html 3.2//en"><html>
-<!-- $Id: nmb_netbiossession.html,v 1.1 2001-08-20 12:40:17 miketeo Exp $ -->
+<!-- $Id: nmb_netbiossession.html,v 1.2 2001-09-01 07:09:35 miketeo Exp $ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
 <link rev="made" href="mailto:michaelteo@bigfoot.com">
@@ -10,8 +10,8 @@
 <p>A nmb.NetBIOSSession object can be created using the following constructor.
 
 <dl>
-  <dt><b>NetBIOSSession(myname, remote_name, remote_host, sess_port = nmb.NETBIOS_SESSION_PORT)</b></dt>
-  <dd>Setup a NetBIOS over TCP/IP session between 2 NetBIOS names, myname and remote_name. Note that some machines might reject the connection if remote_name does not belong to their machines. remote_host should be a string containing the hostname or IP address of the remote machine.</dd>
+  <dt><b>NetBIOSSession(myname, remote_name, remote_host, host_type = nmb.TYPE_SERVER, sess_port = nmb.NETBIOS_SESSION_PORT)</b></dt>
+  <dd>Setup a NetBIOS over TCP/IP session between 2 NetBIOS names, myname and remote_name. Note that some machines might reject the connection if remote_name does not belong to their machines. remote_host should be a string containing the hostname or IP address of the remote machine. host_type is used to specify the type of the remote host.</dd>
 </dl>
 
 <p>nmb.NetBIOSSession objects has the following methods.
@@ -45,6 +45,6 @@
 <br clear=all>
 <hr noshade>
 <!-- hhmts start -->
-<br><i>Last modified on Sun, Aug 19 2001</i>
+<br><i>Last modified on Sat, Sep  1 2001</i>
 <!-- hhmts end -->
 </body></html>
