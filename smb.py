@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.1 2001-08-20 12:13:01 miketeo Exp $
+# $Id: smb.py,v 1.2 2001-08-22 15:06:21 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -31,7 +31,7 @@ from nmb import *
 
 
 VERSION = '0.1.0'
-CVS_REVISION = '$Revision: 1.1 $'
+CVS_REVISION = '$Revision: 1.2 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -93,6 +93,20 @@ SMB_ACCESS_READWRITE = 0x02
 SMB_ACCESS_EXEC = 0x03
 
 
+
+def strerror(errclass, errcode):
+    if errclass == 0x01:
+        return 'OS error', ERRDOS.get(errcode, 'Unknown error')
+    elif errclass == 0x02:
+        return 'Server error', ERRSRV.get(errcode, 'Unknown error')
+    elif errclass == 0x03:
+        return 'Hardware error', ERRHRD.get(errcode, 'Unknown error')
+    elif errclass == 0xff:
+        return 'Bad command', 'Bad command. Please file bug report'
+    else:
+        return 'Unknown error', 'Unknown error'
+
+    
 
 class SessionError(Exception): pass
 
@@ -664,3 +678,75 @@ class SMB:
                             raise SessionError, ( 'Rename failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
         finally:
             self.__disconnect_tree(tid)
+
+
+
+ERRDOS = { 1: 'Invalid function',
+           2: 'File not found',
+           3: 'Invalid directory',
+           4: 'Too many open files',
+           5: 'Access denied',
+           6: 'Invalid file handle. Please file a bug report.',
+           7: 'Memory control blocks destroyed',
+           8: 'Out of memory',
+           9: 'Invalid memory block address',
+           10: 'Invalid environment',
+           11: 'Invalid format',
+           12: 'Invalid open mode',
+           13: 'Invalid data',
+           15: 'Invalid drive',
+           16: 'Attempt to remove server\'s current directory',
+           17: 'Not the same device',
+           18: 'No files found',
+           32: 'Sharing mode conflicts detected',
+           33: 'Lock request conflicts detected',
+           80: 'File already exists'
+           }
+
+ERRSRV = { 1: 'Non-specific error',
+           2: 'Bad password',
+           4: 'Access denied',
+           5: 'Invalid tid. Please file a bug report.',
+           6: 'Invalid network name',
+           7: 'Invalid device',
+           49: 'Print queue full',
+           50: 'Print queue full',
+           51: 'EOF on print queue dump',
+           52: 'Invalid print file handle',
+           64: 'Command not recognized. Please file a bug report.',
+           65: 'Internal server error',
+           67: 'Invalid path',
+           69: 'Invalid access permissions',
+           71: 'Invalid attribute mode',
+           81: 'Server is paused',
+           82: 'Not receiving messages',
+           83: 'No room to buffer messages',
+           87: 'Too many remote user names',
+           88: 'Operation timeout',
+           89: 'Out of resources',
+           91: 'Invalid user handle. Please file a bug report.',
+           250: 'Temporarily unable to support raw mode for transfer',
+           251: 'Temporarily unable to support raw mode for transfer',
+           252: 'Continue in MPX mode',
+           65535: 'Unsupported function'
+           }
+
+ERRHRD = { 19: 'Media is write-protected',
+           20: 'Unknown unit',
+           21: 'Drive not ready',
+           22: 'Unknown command',
+           23: 'CRC error',
+           24: 'Bad request',
+           25: 'Seek error',
+           26: 'Unknown media type',
+           27: 'Sector not found',
+           28: 'Printer out of paper',
+           29: 'Write fault',
+           30: 'Read fault',
+           31: 'General failure',
+           32: 'Open conflicts with an existing open',
+           33: 'Invalid lock request',
+           34: 'Wrong disk in drive',
+           35: 'FCBs not available',
+           36: 'Sharing buffer exceeded'
+           }
