@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmb.py,v 1.3 2001-09-01 07:02:58 miketeo Exp $
+# $Id: nmb.py,v 1.4 2001-10-01 15:48:22 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # nmb.py - NetBIOS library
@@ -29,7 +29,7 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.3 $'
+CVS_REVISION = '$Revision: 1.4 $'
 
 # Taken from socket module reference
 INADDR_ANY = ''
@@ -385,6 +385,10 @@ class NetBIOSSession:
 
     def get_remote_name(self):
         return self.__remote_name
+
+    def close(self):
+        self.__sock.shutdown(2)
+        self.__sock.close()
 
     def send_packet(self, data):
         self.__sock.send('\x00\x00' + pack('>H', len(data)) + data)
