@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmb.py,v 1.7 2003-02-22 07:57:00 miketeo Exp $
+# $Id: nmb.py,v 1.8 2003-03-08 13:14:14 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # nmb.py - NetBIOS library
@@ -29,7 +29,7 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.7 $'
+CVS_REVISION = '$Revision: 1.8 $'
 
 # Taken from socket module reference
 INADDR_ANY = ''
@@ -371,8 +371,15 @@ class NetBIOSSession:
 
         self.__remote_host = remote_host
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__sock.connect(( remote_host, sess_port ))
-        self.__request_session(host_type)
+        try:
+            self.__sock.connect(( remote_host, sess_port ))
+            self.__request_session(host_type)
+        except socket.error, ex2:
+            try:
+                self.__sock.close()
+            except socket.error, ex:
+                pass
+            raise ex2
 
     def get_myname(self):
         return self.__myname
