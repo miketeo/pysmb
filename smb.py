@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.8 2001-10-04 17:07:58 miketeo Exp $
+# $Id: smb.py,v 1.9 2001-11-06 16:18:35 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -37,7 +37,7 @@ except ImportError:
 
 
 
-CVS_REVISION = '$Revision: 1.8 $'
+CVS_REVISION = '$Revision: 1.9 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -224,7 +224,10 @@ class SMB:
         self.__can_write_raw = rawmode & 0x02
 
     def __del__(self):
-        self.__sess.close()
+        try:
+            self.__sess.close()
+        except AttributeError:
+            pass
 
     def __decode_smb(self, data):
         _, cmd, err_class, _, err_code, flags1, flags2, _, tid, pid, uid, mid, wcount = unpack('<4sBBBHBH12sHHHHB', data[:33])
@@ -347,6 +350,7 @@ class SMB:
                             raise SessionError, ( 'Non-raw retr file failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
 
     def __raw_retr_file(self, tid, fid, offset, datasize, callback, timeout = None):
+        max_buf_size = self.__max_transmit_size & ~0x3ff  # Write in multiple KB blocks
         read_offset = offset
         while read_offset < datasize:
             self.__send_smb_packet(SMB_COM_READ_RAW, 0, 0, 0, tid, 0, pack('<HLHHLH', fid, read_offset, 0xffff, 0, 0, 0), '')
