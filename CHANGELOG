@@ -3,6 +3,10 @@ pysmb-0.3.0, 10 Nov 2001
 ========================
 
 - Add support for services in share mode. Minor changes to smb.SMB class API.
+- Fix a bug in smb.py's __raw_retr_file which has failed to initialize the max_buf_size prior to usage.
+- Fix a bug in smblistshare which fails to print the correct NMB error message
+- Modify smb.py not throw AttributeError in the destructor when there is an error while creating a session
+  in the constructor
 
 pysmb-0.2.0, 04 Oct 2001
 ========================
