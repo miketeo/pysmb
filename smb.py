@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.12 2002-04-17 14:32:44 miketeo Exp $
+# $Id: smb.py,v 1.13 2002-06-22 08:35:57 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -40,7 +40,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-CVS_REVISION = '$Revision: 1.12 $'
+CVS_REVISION = '$Revision: 1.13 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -472,7 +472,10 @@ class SMB:
                 cmd, err_class, err_code, flags1, flags2, _, _, mid, params, d = self.__decode_smb(data)
                 if cmd == SMB.SMB_COM_TRANSACTION2:
                     if err_class == 0x00 and err_code == 0x00:
-                        f1, f2 = unpack('<lL', d[34:42])
+                        if flags2 & 0x40:
+                            f1, f2 = unpack('<LL', d[47:55])
+                        else:
+                            f1, f2 = unpack('<LL', d[45:53])
                         return (f2 & 0xffffffffL) << 32 | f1
                     else:
                         raise SessionError, ( 'File information query failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
@@ -800,8 +803,9 @@ class SMB:
         try:
             fid, attrib, lastwritetime, datasize, grantedaccess, filetype, devicestate, action, serverfid = self.__open_file(tid, filename, mode, SMB_ACCESS_READ | SMB_SHARE_DENY_WRITE)
 
-            if not datasize:
-                datasize = self.__query_file_info(tid, fid)
+            #if not datasize:
+            datasize = self.__query_file_info(tid, fid)
+            print datasize
 
             if self.__can_read_raw:
                 self.__raw_retr_file(tid, fid, offset, datasize, callback)
