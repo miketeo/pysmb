@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.4 2001-08-24 15:40:43 miketeo Exp $
+# $Id: smb.py,v 1.5 2001-09-01 07:36:23 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -30,8 +30,7 @@ from struct import *
 
 
 
-VERSION = '0.1.1'
-CVS_REVISION = '$Revision: 1.4 $'
+CVS_REVISION = '$Revision: 1.5 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
