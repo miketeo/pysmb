@@ -1,5 +1,5 @@
 <!doctype html public "-//w3c/dtd html 3.2//en"><html>
-<!-- $Id: smb_smb.html,v 1.1 2001-08-20 12:40:17 miketeo Exp $ -->
+<!-- $Id: smb_smb.html,v 1.2 2001-08-23 15:24:47 miketeo Exp $ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
 <link rev="made" href="mailto:michaelteo@bigfoot.com">
@@ -10,7 +10,7 @@
 <p>A smb.SMB object can be created using the following constructor.
 
 <dl>
-  <dt><b>SMB(remote_name, remote_host, my_name = None, sess_port = NETBIOS_SESSION_PORT)</b></dt>
+  <dt><b>SMB(remote_name, remote_host, my_name = None, sess_port = nmb.NETBIOS_SESSION_PORT)</b></dt>
   <dd>Setup a SMB connection between 2 NetBIOS names, my_name and remote_name. If my_name is not supplied, a suitable name will be generated. Note that some machines might reject the connection if remote_name does not belong to their machines. remote_host should be a string containing the hostname or IP address of the remote machine.</dd>
 </dl>
 
@@ -80,6 +80,6 @@
 <br clear=all>
 <hr noshade>
 <!-- hhmts start -->
-<br><i>Last modified on Mon, Aug 20 2001</i>
+<br><i>Last modified on Thu, Aug 23 2001</i>
 <!-- hhmts end -->
 </body></html>
