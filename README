@@ -1,6 +1,6 @@
 
-pysmb version 0.4.3
-Copyright (C) 2001-2003 Michael Teo <michaelteo@@bigfoot.com>
+pysmb version 0.4.4
+Copyright (C) 2001-2004 Michael Teo <michaelteo@@bigfoot.com>
 
 This program is a free software with ABSOLUTELY NO WARRANTY!
 You can redistribute/modify/use it under certain conditions.
@@ -19,7 +19,7 @@ It is an experimental SMB/CIFS library written in Python.
 What It Can Do
 ==============
 
-It can run on Python 2.1 and 2.2. I have already tested them on my machines. 
+It can run on Python 2.1, 2.2 and 2.3. I have already tested them on my machines. 
 Since the whole library is written in pure Python, it should be able to run 
 on any Python-supported platforms. 
 It can upload/download/copy/rename/remove/list files and directories that are
