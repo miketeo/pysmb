@@ -1,5 +1,28 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
+# $Id: smbcp,v 1.2 2001-08-23 15:40:18 miketeo Exp $
+#
+# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# smbcp - file transfer program between local machine and remote SMB machines
+#
+# This software is provided 'as-is', without any express or implied warranty. 
+# In no event will the author be held liable for any damages arising from the 
+# use of this software.
+#
+# Permission is granted to anyone to use this software for any purpose, 
+# including commercial applications, and to alter it and redistribute it 
+# freely, subject to the following restrictions:
+#
+# 1. The origin of this software must not be misrepresented; you must not 
+#    claim that you wrote the original software. If you use this software 
+#    in a product, an acknowledgment in the product documentation would be
+#    appreciated but is not required.
+#
+# 2. Altered source versions must be plainly marked as such, and must not be 
+#    misrepresented as being the original software.
+#
+# 3. This notice cannot be removed or altered from any source distribution.
+#
 
 import os, os.path, sys, stat, string, re, getopt, getpass
 import smb, nmb
@@ -155,7 +178,8 @@ def main():
             print 'Warning: Cannot resolve', dest_name
             return
         except nmb.NetBIOSError, ex:
-            print 'Warning: Error resolving', dest_name, ':', ex
+            print 'Warning: Error resolving', dest_name
+            print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
             return
         
         remote = smb.SMB(dest_name, addrs[0].get_ip())
@@ -206,7 +230,8 @@ def main():
             except nmb.NetBIOSTimeout:
                 print 'Warning: Cannot resolve', src_name
             except nmb.NetBIOSError, ex:
-                print 'Warning: Error resolving', src_name, ':', ex
+                print 'Warning: Error resolving', src_name
+                print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
 
             src = smb.SMB(src_name, addrs[0].get_ip())
             if src.is_login_required():
@@ -229,6 +254,9 @@ def main():
 if __name__ == '__main__':
     try:
         main()
+    except smb.SessionError, ex:
+        _, err_msg = smb.strerror(ex[1], ex[2])
+        print ex[0], ':', err_msg
     except KeyboardInterrupt:
         pass
 
