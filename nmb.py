@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmb.py,v 1.1 2001-08-20 12:13:01 miketeo Exp $
+# $Id: nmb.py,v 1.2 2001-08-23 15:19:52 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # nmb.py - NetBIOS library
@@ -29,7 +29,7 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.1 $'
+CVS_REVISION = '$Revision: 1.2 $'
 
 # Taken from socket module reference
 INADDR_ANY = ''
@@ -58,6 +58,18 @@ NAME_TYPES = { TYPE_UNKNOWN: 'Unknown', TYPE_WORKSTATION: 'Workstation', TYPE_CL
                TYPE_SERVER: 'Server', TYPE_MASTER_BROWSER: 'Master Browser', TYPE_BROWSER: 'Browser Server' }
 
 
+
+def strerror(errclass, errcode):
+    if errclass == ERRCLASS_OS:
+        return 'OS Error', os.strerror(errcode)
+    elif errclass == ERRCLASS_QUERY:
+        return 'Query Error', QUERY_ERRORS.get(errcode, 'Unknown error')
+    elif errclass == ERRCLASS_SESSION:
+        return 'Session Error', SESSION_ERRORS.get(errcode, 'Unknown error')
+    else:
+        return 'Unknown Error Class', 'Unknown Error'
+    
+    
 
 class NetBIOSError(Exception): pass
 class NetBIOSTimeout(Exception): pass
@@ -151,7 +163,7 @@ class NetBIOS:
             except socket.error, ex:
                 pass
         if not has_bind:
-            raise NetBIOSError, 'Cannot bind to a good UDP port'
+            raise NetBIOSError, ( 'Cannot bind to a good UDP port', ERRCLASS_OS, errno.EAGAIN )
 
         self.__sock = s
         self.__servport = NETBIOS_NS_PORT
@@ -228,7 +240,7 @@ class NetBIOS:
                                 # Name error. Name was not registered on server.
                                 return None
                             else:
-                                raise NetBIOSError, 'Negative Name Query Response. (Rcode: %d)' % rcode
+                                raise NetBIOSError, ( 'Negative name query response', ERRCLASS_QUERY, rcode )
                             
                         qn_length, qn_name, qn_scope = decode_name(data[12:])
                         offset = 20 + qn_length
@@ -243,7 +255,7 @@ class NetBIOS:
                             return addrs
             except select.error, ex:
                 if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
-                    raise NetBIOSError, "Error while waiting for response: " + ex[1]
+                    raise NetBIOSError, ( 'Error occurs while waiting for response', ERRCLASS_OS, ex[0] )
             except socket.error, ex:
                 pass
 
@@ -278,7 +290,7 @@ class NetBIOS:
                                 # Name error. Name was not registered on server.
                                 return None
                             else:
-                                raise NetBIOSError, 'Negative Name Query Response. (Rcode: %d)' % rcode
+                                raise NetBIOSError, ( 'Negative name query response', ERRCLASS_QUERY, rcode )
                             
                         nodes = [ ]
                         num_names = ord(data[56])
@@ -293,7 +305,7 @@ class NetBIOS:
                         return nodes
             except select.error, ex:
                 if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
-                    raise NetBIOSError, "Error while waiting for response: " + ex[1]
+                    raise NetBIOSError, ( 'Error occurs while waiting for response', ERRCLASS_OS, ex[0] )
             except socket.error, ex:
                 pass
         
@@ -392,8 +404,7 @@ class NetBIOSSession:
         while 1:
             type, flags, data = self.__read(timeout)
             if type == 0x83:
-                err = ord(data[0])
-                raise NetBIOSError, ( "Cannot request session (code: %d)" % err, err )
+                raise NetBIOSError, ( 'Cannot request session', ERRCLASS_SESSION, ord(data[0]) )
             elif type == 0x82:
                 break
             else:
@@ -414,7 +425,7 @@ class NetBIOSSession:
                 read_len = 4 - len(data)
             except select.error, ex:
                 if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
-                    raise NetBIOSError, ( "Error while reading from remote: " + ex[1], ex[0] )
+                    raise NetBIOSError, ( 'Error occurs while reading from remote', ERRCLASS_OS, ex[0] )
                 
         type, flags, length = unpack('>ccH', data)
         if ord(flags) & 0x01:
@@ -432,6 +443,26 @@ class NetBIOSSession:
                 read_len = length - len(data)
             except select.error, ex:
                 if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
-                    raise NetBIOSError, ( "Error while reading from remote: " + ex[1], ex[0] )
+                    raise NetBIOSError, ( 'Error while reading from remote', ERRCLASS_OS, ex[0] )
                 
         return ord(type), ord(flags), data
+
+
+
+ERRCLASS_QUERY = 0x00
+ERRCLASS_SESSION = 0xf0
+ERRCLASS_OS = 0xff
+
+QUERY_ERRORS = { 0x01: 'Request format error. Please file a bug report.',
+                 0x02: 'Internal server error',
+                 0x03: 'Name does not exist',
+                 0x04: 'Unsupported request',
+                 0x05: 'Request refused'
+                 }
+
+SESSION_ERRORS = { 0x80: 'Not listening on called name',
+                   0x81: 'Not listening for calling name',
+                   0x82: 'Called name not present',
+                   0x83: 'Sufficient resources',
+                   0x8f: 'Unspecified error'
+                   }
