@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmb.py,v 1.2 2001-08-23 15:19:52 miketeo Exp $
+# $Id: nmb.py,v 1.3 2001-09-01 07:02:58 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # nmb.py - NetBIOS library
@@ -29,7 +29,7 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.2 $'
+CVS_REVISION = '$Revision: 1.3 $'
 
 # Taken from socket module reference
 INADDR_ANY = ''
@@ -360,7 +360,7 @@ def _do_first_level_decoding(m):
 
 class NetBIOSSession:
 
-    def __init__(self, myname, remote_name, remote_host, sess_port = NETBIOS_SESSION_PORT):
+    def __init__(self, myname, remote_name, remote_host, host_type = TYPE_SERVER, sess_port = NETBIOS_SESSION_PORT):
         if len(myname) > 15:
             self.__myname = string.upper(myname[:15])
         else:
@@ -375,7 +375,7 @@ class NetBIOSSession:
         self.__remote_host = remote_host
         self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__sock.connect(( remote_host, sess_port ))
-        self.__request_session()
+        self.__request_session(host_type)
 
     def get_myname(self):
         return self.__myname
@@ -396,8 +396,8 @@ class NetBIOSSession:
         else:
             return None
 
-    def __request_session(self, timeout = None):
-        remote_name = encode_name(self.__remote_name, TYPE_WORKSTATION, '')
+    def __request_session(self, host_type, timeout = None):
+        remote_name = encode_name(self.__remote_name, host_type, '')
         myname = encode_name(self.__myname, TYPE_WORKSTATION, '')
         
         self.__sock.send('\x81\x00' + pack('>H', len(remote_name) + len(myname)) + remote_name + myname)
