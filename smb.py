@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.9 2001-11-06 16:18:35 miketeo Exp $
+# $Id: smb.py,v 1.10 2001-11-10 06:30:26 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -37,7 +37,7 @@ except ImportError:
 
 
 
-CVS_REVISION = '$Revision: 1.9 $'
+CVS_REVISION = '$Revision: 1.10 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -207,6 +207,20 @@ class SharedFile:
 # Represents a SMB session
 class SMB:
 
+    # Security Share Mode (Used internally by SMB class)
+    SECURITY_SHARE_MASK = 0x01
+    SECURITY_SHARE_SHARE = 0x00
+    SECURITY_SHARE_USER = 0x01
+    
+    # Security Auth Mode (Used internally by SMB class)
+    SECURITY_AUTH_MASK = 0x02
+    SECURITY_AUTH_ENCRYPTED = 0x02
+    SECURITY_AUTH_PLAINTEXT = 0x00
+
+    # Raw Mode Mask (Used internally by SMB class)
+    RAW_READ_MASK = 0x01
+    RAW_WRITE_MASK = 0x02
+
     def __init__(self, remote_name, remote_host, my_name = None, host_type = nmb.TYPE_SERVER, sess_port = nmb.NETBIOS_SESSION_PORT):
         # The uid attribute will be set when the client calls the login() method
         self.__uid = 0
@@ -219,9 +233,18 @@ class SMB:
                 my_name = my_name[:i]
             
         self.__sess = nmb.NetBIOSSession(my_name, remote_name, remote_host, host_type, sess_port)
-        _, self.__login_required, self.__max_transmit_size, rawmode, self.__enc_key = self.__neg_session()
-        self.__can_read_raw = rawmode & 0x01
-        self.__can_write_raw = rawmode & 0x02
+        _, auth, self.__max_transmit_size, rawmode, self.__enc_key = self.__neg_session()
+        self.__can_read_raw = rawmode & SMB.RAW_READ_MASK
+        self.__can_write_raw = rawmode & SMB.RAW_WRITE_MASK
+        self.__share_mode = auth & SMB.SECURITY_SHARE_MASK
+
+        # If the following assertion fails, then mean that the encryption key is not sent when
+        # encrypted authentication is required by the server.
+        assert (auth & SMB.SECURITY_AUTH_MASK == SMB.SECURITY_AUTH_PLAINTEXT) or (auth & SMB.SECURITY_AUTH_MASK == SMB.SECURITY_AUTH_ENCRYPTED and self.__enc_key and len(self.__enc_key) >= 8)
+
+        # We use the self.__enc_key to determine whether encryption is needed
+        if auth & SMB.SECURITY_AUTH_MASK == SMB.SECURITY_AUTH_PLAINTEXT:
+            self.__enc_key = None
 
     def __del__(self):
         try:
@@ -267,8 +290,15 @@ class SMB:
                     else:
                         raise SessionError, ( "Cannot neg dialect. (ErrClass: %d and ErrCode: %d)" % ( err_class, err_code ), err_class, err_code )
             
-    def __connect_tree(self, path, service, timeout = None):
-        self.__send_smb_packet(SMB_COM_TREE_CONNECT_ANDX, 0, 0x08, 0, 0, 0, pack('<BBHHH', 0xff, 0, 0, 0, 1), '\0' + string.upper(path) + '\0' + service + '\0')
+    def __connect_tree(self, path, service, password, timeout = None):
+        if password:
+            # Password is only encrypted if the server passed us an "encryption" during protocol dialect
+            # negotiation and mxCrypto's DES module is loaded.
+            if self.__enc_key and DES:
+                password = self.__deshash(password)
+            self.__send_smb_packet(SMB_COM_TREE_CONNECT_ANDX, 0, 0x08, 0, 0, 0, pack('<BBHHH', 0xff, 0, 0, 0, len(password)), password + string.upper(path) + '\0' + service + '\0')
+        else:
+            self.__send_smb_packet(SMB_COM_TREE_CONNECT_ANDX, 0, 0x08, 0, 0, 0, pack('<BBHHH', 0xff, 0, 0, 0, 1), '\0' + string.upper(path) + '\0' + service + '\0')
 
         while 1:
             data = self.__sess.recv_packet(timeout)
@@ -459,7 +489,9 @@ class SMB:
         return DES(self.__expand_des_key(p21[:7])).encrypt(self.__enc_key) + DES(self.__expand_des_key(p21[7:14])).encrypt(self.__enc_key) + DES(self.__expand_des_key(p21[14:])).encrypt(self.__enc_key)
 
     def is_login_required(self):
-        return self.__login_required
+        # Login is required if share mode is user. Otherwise only public services or services in share mode
+        # are allowed.
+        return self.__share_mode == SMB.SECURITY_SHARE_USER
 
     def login(self, name, password, domain = '', timeout = None):
         # Password is only encrypted if the server passed us an "encryption" during protocol dialect
@@ -512,10 +544,10 @@ class SMB:
         finally:
             self.__disconnect_tree(tid)
 
-    def list_path(self, service, path = '*', timeout = None):
+    def list_path(self, service, path = '*', password = None, timeout = None):
         path = string.replace(path, '/', '\\')
             
-        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, timeout)
+        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
             self.__trans2(tid, '\x01\x00', '\x00', '\x16\x00\x00\x02\x06\x00\x04\x01\x00\x00\x00\x00\x5c' + path + '\x00', '')
             while 1:
@@ -539,11 +571,11 @@ class SMB:
         finally:
             self.__disconnect_tree(tid)
 
-    def retr_file(self, service, filename, callback, mode = SMB_O_OPEN, offset = 0, timeout = None):
+    def retr_file(self, service, filename, callback, mode = SMB_O_OPEN, offset = 0, password = None, timeout = None):
         filename = string.replace(filename, '/', '\\')
 
         fid = -1
-        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, timeout)
+        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
             fid, attrib, lastwritetime, datasize, grantedaccess, filetype, devicestate, action, serverfid = self.__open_file(tid, filename, mode, SMB_ACCESS_READ | SMB_SHARE_DENY_WRITE)
 
@@ -556,11 +588,11 @@ class SMB:
                 self.__close_file(tid, fid)
             self.__disconnect_tree(tid)
 
-    def stor_file(self, service, filename, callback, mode = SMB_O_CREAT | SMB_O_TRUNC, offset = 0, timeout = None):
+    def stor_file(self, service, filename, callback, mode = SMB_O_CREAT | SMB_O_TRUNC, offset = 0, password = None, timeout = None):
         filename = string.replace(filename, '/', '\\')
 
         fid = -1
-        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, timeout)
+        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
             fid, attrib, lastwritetime, datasize, grantedaccess, filetype, devicestate, action, serverfid = self.__open_file(tid, filename, mode, SMB_ACCESS_WRITE | SMB_SHARE_DENY_WRITE)
 
@@ -577,17 +609,17 @@ class SMB:
                 self.__close_file(tid, fid)
             self.__disconnect_tree(tid)
 
-    def copy(self, src_service, src_path, dest_service, dest_path, callback = None, write_mode = SMB_O_CREAT | SMB_O_TRUNC, timeout = None):
+    def copy(self, src_service, src_path, dest_service, dest_path, callback = None, write_mode = SMB_O_CREAT | SMB_O_TRUNC, src_password = None, dest_password = None, timeout = None):
         dest_path = string.replace(dest_path, '/', '\\')
         src_path = string.replace(src_path, '/', '\\')
-        src_tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + src_service, SERVICE_ANY, timeout)
+        src_tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + src_service, SERVICE_ANY, src_password, timeout)
 
         dest_tid = -1
         try:
             if src_service == dest_service:
                 dest_tid = src_tid
             else:
-                dest_tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + dest_service, SERVICE_ANY, timeout)
+                dest_tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + dest_service, SERVICE_ANY, dest_password, timeout)
             
             dest_fid = self.__open_file(dest_tid, dest_path, write_mode, SMB_ACCESS_WRITE | SMB_SHARE_DENY_WRITE)[0]
             src_fid, _, _, src_datasize, _, _, _, _, _ = self.__open_file(src_tid, src_path, SMB_O_OPEN, SMB_ACCESS_READ | SMB_SHARE_DENY_WRITE)
@@ -635,8 +667,8 @@ class SMB:
             if dest_tid > -1 and src_service != dest_service:
                 self.__disconnect_tree(dest_tid)
 
-    def check_dir(self, service, path, timeout = None):
-        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, timeout)
+    def check_dir(self, service, path, password = None, timeout = None):
+        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
             self.__send_smb_packet(SMB_COM_CHECK_DIR, 0, 0x08, 0, tid, 0, '', '\x04' + path + '\x00')
 
@@ -652,11 +684,11 @@ class SMB:
         finally:
             self.__disconnect_tree(tid)
 
-    def remove(self, service, path, timeout = None):
+    def remove(self, service, path, password = None, timeout = None):
         # Perform a list to ensure the path exists
-        self.list_path(service, path, timeout)
+        self.list_path(service, path, password, timeout)
 
-        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, timeout)
+        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
             self.__send_smb_packet(SMB_COM_DELETE, 0, 0x08, 0, tid, 0, pack('<H', ATTR_HIDDEN | ATTR_SYSTEM | ATTR_ARCHIVE), '\x04' + path + '\x00')
 
@@ -672,11 +704,11 @@ class SMB:
         finally:
             self.__disconnect_tree(tid)
 
-    def rmdir(self, service, path, timeout = None):
+    def rmdir(self, service, path, password = None, timeout = None):
         # Check that the directory exists
-        self.check_dir(service, path, timeout)
+        self.check_dir(service, path, password, timeout)
 
-        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, timeout)
+        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
             self.__send_smb_packet(SMB_COM_DELETE_DIR, 0, 0x08, 0, tid, 0, '', '\x04' + path + '\x00')
 
@@ -692,8 +724,8 @@ class SMB:
         finally:
             self.__disconnect_tree(tid)
 
-    def mkdir(self, service, path, timeout = None):
-        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, timeout)
+    def mkdir(self, service, path, password = None, timeout = None):
+        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
             self.__send_smb_packet(SMB_COM_CREATE_DIR, 0, 0x08, 0, tid, 0, '', '\x04' + path + '\x00')
 
@@ -709,8 +741,8 @@ class SMB:
         finally:
             self.__disconnect_tree(tid)
 
-    def rename(self, service, old_path, new_path, timeout = None):
-        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, timeout)
+    def rename(self, service, old_path, new_path, password = None, timeout = None):
+        tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
             self.__send_smb_packet(SMB_COM_RENAME, 0, 0x08, 0, tid, 0, pack('<H', ATTR_SYSTEM | ATTR_HIDDEN | ATTR_DIRECTORY), '\x04' + old_path + '\x00\x04' + new_path + '\x00')
 
