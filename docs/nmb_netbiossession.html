@@ -1,5 +1,5 @@
 <!doctype html public "-//w3c/dtd html 3.2//en"><html>
-<!-- $Id: nmb_netbiossession.html,v 1.2 2001-09-01 07:09:35 miketeo Exp $ -->
+<!-- $Id: nmb_netbiossession.html,v 1.3 2001-10-01 15:54:19 miketeo Exp $ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
 <link rev="made" href="mailto:michaelteo@bigfoot.com">
@@ -32,6 +32,11 @@
 </dl>
 
 <dl>
+  <dt><b>close()</b></dt>
+  <dd>Close the current session. Any future read/write on this session will result in error.</dd>
+</dl>
+
+<dl>
   <dt><b>send_packet(data)</b></dt>
   <dd>Send a SMB data packet to the remote machine. The length of the data must not be more than 65535. Raises nmb.NetBIOSError if error occurs when sending the packet.</dd>
 </dl>
@@ -45,6 +50,6 @@
 <br clear=all>
 <hr noshade>
 <!-- hhmts start -->
-<br><i>Last modified on Sat, Sep  1 2001</i>
+<br><i>Last modified on Tue, Oct  2 2001</i>
 <!-- hhmts end -->
 </body></html>
