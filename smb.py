@@ -1,5 +1,5 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.3 2001-08-23 15:26:30 miketeo Exp $
+# $Id: smb.py,v 1.4 2001-08-24 15:40:43 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smb.py - SMB/CIFS library
@@ -31,7 +31,7 @@ from struct import *
 
 
 VERSION = '0.1.1'
-CVS_REVISION = '$Revision: 1.3 $'
+CVS_REVISION = '$Revision: 1.4 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
@@ -519,8 +519,10 @@ class SMB:
         try:
             fid, attrib, lastwritetime, datasize, grantedaccess, filetype, devicestate, action, serverfid = self.__open_file(tid, filename, mode, SMB_ACCESS_WRITE | SMB_SHARE_DENY_WRITE)
 
-            if self.__can_write_raw:
-                # Once the __raw_write_file returns, fid is already closed
+            # If the max_transmit buffer size is more than 16KB, upload process using non-raw mode is actually
+            # faster than using raw-mode.
+            if self.__max_transmit_size < 16384 and self.__can_write_raw:
+                # Once the __raw_stor_file returns, fid is already closed
                 self.__raw_stor_file(tid, fid, offset, datasize, callback, timeout)
                 fid = -1
             else:
