@@ -1,5 +1,5 @@
 <!doctype html public "-//w3c/dtd html 3.2//en"><html>
-<!-- $Id: smb_smb.html,v 1.4 2001-11-10 06:34:15 miketeo Exp $ -->
+<!-- $Id: smb_smb.html,v 1.5 2001-11-10 13:27:09 miketeo Exp $ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
 <link rev="made" href="mailto:michaelteo@bigfoot.com">
@@ -76,6 +76,16 @@
   <dd>Rename a file of old_path to new_path in service. Both old_path and new_path must be a fully-qualified path (excluding the service component) and new_path must not exist. password is the authentication info required for access if this service is in share mode and is protected. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
 </dl>
 
+<dl>
+  <dt><b>get_domains(timeout = None)</b> -> [ &lt;string instance&gt; ... ]</dt>
+  <dd>Return a list of string containing the available domain names. Note that the remote host must be at least a Domain Master Browse Server for this operation to succeed. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+</dl>
+
+<dl>
+  <dt><b>get_servers_for_domain(timeout = None)</b> -> [ &lt;smb.SMBMachine instance&gt; ... ]</dt>
+  <dd>Return a list of smb.SMBMachine instances containing the information about the registered SMB servers for the domain. Note that the remote machine has to be at least a Master Browse Server for this operation to succeed. Raises nmb.NetBIOSTimeout if timeout (in secs) waiting for reply. Raises smb.SessionError if error occurs.</dd>
+</dl>
+      
 <div align="right"><a href="smb.html">smb Module<img src="return.gif" width=39 height=46 border=0 alt="smb"></a></div>      
 <br clear=all>
 <hr noshade>
