@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbdu,v 1.1 2001-08-20 12:13:01 miketeo Exp $
+# $Id: smbdu,v 1.2 2001-08-23 15:30:36 miketeo Exp $
 #
 # Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
 # smbdu - summarize disk usage of each SMB path recursively
@@ -32,7 +32,7 @@ VERSION = '0.1.0'
 
 
 def print_usage_screen():
-    print 'Usage:', sys.argv[0], '[option]... [<user>@]<NetBIOS name>:<share>/<path> ...'
+    print 'Usage: smbdu [option]... [<user>@]<NetBIOS name>:<share>/<path> ...'
     print 'Summarize disk usage of each SMB path recursively'
     print
     print '  -B broadcast addr     the address to use for broadcasts'
@@ -182,9 +182,11 @@ def main():
             print
             
         except smb.SessionError, ex:
-            print ex[0]
+            _, err_msg = smb.strerror(ex[1], ex[2])
+            print ex[0], ':', err_msg
         except nmb.NetBIOSError, ex:
-            print ex
+            _, err_msg = nmb.strerror(ex[1], ex[2])
+            print ex[0], ':', err_msg
         except nmb.NetBIOSTimeout:
             print 'Timeout waiting for reply'
         
