@@ -1,0 +1,235 @@
+#!/usr/bin/env python
+# -*- mode: python; tab-width: 4 -*-
+
+import os, os.path, sys, stat, string, re, getopt, getpass
+import smb, nmb
+
+VERSION = '0.1.0'
+
+USER_HOST_PATH_PATTERN = re.compile('(\w+)@([\w\.]+):/*([^/]+)(/.*)')
+HOST_PATH_PATTERN = re.compile(r"([\w\.]+):/*([^/]+)(/*.*)")
+
+def parse_path(path):
+    m = USER_HOST_PATH_PATTERN.match(path)
+    if m:
+        return m.groups()
+    m = HOST_PATH_PATTERN.match(path)
+    if m:
+        return '', m.group(1), m.group(2), m.group(3)
+    return None
+
+
+
+def print_usage_screen():
+    print 'Usage:', sys.argv[0], '[-n] [-r] [-B bcast addr] src ... [<user>@]<nbname>:/share/path'
+    print '      ', sys.argv[0], '[-n] [-r] [-B bcast addr] [<user>@]<nbname>:/share/path dest'
+    print
+    print '  -n                    show what would have been transferred without doing it'
+    print '  -r                    recurse into directories'
+    print '  -B broadcast addr     the address to use for broadcasts'
+    print '  --version             show version and exit'
+    print
+    
+
+
+def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir):
+    global recursive, dry_run
+
+    try:
+        info = src.list_path(src_service, src_path)
+        is_src_dir = info[0].is_directory()
+    except smb.SessionError:
+        return
+
+    if is_src_dir:
+        if not is_dest_dir:
+            print 'Warning: Destination is not directory'
+            return
+
+        if recursive:
+            if not dry_run:
+                try:
+                    os.mkdir(os.path.join(dest_path, os.path.basename(src_path)))
+                except:
+                    pass
+        
+            for f in src.list_path(src_service, src_path + '/*'):
+                name = f.get_longname()
+                if name == '.' or name == '..':
+                    continue
+
+                if f.is_directory():
+                    remote2local_copy(src, src_service, src_path + '/' + name, os.path.join(dest_path, os.path.basename(src_path)), is_dest_dir)
+                else:
+                    print src_path + '/' + name,
+                    print '=>', os.path.join(dest_path, os.path.basename(src_path), name)
+                    if not dry_run:
+                        fh = open(os.path.join(dest_path, os.path.basename(src_path), name), 'wb')
+                        try:
+                            src.retr_file(src_service, src_path + '/' + name, fh.write)
+                        finally:
+                            fh.close()
+                        
+        else:
+            print 'Warning: source is a directory but -r is not set.'
+    else:
+        print src_path, '=>', os.path.join(dest_path, os.path.basename(src_path))
+        if not dry_run:
+            fh = open(os.path.join(dest_path, os.path.basename(src_path)), 'wb')
+            try:
+                src.retr_file(src_service, src_path, fh.write)
+            finally:
+                fh.close()
+                
+    
+
+def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir):
+    global recursive, dry_run
+
+    if os.path.isdir(src_path):
+        if not is_dest_dir:
+            print 'Warning: Destination is not directory'
+            return
+        
+        if recursive:
+            for f in os.listdir(src_path):
+                if f != '.' and f != '..':
+                    try:
+                        remote.mkdir(dest_service, dest_path + '/' + os.path.basename(src_path))
+                    except smb.SessionError:
+                        pass
+                    local2remote_copy(remote, dest_service, dest_path + '/' + os.path.basename(src_path), os.path.join(src_path, f), is_dest_dir)
+        else:
+            print 'Warning:', src_path, 'is a directory but -r is not set.'
+    else:
+        print src_path, '=>',
+        print dest_path + '/' + os.path.basename(src_path)
+        if not dry_run:
+            fh = open(src_path, 'rb')
+            try:
+                remote.stor_file(dest_service, dest_path + '/' + os.path.basename(src_path), fh.read)
+            finally:
+                fh.close()
+
+
+
+recursive = 0
+dry_run = 0
+
+def main():
+    global recursive, dry_run
+
+    netbios = nmb.NetBIOS()
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'rnB:', [ 'version' ])
+        for k, v in optlist:
+            if k == '-r':
+                recursive = 1
+            elif k == '-n':
+                dry_run = 1
+            elif k == '-B':
+                netbios.set_broadcastaddr(v)
+            elif k == '--version':
+                print 'smbcp version', VERSION, '(smb:', smb.CVS_REVISION, 'and nmb:', nmb.CVS_REVISION, ')'
+                return
+    except getopt.error:
+        print_usage_screen()
+        return
+    
+    if len(args) < 2:
+        print_usage_screen()
+        return
+
+    dest = args[-1]
+    sources = args[:-1]
+    
+    dest_info = parse_path(dest)
+    if dest_info:
+        user, dest_name, dest_service, dest_path = dest_info
+
+        try:
+            addrs = netbios.gethostbyname(dest_name)
+            if not addrs:
+                return
+        except nmb.NetBIOSTimeout:
+            print 'Warning: Cannot resolve', dest_name
+            return
+        except nmb.NetBIOSError, ex:
+            print 'Warning: Error resolving', dest_name, ':', ex
+            return
+        
+        remote = smb.SMB(dest_name, addrs[0].get_ip())
+        if remote.is_login_required():
+            if not user:
+                user = getpass.getuser()
+            password = getpass.getpass('Password for ' + user + '@' + dest_name + ': ')
+            remote.login(user, password)
+                
+        is_dest_dir = 0
+        try:
+            remote.check_dir(dest_service, dest_path)
+            is_dest_dir = 1
+        except smb.SessionError:
+            pass
+
+        if len(sources) > 1 and not is_dest_dir:
+            print 'Warning: Destination not directory'
+            return
+
+        if dest_path and dest_path[-1] == '/':
+            dest_path = dest_path[:-1]
+
+        for source in sources:
+            if parse_path(source):
+                print 'Warning: You have specified a remote=>remote copy. We can only do local=>remote or remote=>local copy.'
+            else:
+                source = os.path.normpath(source)
+                local2remote_copy(remote, dest_service, dest_path, source, is_dest_dir)
+    else:
+        is_dest_dir = os.path.isdir(dest)
+        if len(sources) > 1 and not is_dest_dir:
+            print 'Warning: Destination not directory'
+            return
+
+        passwords = { }
+        for source in sources:
+            src_info = parse_path(source)
+            if not src_info:
+                print 'Warning: You have specified a local=>local copy. We can only do local=>remote or remote=>local copy.'
+
+            user, src_name, src_service, src_path = src_info
+
+            try:
+                addrs = netbios.gethostbyname(src_name)
+                if not addrs:
+                    return
+            except nmb.NetBIOSTimeout:
+                print 'Warning: Cannot resolve', src_name
+            except nmb.NetBIOSError, ex:
+                print 'Warning: Error resolving', src_name, ':', ex
+
+            src = smb.SMB(src_name, addrs[0].get_ip())
+            if src.is_login_required():
+                if not user:
+                    user = getpass.getuser()
+                if passwords.has_key(( user, src_name )):
+                    password = passwords[( user, src_name )]
+                else:
+                    password = getpass.getpass('Password for ' + user + '@' + src_name + ': ')
+                    passwords[( user, src_name )] = password
+                src.login(user, password)
+
+            if src_path and src_path[-1] == '/':
+                src_path = src_path[:-1]
+
+            remote2local_copy(src, src_service, src_path, dest, is_dest_dir)
+            
+    
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
+
+    

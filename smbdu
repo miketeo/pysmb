@@ -1,0 +1,195 @@
+#!/usr/bin/env python
+# -*- mode: python; tab-width: 4 -*-
+# $Id: smbdu,v 1.1 2001-08-20 12:13:01 miketeo Exp $
+#
+# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# smbdu - summarize disk usage of each SMB path recursively
+#
+# This software is provided 'as-is', without any express or implied warranty. 
+# In no event will the author be held liable for any damages arising from the 
+# use of this software.
+#
+# Permission is granted to anyone to use this software for any purpose, 
+# including commercial applications, and to alter it and redistribute it 
+# freely, subject to the following restrictions:
+#
+# 1. The origin of this software must not be misrepresented; you must not 
+#    claim that you wrote the original software. If you use this software 
+#    in a product, an acknowledgment in the product documentation would be
+#    appreciated but is not required.
+#
+# 2. Altered source versions must be plainly marked as such, and must not be 
+#    misrepresented as being the original software.
+#
+# 3. This notice cannot be removed or altered from any source distribution.
+#
+
+import os, sys, string, re, getopt, getpass
+import smb, nmb
+
+VERSION = '0.1.0'
+
+
+
+def print_usage_screen():
+    print 'Usage:', sys.argv[0], '[option]... [<user>@]<NetBIOS name>:<share>/<path> ...'
+    print 'Summarize disk usage of each SMB path recursively'
+    print
+    print '  -B broadcast addr     the address to use for broadcasts'
+    print '  -a, --all             write counts for all files, not just directories'
+    print '  -b, --bytes           print size in bytes'
+    print '  -k, --kilobytes       print size in kilobytes'
+    print '  -m, --megabytes       print size in megabytes'
+    print '  -S, --separate-dirs   do not include size of subdirectories'
+    print '      --max-depth=N     print the total for a directory (or file, with --all)'
+    print '                        only if it is N or fewer levels below the command'
+    print '                        line argument'
+    print '      --help            display this help and exit'
+    print '      --version         output version information and exit'
+    print 
+    
+
+USER_HOST_PATH_PATTERN = re.compile('(\w+)@([\w\.]+):/*([^/]+)(/.*)')
+HOST_PATH_PATTERN = re.compile(r"([\w\.]+):/*([^/]+)(/*.*)")
+
+def parse_path(path):
+    m = USER_HOST_PATH_PATTERN.match(path)
+    if m:
+        return m.groups()
+    m = HOST_PATH_PATTERN.match(path)
+    if m:
+        return '', m.group(1), m.group(2), m.group(3)
+    return None
+
+
+
+def query_path(s, share, path, depth):
+    global show_all, blocksize, spaces, max_depth, separate_dirs
+    
+    count = 1
+    try:
+        if max_depth < 0 or depth <= max_depth:
+            output = 1
+        else:
+            output = 0
+    
+        listings = s.list_path(share, path + '/*')
+        for f in listings:
+            if f.get_longname() != '.' and f.get_longname() != '..':
+                if f.is_directory():
+                    if separate_dirs:
+                        query_path(s, share, path + '/' + f.get_longname(), depth + 1)
+                    else:
+                        count = count + query_path(s, share, path + '/' + f.get_longname(), depth + 1)
+                else:
+                    count = count + f.get_filesize()
+                    if output and show_all:
+                        print string.ljust('%ld' % ( f.get_filesize() / blocksize, ), spaces),
+                        print path + '/' + f.get_longname()
+
+        if output:
+            print string.ljust('%ld' % ( count / blocksize, ), spaces), path
+    except smb.SessionError, ex:
+        print 'Cannot list', path,
+        print '(ErrClass: %d, ErrCode: %d)' % ( ex[1], ex[2] )
+        
+    return count
+
+
+
+show_all = 0
+blocksize = 1
+spaces = 13
+max_depth = -1
+separate_dirs = 0
+
+def main():
+    global show_all, blocksize, spaces, max_depth, separate_dirs
+
+    help = 0
+    netbios = nmb.NetBIOS()
+
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'abkmSB:', [ 'help', 'all', 'max-depth=', 'bytes', 'kilobytes', 'megabytes', 'version', 'separate-dirs' ])
+        for k, v in optlist:
+            if k in ( '-a', '--all' ):
+                show_all = 1
+            elif k in ( '-k', '--kilobytes' ):
+                blocksize = 1024
+                spaces = 10
+            elif k in ( '-m', '--megabytes' ):
+                blocksize = 1048576
+                spaces = 7
+            elif k in ( '-b', '--bytes' ):
+                blocksize = 1
+                spaces = 13
+            elif k == '--max-depth':
+                max_depth = int(v)
+            elif k in ( '-S', '--separate-dirs' ):
+                separate_dirs = 1
+            elif k == '-B':
+                netbios.set_broadcastaddr(v)
+            elif k == '--help':
+                help = 1
+            elif k == '--version':
+                print 'smbdu version', VERSION,'(smb:', smb.CVS_REVISION, 'and nmb:', nmb.CVS_REVISION, ')'
+                return
+    except getopt.error, ex:
+        print_usage_screen()
+        return
+
+    if help or not args:
+        print_usage_screen()
+        return
+
+    password_lists = { }
+    for arg in args:
+        path_info = parse_path(arg)
+        if not path_info:
+            print 'Invalid SMB path:', arg
+            continue
+
+        user, nbname, share, path = path_info
+
+        path = re.sub('/+', '/', path)
+        if path and path[-1] == '/':
+            path = path[:-1]
+
+        try:
+            print 'Finding', nbname
+            addrs = netbios.gethostbyname(nbname)
+            if not addrs:
+                print 'Cannot resolve', nbname
+                
+            print 'Connecting to', nbname, 'at', addrs[0].get_ip()
+            s = smb.SMB(nbname, addrs[0].get_ip())
+
+            if s.is_login_required():
+                if not user:
+                    user = getpass.getuser()
+                if password_lists.has_key(( user, nbname )):
+                    password = password_lists[( user, nbname )]
+                else:
+                    password = getpass.getpass('Password for ' + user + '@' + nbname + ': ')
+                    password_lists[( user, nbname )] = password
+                    
+                print 'Authenticating using user name,', user
+                s.login(user, password)
+                print 'Authentication passed'
+
+            print 
+            count = query_path(s, share, path, 0)
+            print
+            
+        except smb.SessionError, ex:
+            print ex[0]
+        except nmb.NetBIOSError, ex:
+            print ex
+        except nmb.NetBIOSTimeout:
+            print 'Timeout waiting for reply'
+        
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass

@@ -1,0 +1,169 @@
+#!/usr/bin/env python
+# -*- mode: python; tab-width: 4 -*-
+# $Id: nmbquery,v 1.1 2001-08-20 12:13:01 miketeo Exp $
+#
+# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# nmbquery - NetBIOS over TCP/IP to lookup NetBIOS names and retrieve
+#            their node status
+#
+# This software is provided 'as-is', without any express or implied warranty. 
+# In no event will the author be held liable for any damages arising from the 
+# use of this software.
+#
+# Permission is granted to anyone to use this software for any purpose, 
+# including commercial applications, and to alter it and redistribute it 
+# freely, subject to the following restrictions:
+#
+# 1. The origin of this software must not be misrepresented; you must not 
+#    claim that you wrote the original software. If you use this software 
+#    in a product, an acknowledgment in the product documentation would be
+#    appreciated but is not required.
+#
+# 2. Altered source versions must be plainly marked as such, and must not be 
+#    misrepresented as being the original software.
+#
+# 3. This notice cannot be removed or altered from any source distribution.
+#
+
+import sys, os, string, socket, getopt
+import nmb, smb
+
+VERSION = '0.1.0'
+
+
+
+def print_usage_screen():
+    print 'Usage:', sys.argv[0], '[-M] [-T] [-S] [-A] [-t] [-B bcast address] name'
+    print 'Version', VERSION, '(smb:', smb.CVS_REVISION, 'and nmb:', nmb.CVS_REVISION, ')'
+    print
+    print '    -B broadcast addr   the address to use for broadcasts'
+    print '    -M                  searches for a master browser'
+    print '    -S                  lookup node status as well'
+    print '    -T                  translate IP addresses into names'
+    print '    -A                  do a node status on <name> as an IP Address'
+    print '    -t                  timeout in seconds to wait for reply'
+    print '    -h                  print this help message.'
+    print
+    print '    If you specify -M and name is "-", do a look up on __MSBROWSE__<01>'
+    print
+
+
+
+def main():
+    broadcastaddr = None
+    search_master = 0
+    lookup_status = 0
+    translate_ip = 0
+    is_name_ip = 0
+    timeout = 1
+    help = 0
+
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], 'ht:B:MAST')
+        for k, v in optlist:
+            if k == '-B':
+                broadcastaddr = v
+            elif k == '-M':
+                search_master = 1
+            elif k == '-S':
+                lookup_status = 1
+            elif k == '-T':
+                translate_ip = 1
+            elif k == '-A':
+                is_name_ip = 1
+            elif k == '-t':
+                timeout = int(v)
+            elif k == '-h':
+                help = 1
+    except getopt.error:
+        print_usage_screen()
+        return
+
+    if help or not args:
+        print_usage_screen()
+        return
+
+    n = nmb.NetBIOS()
+    if broadcastaddr:
+        n.set_broadcast_addr(broadcastaddr)
+
+    for name in args:
+        ip = None
+        if is_name_ip:
+            ip = name
+        else:
+            try:
+                print 'Querying', name, 'on', n.get_broadcastaddr()
+                
+                if search_master:
+                    if name == '-':
+                        name = '__MSBROWSE__'
+                        query = '\x01\x02__MSBROWSE__\x02'
+                        type = nmb.TYPE_UNKNOWN
+                    else:
+                        query = name
+                        type = nmb.TYPE_MASTER_BROWSER
+                else:
+                    query = name
+                    type = nmb.TYPE_WORKSTATION
+                
+                addrs = n.gethostbyname(query, type, timeout = timeout)
+                if not addrs:
+                    print name, ' not registered'
+                else:
+                    for addr in addrs:
+                        if translate_ip:
+                            try:
+                                print socket.gethostbyaddr(addr.get_ip())[0], addr.get_ip(), name
+                            except socket.error:
+                                print '<unknown>', addr.get_ip(), name
+                        else:
+                            print addr.get_ip(), name
+                    ip = addrs[0].get_ip()
+
+                    # This is a wildcard query
+                    if name == '*':
+                        name = ip
+            except nmb.NetBIOSTimeout:
+                print 'Name query failed to find', name
+            except nmb.NetBIOSError:
+                print 'Error querying', name
+            
+        if ip and lookup_status:
+            print 'Looking up status of', name
+            try:
+                nodes = n.getnodestatus('*', ip)
+                if nodes:
+                    print 'Received', len(nodes), 'names'
+                    for node in nodes:
+                        print '  ', string.ljust(node.get_nbname(), 17),
+                        print string.ljust('<' + nmb.NAME_TYPES.get(node.get_nametype(), 'Unknown') + '>', 18),
+                        print '-',
+                        if node.is_group():
+                            print '<GROUP>',
+                        else:
+                            print '       ',
+                        if node.is_active():
+                            print '<ACTIVE>',
+                        else:
+                            print '        ',
+                        if node.is_conflict():
+                            print '<CONFLICT>',
+                        else:
+                            print '          ',
+                        print
+                else:
+                    print 'Node status for', name, 'not available'
+            except nmb.NetBIOSTimeout:
+                print 'No status response (this is not unusual)'
+            except nmb.NetBIOSError:
+                print 'Error getting status response'
+                
+        print
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
+
