@@ -1,0 +1,77 @@
+<!doctype html public "-//w3c/dtd html 3.2//en"><html>
+<!-- $Id: nmb.html,v 1.1 2001-08-20 12:40:17 miketeo Exp $ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
+<link rev="made" href="mailto:michaelteo@bigfoot.com">
+<title>Pysmb Documentation: nmb</title>
+</head>
+<body text="#000000" bgcolor="#ffffcc" link="#0000ee" vlink="#5511cc" alink="#ff0000">
+<h1>nmb -- NetBIOS over TCP/IP operations</h1>
+<p>This module provides basic NetBIOS over IP functionalities.
+
+<h2>Exported Classes</h2>
+
+<dl>
+  <dt><b>NetBIOSError</b> (Exception)</dt>
+  <dd>This exception is raised when an error has occured when performing a NetBIOS operation.</dd>
+</dl>
+
+<dl>
+  <dt><b>NetBIOSTimeout</b> (Exception)</dt>
+  <dd>This exception is raised when a timeout has occured when waiting for reply to a NetBIOS operation.</dd>
+</dl>
+
+<dl>
+  <dt><b><a href="nmb_nbhostentry.html">NBHostEntry</a></b></dt>
+  <dd>Instances of this class contain information of the resolved host for a NetBIOS name.</dd>
+</dl>
+
+<dl>
+  <dt><b><a href="nmb_nbnodeentry.html">NBNodeEntry</a></b></dt>
+  <dd>Instances of this class contain information about the nodes.</dd>
+</dl>
+
+<dl>
+  <dt><b><a href="nmb_netbios.html">NetBIOS</a></b></dt>
+  <dd>A wrapper class which contains the required NetBIOS over IP operations for pysmb.</dd>
+</dl>
+
+<dl>
+  <dt><b><a href="nmb_netbiossession.html">NetBIOSSession</a></b></dt>
+  <dd>Represents a NetBIOS over TCP/IP session. You should not create an instance of this class directly. This class is used primarily by smb module.</dd>
+</dl>
+
+<h2>Exported Constants</h2>
+
+<dl>
+  <dt><b>TYPE_UNKNOWN<br>TYPE_WORKSTATION<br>TYPE_CLIENT<br>TYPE_SERVER<br>TYPE_MASTER_BROWSER<br>TYPE_BROWSER</b></dt>
+  <dd>These constants define the values for name type.</dd>
+</dl>
+
+<dl>
+  <dt><b>NAME_TYPES</b></dt>
+  <dd>This is a dictionary which contains mapping from the TYPE_XXX constants values to human readable strings.</dd>
+</dl>
+
+<dl>
+  <dt><b>NODE_B<br>NODE_P<br>NODE_M<br>NODE_RESERVED</b></dt>
+  <dd>These constants define the values for the node type.</dd>
+</dl>
+
+<dl>
+  <dt><b>NETBIOS_NS_PORT</b></dt>
+  <dd>Default port for NetBIOS name service</dd>
+</dl>
+
+<dl>
+  <dt><b>NETBIOS_SESSION_PORT</b></dt>
+  <dd>Default port for NetBIOS session service</dd>
+</dl>
+
+<div align="right"><a href="index.html">Table of Contents<img src="return.gif" width=39 height=46 border=0 alt="TOC"></a></div>
+<br clear=all>
+<hr noshade>
+<!-- hhmts start -->
+<br><i>Last modified on Mon, Aug 20 2001</i>
+<!-- hhmts end -->
+</body></html>

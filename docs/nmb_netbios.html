@@ -1,0 +1,55 @@
+<!doctype html public "-//w3c/dtd html 3.2//en"><html>
+<!-- $Id: nmb_netbios.html,v 1.1 2001-08-20 12:40:17 miketeo Exp $ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
+<link rev="made" href="mailto:michaelteo@bigfoot.com">
+<title>nmb.NetBIOS Objects</title>
+</head>
+<body text="#000000" bgcolor="#ffffcc" link="#0000ee" vlink="#5511cc" alink="#ff0000">
+<h1>nmb.NetBIOS Objects</h1>
+<p>A nmb.NetBIOS object can be created using the following constructor.
+
+<dl>
+  <dt><b>NetBIOS(servport = nmb.NETBIOS_NS_PORT)</b></dt>
+  <dd>Creates a nmb.NetBIOS object where all future queries will be sent through servport. nmb.NETBIOS_NS_PORT is standard port (137) for NetBIOS name service. All queries will be broadcasted using the default broadcast address. Raised NetBIOSError if we cannot bind to a UDP port.</dd>
+</dl>
+
+<p>nmb.NetBIOS objects have the following methods.
+
+<dl>
+  <dt><b>set_nameserver(nameserver)</b></dt>
+  <dd>Set the default NetBIOS domain nameserver. All name service queries will be sent to this server. The nameserver parameter should be a string containing a valid hostname or IP address. Use None if you wish to reset to using broadcast address for query.</dd>
+</dl>
+
+<dl>
+  <dt><b>get_nameserver()</b> -> string</dt>
+  <dd>Returns the default NetBIOS domain nameserver, or None if none is specified</dd>
+</dl>
+
+<dl>
+  <dt><b>set_broadcastaddr()</b></dt>
+  <dd>Set the broadcast address to be used for query.</dd>
+</dl>
+
+<dl>
+  <dt><b>get_broadcastaddr()</b> -> string</dt>
+  <dd>Return the broadcast address to be used, or nmb.BROADCAST_ADDR if default broadcast address is used.</dd>
+</dl>
+
+<dl>
+  <dt><b>gethostbyname(nbname, type = TYPE_WORKSTATION, scope = None, timeout = 1)</b> -> [ &lt;<a href="nmb_nbhostentry.html">nmb.NBHostEntry instance</a>&gt; ... ]</dt>
+  <dd>Returns a list of NBHostEntry instances containing the host information for nbname. If a NetBIOS domain nameserver has been specified, it will be used for the query. Otherwise, the query is broadcasted on the broadcast address. timeout should be an int specifying the number of seconds to wait for reply. Raises NetBIOSTimeout if timeout (in secs) is reached. Raises NetBIOSError for other errors.</dd>
+</dl>
+      
+<dl>
+  <dt><b>getnodestatus(nbname, destaddr = None, type = TYPE_WORKSTATION, scope = None,timeout = 1)</b> -> [ &lt;<a href="nmb_nbnodeentry.html">nmb.NBNodeEntry instance</a>&gt; ... ]</dt>
+  <dd>Returns a list of NBNodeEntry instances containing node status information for nbname. If destaddr contains an IP address, then this will become an unicast query on the destaddr. Raises NetBIOSTimeout if timeout (in secs) is reached. Raises NetBIOSError for other errors.</dd>
+</dl>
+
+<div align="right"><a href="nmb.html">nmb Module<img src="return.gif" width=39 height=46 border=0 alt="nmb"></a></div>      
+<br clear=all>
+<hr noshade>
+<!-- hhmts start -->
+<br><i>Last modified on Mon, Aug 20 2001</i>
+<!-- hhmts end -->
+</body></html>

@@ -1,0 +1,71 @@
+
+pysmb version 0.1.0
+Copyright (C) 2001 Michael Teo <michaelteo@@bigfoot.com>
+
+This program is a free software with ABSOLUTELY NO WARRANTY!
+You can redistribute/modify/use it under certain conditions.
+Look at the file "LICENSE" within this distribution for details.
+
+The latest version can be found under the Projects section on my home page at:
+http://miketeo.net/
+
+
+What is Pysmb ?
+===============
+
+It is an experimental SMB/CIFS library written in Python.
+
+
+What It Can Do
+==============
+
+It can run on Python 1.5.2 and Python 2.1. I have already tested them on
+my machines. 
+Since the whole library is written in pure Python, it should be able to run 
+on any Python-supported platforms. 
+It can upload/download/copy/rename/remove/list files and directories. 
+
+
+What It Can't Do
+================
+
+Note that this is only a client library. It does not share files. 
+Currently it does not support encrypted authentication when connecting to some 
+Windows machines. You can turn off encrypted authentication on these machines by
+using these registry files (Win95, Win98, Win2000, NT4) in the extra directory
+
+
+Utilities
+=========
+
+Pysmb also includes some simple utilities which I hope can help to demonstrate 
+the use of pysmb. These are working applications which I feel will be very 
+useful. 
+
+- nmbquery
+  This is very similar to Samba's nmblookup but is quite very limited in its 
+  functionality 
+ 
+- smbdu
+  This displays the disk usage of the files/directories recursively like the 
+  Unix's du program. 
+  
+- smbcp
+  Performs files/directory copy to/from your local machine and the remote SMB 
+  machine. 
+
+
+How To Install
+==============
+
+Simply put smb.py and nmb.py together with your Python source files and 
+import them. Please use 
+   import smb, nmb
+
+and not 
+   from smb import *
+
+This is because smb.py defines a number of constants which might interfere 
+with your project's variables. For more information about the API, please 
+consult the documentation in the docs directory, or look at the accompanying 
+utilities for ideas. 

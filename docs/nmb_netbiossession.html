@@ -1,0 +1,50 @@
+<!doctype html public "-//w3c/dtd html 3.2//en"><html>
+<!-- $Id: nmb_netbiossession.html,v 1.1 2001-08-20 12:40:17 miketeo Exp $ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
+<link rev="made" href="mailto:michaelteo@bigfoot.com">
+<title>nmb.NetBIOSSession Objects</title>
+</head>
+<body text="#000000" bgcolor="#ffffcc" link="#0000ee" vlink="#5511cc" alink="#ff0000">
+<h1>nmb.NetBIOSSession Objects</h1>
+<p>A nmb.NetBIOSSession object can be created using the following constructor.
+
+<dl>
+  <dt><b>NetBIOSSession(myname, remote_name, remote_host, sess_port = nmb.NETBIOS_SESSION_PORT)</b></dt>
+  <dd>Setup a NetBIOS over TCP/IP session between 2 NetBIOS names, myname and remote_name. Note that some machines might reject the connection if remote_name does not belong to their machines. remote_host should be a string containing the hostname or IP address of the remote machine.</dd>
+</dl>
+
+<p>nmb.NetBIOSSession objects has the following methods.
+
+<dl>
+  <dt><b>get_myname()</b> -> string</dt>
+  <dd>Return the NetBIOS name of the local machine.</dd>
+</dl>
+
+<dl>
+  <dt><b>get_remote_name()</b> -> string</dt>
+  <dd>Return the NetBIOS name of the remote machine.</dd>
+</dl>
+
+<dl>
+  <dt><b>get_remote_host()</b> -> string</dt>
+  <dd>Return the hostname or IP address of the remote machine</dd>
+</dl>
+
+<dl>
+  <dt><b>send_packet(data)</b></dt>
+  <dd>Send a SMB data packet to the remote machine. The length of the data must not be more than 65535. Raises nmb.NetBIOSError if error occurs when sending the packet.</dd>
+</dl>
+
+<dl>
+  <dt><b>recv_packet(timeout = None)</b> -> string</dt>
+  <dd>Attempts to read in a data packet within timeout (in secs). Raises nmb.NetBIOSTimeout when timeout (in secs) is reached before data is received. Raises nmb.NetBIOSError if error occurs when receiving the packet.</dd>
+</dl>
+
+<div align="right"><a href="nmb.html">nmb Module<img src="return.gif" width=39 height=46 border=0 alt="nmb"></a></div>
+<br clear=all>
+<hr noshade>
+<!-- hhmts start -->
+<br><i>Last modified on Sun, Aug 19 2001</i>
+<!-- hhmts end -->
+</body></html>

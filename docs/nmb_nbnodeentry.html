@@ -1,0 +1,58 @@
+<!doctype html public "-//w3c/dtd html 3.2//en"><html>
+<!-- $Id: nmb_nbnodeentry.html,v 1.1 2001-08-20 12:40:17 miketeo Exp $ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
+<link rev="made" href="mailto:michaelteo@bigfoot.com">
+<title>nmb.NBNodeEntry Objects</title>
+</head>
+<body text="#000000" bgcolor="#ffffcc" link="#0000ee" vlink="#5511cc" alink="#ff0000">
+<h1>nmb.NBNodeEntry Objects</h1>
+<p>nmb.NBNodeEntry objects have the following methods.
+
+<dl>
+  <dt><b>get_nbname()</b> -> string</dt>
+  <dd>Returns the NetBIOS of this host entry</dd>
+</dl>
+
+<dl>
+  <dt><b>get_nametype()</b> -> string</dt>
+  <dd>Returns the name type of this host entry</dd>
+</dl>
+
+<dl>
+  <dt><b>get_nodetype()</b> -> int</dt>
+  <dd>Returns the type of node for thos node entry.</dd>
+</dl>
+
+<dl>
+  <dt><b>is_group()</b> -> int</dt>
+  <dd>Returns non-zero if this node is a group. Otherwise, zero.</dd>
+</dl>
+
+<dl>
+  <dt><b>is_deleting()</b> -> int</dt>
+  <dd>Returns non-zero if this node is being deleted. Otherwise, zero.</dd>
+</dl>
+
+<dl>
+  <dt><b>is_conflict()</b> -> int</dt>
+  <dd>Returns non-zero if this node is in conflict with another node. Otherwise, zero.</dd>
+</dl>
+
+<dl>
+  <dt><b>is_active()</b> -> int</dt>
+  <dd>Returns non-zero if this node is active. Otherwise, zero.</dd>
+</dl>
+
+<dl>
+  <dt><b>is_permanent()</b> -> int</dt>
+  <dd>Returns non-zero if this node is permanent. Otherwise, zero.</dd>
+</dl>
+
+<div align="right"><a href="nmb.html">nmb Module<img src="return.gif" width=39 height=46 border=0 alt="nmb"></a></div>
+<br clear=all>
+<hr noshade>
+<!-- hhmts start -->
+<br><i>Last modified on Sun, Aug 19 2001</i>
+<!-- hhmts end -->
+</body></html>

@@ -1,0 +1,33 @@
+<!doctype html public "-//w3c/dtd html 3.2//en"><html>
+<!-- $Id: index.html,v 1.1 2001-08-20 12:40:17 miketeo Exp $ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
+<link rev="made" href="mailto:michaelteo@bigfoot.com">
+<title>Pysmb Documentation</title>
+</head>
+<body text="#000000" bgcolor="#ffffcc" link="#0000ee" vlink="#5511cc" alink="#ff0000">
+<h1>Pysmb Documentation for version 0.1.0</h1>
+<p>Pysmb is an experimental SMB/CIFS library written in Python.
+
+<h2>Modules</h2>
+<ul>
+  <li><a href="smb.html">smb</a> - Contains all the SMB operations and constants</li>
+  <li><a href="nmb.html">nmb</a> - Contains some of the NetBIOS over TCP/IP operations which is neccessary for the smb module to operate. </li>
+</ul>
+
+<h2>Quick Start</h2>
+<ol>
+  <li>Request the NetBIOS name of the remote machine from your user.</li>
+  <li>Create a nmb.NetBIOS() object.</li>
+  <li>Call nmb.NetBIOS.gethostbyname() method to resolve your remote NetBIOS name to an IP address.</li>
+  <li>Create a smb.SMB() object, passing in the NetBIOS names and the resolved IP address.</li>
+  <li>Call smb.SMB.is_login_required() to determine if the remote machine requires login to further access its services. If login is required, retrieve the user name and password from the user and call smb.SMB.login().</li>
+  <li>Depending on your application, call the exported functions in smb.SMB object.</li>
+</ol>
+
+<br clear=all>
+<hr noshade>
+<!-- hhmts start -->
+<br><i>Last modified on Mon, Aug 20 2001</i>
+<!-- hhmts end -->
+</body></html>

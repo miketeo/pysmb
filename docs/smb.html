@@ -1,0 +1,72 @@
+<!doctype html public "-//w3c/dtd html 3.2//en"><html>
+<!-- $Id: smb.html,v 1.1 2001-08-20 12:40:17 miketeo Exp $ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html"; charset="iso-8859-1">
+<link rev="made" href="mailto:michaelteo@bigfoot.com">
+<title>Pysmb Documentation: smb</title>
+</head>
+<body text="#000000" bgcolor="#ffffcc" link="#0000ee" vlink="#5511cc" alink="#ff0000">
+<h1>smb -- SMB operations</h1>
+<p>This module provides SMB operations.
+
+<h2>Exported Classes</h2>
+
+<dl>
+  <dt><b>SessionError</b> (Exception)</dt>
+  <dd>This exception is raised when an error has occured when performing a SMB operation.</dd>
+</dl>
+
+<dl>
+  <dt><b><a href="smb_shareddevice.html">SharedDevice</a></b></dt>
+  <dd>A data structure for containing information about the shared device/service.</dd>
+</dl>
+
+<dl>
+  <dt><b><a href="smb_sharedfile.html">SharedFile</a></b></dt>
+  <dd>A data structure for containing information about the file or directory in the shared directory.</dd>
+</dl>
+
+<dl>
+  <dt><b><a href="smb_smb.html">SMB</a></b></dt>
+  <dd>A wrapper for the SMB operations.</dd>
+</dl>
+
+<h2>Exported Constants</h2>
+
+<dl>
+  <dt><b>SHARED_DISK<br>SHARED_PRINT_QUEUE<br>SHARED_DEVICE<br>SHARED_IPC</b></dt>
+  <dd>These constants define the values for the type of shared device/service.</dd>
+</dl>
+
+<dl>
+  <dt><b>ATTR_ARCHIVE<br>ATTR_COMPRESSED<br>ATTR_NORMAL<br>ATTR_HIDDEN<br>ATTR_READONLY<br>ATTR_TEMPORARY<br>ATTR_DIRECTORY<br>ATTR_SYSTEM</b></dt>
+  <dd>These constants define the mask values for the attributes of the SharedFile.</dd>
+</dl>
+
+<dl>
+  <dt><b>SMB_O_CREAT</b></dt>
+  <dd>Create the file if file does not exists. Otherwise, operation fails.</dd>
+</dl>
+
+<dl>
+  <dt><b>SMB_O_EXCL</b></dt>
+  <dd>When used with SMB_O_CREAT, operation fails if file exists. Cannot be used with SMB_O_OPEN.</dd>
+</dl>
+
+<dl>
+  <dt><b>SMB_O_OPEN</b></dt>
+  <dd>Open the file if the file exists</dd>
+</dl>
+
+<dl>
+  <dt><b>SMB_O_TRUNC</b></dt>
+  <dd>Truncate the file if the file exists</dd>
+</dl>
+
+<div align="right"><a href="index.html">Table of Contents<img src="return.gif" width=39 height=46 border=0 alt="TOC"></a></div>
+<br clear=all>
+<hr noshade>
+<!-- hhmts start -->
+<br><i>Last modified on Sun, Aug 19 2001</i>
+<!-- hhmts end -->
+</body></html>
