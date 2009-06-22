@@ -177,7 +177,7 @@ def main():
             elif k == '-I':
                 remote_ip_addr = v
             elif k == '--version':
-                print 'smbcp version', VERSION, '(smb:', smb.CVS_REVISION, 'and nmb:', nmb.CVS_REVISION, ')'
+                print 'smbcp version', VERSION
                 return
     except getopt.error:
         print_usage_screen()

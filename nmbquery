@@ -32,7 +32,7 @@ from pysmb_version import VERSION
 
 def print_usage_screen():
     print 'Usage: nmbquery [-M] [-T] [-S] [-A] [-t] [-B bcast address] name'
-    print 'Version', VERSION, '(smb:', smb.CVS_REVISION, 'and nmb:', nmb.CVS_REVISION, ')'
+    print 'Version', VERSION
     print
     print '    -B broadcast addr   the address to use for broadcasts'
     print '    -M                  searches for a master browser'
