@@ -1,6 +1,6 @@
 
-pysmb version 0.4.4
-Copyright (C) 2001-2004 Michael Teo <michaelteo@@bigfoot.com>
+pysmb version 0.4.5
+Copyright (C) 2001-2009 Michael Teo <miketeo (a) miketeo.net>
 
 This program is a free software with ABSOLUTELY NO WARRANTY!
 You can redistribute/modify/use it under certain conditions.
@@ -19,9 +19,9 @@ It is an experimental SMB/CIFS library written in Python.
 What It Can Do
 ==============
 
-It can run on Python 2.1, 2.2 and 2.3. I have already tested them on my machines. 
-Since the whole library is written in pure Python, it should be able to run 
-on any Python-supported platforms. 
+It can run on Python 2.x. I have already tested them on my machines.
+Since the whole library is written in pure Python, it should be able to run
+on any Python-supported platforms.
 It can upload/download/copy/rename/remove/list files and directories that are
 shared in user mode.
 From version 0.2.0, pysmb also supports encrypted authentication in DES.
@@ -29,34 +29,34 @@ However, you can turn off encrypted authentication on these machines by
 using these registry files (Win95, Win98, Win2000, NT4) in the extra directory
 From version 0.3.0, pysmb allows operations on services in share mode. Previous
 versions only support services in user mode.
-From version 0.4.0, pysmb uses NT LM0.12 dialect to communicate with the SMB 
+From version 0.4.0, pysmb uses NT LM0.12 dialect to communicate with the SMB
 server. Note that this is only a partial implementation, so it might fail on
 some systems
 
 What It Can't Do
 ================
 
-Note that this is only a client library. It does not share files. 
+Note that this is only a client library. It does not share files.
 
 
 Utilities
 =========
 
-Pysmb also includes some simple utilities which I hope can help to demonstrate 
-the use of pysmb. These are working applications which I feel will be very 
-useful. 
+Pysmb also includes some simple utilities which I hope can help to demonstrate
+the use of pysmb. These are working applications which I feel will be very
+useful.
 
 - nmbquery
-  This is very similar to Samba's nmblookup but is quite very limited in its 
-  functionality 
- 
+  This is very similar to Samba's nmblookup but is quite very limited in its
+  functionality
+
 - smbdu
-  This displays the disk usage of the files/directories recursively like the 
-  Unix's du program. 
-  
+  This displays the disk usage of the files/directories recursively like the
+  Unix's du program.
+
 - smbcp
-  Performs files/directory copy to/from your local machine and the remote SMB 
-  machine. 
+  Performs files/directory copy to/from your local machine and the remote SMB
+  machine.
 
 - smblistshare
   List the available share devices on the remote SMB machine.
@@ -65,14 +65,14 @@ useful.
 How To Install
 ==============
 
-Simply put smb.py and nmb.py together with your Python source files and 
-import them. Please use 
+Simply put smb.py and nmb.py together with your Python source files and
+import them. Please use
    import smb, nmb
 
-and not 
+and not
    from smb import *
 
-This is because smb.py defines a number of constants which might interfere 
-with your project's variables. For more information about the API, please 
-consult the documentation in the docs directory, or look at the accompanying 
-utilities for ideas. 
+This is because smb.py defines a number of constants which might interfere
+with your project's variables. For more information about the API, please
+consult the documentation in the docs directory, or look at the accompanying
+utilities for ideas.

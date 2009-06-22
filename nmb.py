@@ -1,23 +1,22 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmb.py,v 1.9 2003-04-19 09:44:43 miketeo Exp $
 #
-# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# Copyright (C) 2001-2009 Michael Teo <miketeo (a) miketeo.net>
 # nmb.py - NetBIOS library
 #
-# This software is provided 'as-is', without any express or implied warranty. 
-# In no event will the author be held liable for any damages arising from the 
+# This software is provided 'as-is', without any express or implied warranty.
+# In no event will the author be held liable for any damages arising from the
 # use of this software.
 #
-# Permission is granted to anyone to use this software for any purpose, 
-# including commercial applications, and to alter it and redistribute it 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
 # freely, subject to the following restrictions:
 #
-# 1. The origin of this software must not be misrepresented; you must not 
-#    claim that you wrote the original software. If you use this software 
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
 #    in a product, an acknowledgment in the product documentation would be
 #    appreciated but is not required.
 #
-# 2. Altered source versions must be plainly marked as such, and must not be 
+# 2. Altered source versions must be plainly marked as such, and must not be
 #    misrepresented as being the original software.
 #
 # 3. This notice cannot be removed or altered from any source distribution.
@@ -70,8 +69,8 @@ def strerror(errclass, errcode):
         return 'Session Error', SESSION_ERRORS.get(errcode, 'Unknown error')
     else:
         return 'Unknown Error Class', 'Unknown Error'
-    
-    
+
+
 
 class NetBIOSError(Exception): pass
 class NetBIOSTimeout(Exception): pass
@@ -100,7 +99,7 @@ class NBHostEntry:
 
 
 class NBNodeEntry:
-    
+
     def __init__(self, nbname, nametype, isgroup, nodetype, deleting, isconflict, isactive, ispermanent):
         self.__nbname = nbname
         self.__nametype = nametype
@@ -146,7 +145,7 @@ class NBNodeEntry:
         if self.__deleting:
             s = s + ' DELETING'
         return s
-            
+
 
 
 class NetBIOS:
@@ -179,7 +178,7 @@ class NetBIOS:
     def set_broadcastaddr(self, broadcastaddr):
         self.__broadcastaddr = broadcastaddr
 
-    # Return the broadcast address to be used, or BROADCAST_ADDR if default broadcast address is used.   
+    # Return the broadcast address to be used, or BROADCAST_ADDR if default broadcast address is used.
     def get_broadcastaddr(self):
         return self.__broadcastaddr
 
@@ -198,7 +197,7 @@ class NetBIOS:
             return self.__querynodestatus(nbname, destaddr, type, scope, timeout)
         else:
             return self.__querynodestatus(nbname, self.__nameserver, type, scope, timeout)
-    
+
     def __queryname(self, nbname, destaddr, type, scope, timeout):
         netbios_name = string.upper(nbname)
         trn_id = randint(1, 32000)
@@ -213,7 +212,7 @@ class NetBIOS:
         wildcard_query = netbios_name == '*'
 
         self.__sock.sendto(req, 0, ( destaddr, self.__servport ))
-        
+
         addrs = [ ]
         tries = 3
         while 1:
@@ -238,7 +237,7 @@ class NetBIOS:
                                 return None
                             else:
                                 raise NetBIOSError, ( 'Negative name query response', ERRCLASS_QUERY, rcode )
-                            
+
                         qn_length, qn_name, qn_scope = decode_name(data[12:])
                         offset = 20 + qn_length
                         num_records = (unpack('>H', data[offset:offset + 2])[0] - 2) / 4
@@ -288,7 +287,7 @@ class NetBIOS:
                                 return None
                             else:
                                 raise NetBIOSError, ( 'Negative name query response', ERRCLASS_QUERY, rcode )
-                            
+
                         nodes = [ ]
                         num_names = ord(data[56])
                         for i in range(0, num_names):
@@ -298,14 +297,14 @@ class NetBIOS:
                             nodes.append(NBNodeEntry(name, type, flags & 0x8000, flags & 0x6000,
                                                      flags & 0x1000, flags & 0x0800, flags & 0x0400,
                                                      flags & 0x0200))
-                             
+
                         return nodes
             except select.error, ex:
                 if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                     raise NetBIOSError, ( 'Error occurs while waiting for response', ERRCLASS_OS, ex[0] )
             except socket.error, ex:
                 pass
-        
+
 
 
 # Perform first and second level encoding of name as specified in RFC 1001 (Section 4)
@@ -316,7 +315,7 @@ def encode_name(name, type, scope):
         name = name[:15] + chr(type)
     else:
         name = string.ljust(name, 15) + chr(type)
-        
+
     encoded_name = chr(len(name) * 2) + re.sub('.', _do_first_level_encoding, name)
     if scope:
         encoded_scope = ''
@@ -413,7 +412,7 @@ class NetBIOSSession:
     def __request_session(self, host_type, timeout = None):
         remote_name = encode_name(self.__remote_name, host_type, '')
         myname = encode_name(self.__myname, TYPE_WORKSTATION, '')
-        
+
         self.__sock.send('\x81\x00' + pack('>H', len(remote_name) + len(myname)) + remote_name + myname)
         while 1:
             type, flags, data = self.__read(timeout)
@@ -434,17 +433,17 @@ class NetBIOSSession:
                 ready, _, _ = select.select([ self.__sock.fileno() ], [ ], [ ], timeout)
                 if not ready:
                     raise NetBIOSTimeout
-                
+
                 data = data + self.__sock.recv(read_len)
                 read_len = 4 - len(data)
             except select.error, ex:
                 if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                     raise NetBIOSError, ( 'Error occurs while reading from remote', ERRCLASS_OS, ex[0] )
-                
+
         type, flags, length = unpack('>ccH', data)
         if ord(flags) & 0x01:
             length = length | 0x10000
-            
+
         read_len = length
         data = ''
         while read_len > 0:
@@ -458,7 +457,7 @@ class NetBIOSSession:
             except select.error, ex:
                 if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                     raise NetBIOSError, ( 'Error while reading from remote', ERRCLASS_OS, ex[0] )
-                
+
         return ord(type), ord(flags), data
 
 

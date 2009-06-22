@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smblistshare,v 1.4 2001-11-06 16:17:28 miketeo Exp $
 #
-# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# Copyright (C) 2001-2009 Michael Teo <miketeo (a) miketeo.net>
 # smblistshare - list the shared devices on a SMB machine
 #
-# This software is provided 'as-is', without any express or implied warranty. 
-# In no event will the author be held liable for any damages arising from the 
+# This software is provided 'as-is', without any express or implied warranty.
+# In no event will the author be held liable for any damages arising from the
 # use of this software.
 #
-# Permission is granted to anyone to use this software for any purpose, 
-# including commercial applications, and to alter it and redistribute it 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
 # freely, subject to the following restrictions:
 #
-# 1. The origin of this software must not be misrepresented; you must not 
-#    claim that you wrote the original software. If you use this software 
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
 #    in a product, an acknowledgment in the product documentation would be
 #    appreciated but is not required.
 #
-# 2. Altered source versions must be plainly marked as such, and must not be 
+# 2. Altered source versions must be plainly marked as such, and must not be
 #    misrepresented as being the original software.
 #
 # 3. This notice cannot be removed or altered from any source distribution.
@@ -48,7 +47,7 @@ def print_usage_screen():
     print '  -I remote IP addr     connect to this IP address for remote host'
     print '  --help                display this help and exit'
     print '  --version             output version information and exit'
-    print 
+    print
 
 
 
@@ -77,7 +76,7 @@ def main():
     if not args:
         print_usage_screen()
         return
-       
+
     for dest_name in args:
         if not remote_ip_addr:
             try:
@@ -96,13 +95,13 @@ def main():
         else:
             print 'Connecting to', dest_name, 'using', remote_ip_addr
             remote = smb.SMB(dest_name, remote_ip_addr)
-        
+
         if remote.is_login_required():
             if not user:
                 user = getpass.getuser()
             password = getpass.getpass('Password for ' + user + '@' + dest_name + ': ')
             remote.login(user, password)
-                
+
         print
         devices = remote.list_shared()
         if not devices:
@@ -113,7 +112,7 @@ def main():
             for dev in devices:
                 print string.ljust(DEVICE_TYPE_NAMES.get(dev.get_type(), 'Unknown'), 7), string.ljust(dev.get_name(), 15), dev.get_comment()
         print
-    
+
 
 
 if __name__ == '__main__':
@@ -127,5 +126,3 @@ if __name__ == '__main__':
         print ex[0], ':', err_msg
     except KeyboardInterrupt:
         pass
-
-    

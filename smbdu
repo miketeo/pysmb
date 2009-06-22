@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbdu,v 1.5 2001-11-10 06:32:41 miketeo Exp $
 #
-# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# Copyright (C) 2001-2009 Michael Teo <miketeo (a) miketeo.net>
 # smbdu - summarize disk usage of each SMB path recursively
 #
-# This software is provided 'as-is', without any express or implied warranty. 
-# In no event will the author be held liable for any damages arising from the 
+# This software is provided 'as-is', without any express or implied warranty.
+# In no event will the author be held liable for any damages arising from the
 # use of this software.
 #
-# Permission is granted to anyone to use this software for any purpose, 
-# including commercial applications, and to alter it and redistribute it 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
 # freely, subject to the following restrictions:
 #
-# 1. The origin of this software must not be misrepresented; you must not 
-#    claim that you wrote the original software. If you use this software 
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
 #    in a product, an acknowledgment in the product documentation would be
 #    appreciated but is not required.
 #
-# 2. Altered source versions must be plainly marked as such, and must not be 
+# 2. Altered source versions must be plainly marked as such, and must not be
 #    misrepresented as being the original software.
 #
 # 3. This notice cannot be removed or altered from any source distribution.
@@ -63,8 +62,8 @@ def print_usage_screen():
     print '                        line argument'
     print '      --help            display this help and exit'
     print '      --version         output version information and exit'
-    print 
-    
+    print
+
 
 USER_HOST_PATH_PATTERN = re.compile('(\w+)@([\w\.]+):/*([^/]+)(/.*)')
 HOST_PATH_PATTERN = re.compile(r"([\w\.]+):/*([^/]+)(/*.*)")
@@ -82,14 +81,14 @@ def parse_path(path):
 
 def query_path(s, share, path, depth, password):
     global show_all, blocksize, spaces, max_depth, separate_dirs
-    
+
     count = 1L
     try:
         if max_depth < 0 or depth <= max_depth:
             output = 1
         else:
             output = 0
-    
+
         listings = s.list_path(share, path + '/*', password = password)
         for f in listings:
             if f.get_longname() != '.' and f.get_longname() != '..':
@@ -109,7 +108,7 @@ def query_path(s, share, path, depth, password):
     except smb.SessionError, ex:
         print 'Warning: Cannot list', path
         print ex[0], ':', smb.strerror(ex[1], ex[2])[1]
-        
+
     return count
 
 
@@ -182,7 +181,7 @@ def main():
                 if not addrs:
                     print 'Error: Unable to resolve', nbname
                     return
-                    
+
                 print 'Connecting to', nbname, 'at', addrs[0].get_ip()
                 s = smb.SMB(nbname, addrs[0].get_ip())
             else:
@@ -197,7 +196,7 @@ def main():
                 else:
                     password = getpass.getpass('Password for ' + user + '@' + nbname + ': ')
                     password_lists[( user, nbname )] = password
-                    
+
                 print 'Authenticating using user name,', user
                 s.login(user, password)
                 print 'Authentication passed'
@@ -207,17 +206,17 @@ def main():
                 password = getpass.getpass('Password for ' + share + ': ')
                 password_lists[( share + ':' + path, nbname )] = password
 
-            print 
+            print
             count = query_path(s, share, path, 0, password)
             print
-            
+
         except smb.SessionError, ex:
             print ex[0], ':', smb.strerror(ex[1], ex[2])[1]
         except nmb.NetBIOSError, ex:
             print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
         except nmb.NetBIOSTimeout:
             print 'Timeout waiting for reply'
-        
+
 if __name__ == '__main__':
     try:
         main()

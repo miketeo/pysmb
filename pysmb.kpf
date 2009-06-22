@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="1d37ac94-b50a-4b34-8194-935f3bc005df" kpf_version="4" name="pysmb.kpf">
+<preference-set idref="1d37ac94-b50a-4b34-8194-935f3bc005df">
+  <boolean id="import_live">1</boolean>
+</preference-set>
+</project>

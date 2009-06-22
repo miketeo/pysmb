@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smbcp,v 1.8 2002-08-03 05:45:32 miketeo Exp $
 #
-# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# Copyright (C) 2001-2009 Michael Teo <miketeo (a) miketeo.net>
 # smbcp - file transfer program between local machine and remote SMB machines
 #
-# This software is provided 'as-is', without any express or implied warranty. 
-# In no event will the author be held liable for any damages arising from the 
+# This software is provided 'as-is', without any express or implied warranty.
+# In no event will the author be held liable for any damages arising from the
 # use of this software.
 #
-# Permission is granted to anyone to use this software for any purpose, 
-# including commercial applications, and to alter it and redistribute it 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
 # freely, subject to the following restrictions:
 #
-# 1. The origin of this software must not be misrepresented; you must not 
-#    claim that you wrote the original software. If you use this software 
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
 #    in a product, an acknowledgment in the product documentation would be
 #    appreciated but is not required.
 #
-# 2. Altered source versions must be plainly marked as such, and must not be 
+# 2. Altered source versions must be plainly marked as such, and must not be
 #    misrepresented as being the original software.
 #
 # 3. This notice cannot be removed or altered from any source distribution.
@@ -54,7 +53,7 @@ def print_usage_screen():
     print '  -I remote IP addr     connect to this IP address for remote host'
     print '  --version             show version and exit'
     print
-    
+
 
 
 def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir, password):
@@ -78,7 +77,7 @@ def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir, passwo
                     os.mkdir(os.path.join(dest_path, os.path.basename(src_path)))
                 except:
                     pass
-        
+
             for f in src.list_path(src_service, src_path + '/*', password = password):
                 name = f.get_longname()
                 if name == '.' or name == '..':
@@ -95,7 +94,7 @@ def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir, passwo
                             src.retr_file(src_service, src_path + '/' + name, fh.write, password = password)
                         finally:
                             fh.close()
-                        
+
         else:
             print 'Warning: source is a directory but -r is not set.'
     else:
@@ -103,7 +102,7 @@ def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir, passwo
             print src_path, '=>', os.path.join(dest_path, os.path.basename(src_path))
         else:
             print src_path, '=>', dest_path
-            
+
         if not dry_run:
             if is_dest_dir:
                 fh = open(os.path.join(dest_path, os.path.basename(src_path)), 'wb')
@@ -113,8 +112,8 @@ def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir, passwo
                 src.retr_file(src_service, src_path, fh.write, password = password)
             finally:
                 fh.close()
-                
-    
+
+
 
 def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir, password):
     global recursive, dry_run
@@ -123,7 +122,7 @@ def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir, pa
         if not is_dest_dir:
             print 'Warning: Destination is not directory'
             return
-        
+
         if recursive:
             for f in os.listdir(src_path):
                 if f != '.' and f != '..':
@@ -140,7 +139,7 @@ def local2remote_copy(remote, dest_service, dest_path, src_path, is_dest_dir, pa
             print dest_path + '/' + os.path.basename(src_path)
         else:
             print dest_path
-            
+
         if not os.path.exists(src_path):
             print 'Warning:', src_path, 'does not exist'
         elif not dry_run:
@@ -180,14 +179,14 @@ def main():
     except getopt.error:
         print_usage_screen()
         return
-    
+
     if len(args) < 2:
         print_usage_screen()
         return
 
     dest = args[-1]
     sources = args[:-1]
-    
+
     dest_info = parse_path(dest)
     if dest_info:
         user, dest_name, dest_service, dest_path = dest_info
@@ -211,7 +210,7 @@ def main():
         else:
             print 'Connecting to remote,', dest_name, 'using', remote_ip_addr
             remote = smb.SMB(dest_name, remote_ip_addr)
-            
+
         if remote.is_login_required():
             if not user:
                 user = getpass.getuser()
@@ -220,7 +219,7 @@ def main():
             password = None
         else:
             password = getpass.getpass('Password for ' + dest_service + ': ')
-                
+
         is_dest_dir = 0
         try:
             remote.check_dir(dest_service, dest_path, password)
@@ -287,13 +286,13 @@ def main():
                 password = None
             else:
                 password = getpass.getpass('Password for ' + src_service + ': ')
-                 
+
             if src_path and src_path[-1] == '/':
                 src_path = src_path[:-1]
 
             remote2local_copy(src, src_service, src_path, dest, is_dest_dir, password)
-            
-    
+
+
 
 if __name__ == '__main__':
     try:
@@ -306,5 +305,3 @@ if __name__ == '__main__':
         print ex[0], ':', err_msg
     except KeyboardInterrupt:
         pass
-
-    

@@ -1,25 +1,24 @@
 #!/usr/bin/env python
 # -*- mode: python; tab-width: 4 -*-
-# $Id: nmbquery,v 1.3 2001-08-24 15:42:59 miketeo Exp $
 #
-# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# Copyright (C) 2001-2009 Michael Teo <miketeo (a) miketeo.net>
 # nmbquery - NetBIOS over TCP/IP to lookup NetBIOS names and retrieve
 #            their node status
 #
-# This software is provided 'as-is', without any express or implied warranty. 
-# In no event will the author be held liable for any damages arising from the 
+# This software is provided 'as-is', without any express or implied warranty.
+# In no event will the author be held liable for any damages arising from the
 # use of this software.
 #
-# Permission is granted to anyone to use this software for any purpose, 
-# including commercial applications, and to alter it and redistribute it 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
 # freely, subject to the following restrictions:
 #
-# 1. The origin of this software must not be misrepresented; you must not 
-#    claim that you wrote the original software. If you use this software 
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
 #    in a product, an acknowledgment in the product documentation would be
 #    appreciated but is not required.
 #
-# 2. Altered source versions must be plainly marked as such, and must not be 
+# 2. Altered source versions must be plainly marked as such, and must not be
 #    misrepresented as being the original software.
 #
 # 3. This notice cannot be removed or altered from any source distribution.
@@ -94,7 +93,7 @@ def main():
         else:
             try:
                 print 'Querying', name, 'on', n.get_broadcastaddr()
-                
+
                 if search_master:
                     if name == '-':
                         name = '__MSBROWSE__'
@@ -106,7 +105,7 @@ def main():
                 else:
                     query = name
                     type = nmb.TYPE_WORKSTATION
-                
+
                 addrs = n.gethostbyname(query, type, timeout = timeout)
                 if not addrs:
                     print name, ' not registered'
@@ -128,7 +127,7 @@ def main():
                 print 'Name query failed to find', name
             except nmb.NetBIOSError, ex:
                 print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
-            
+
         if ip and lookup_status:
             print 'Looking up status of', name
             try:
@@ -158,7 +157,7 @@ def main():
                 print 'No status response (this is not unusual)'
             except nmb.NetBIOSError, ex:
                 print ex[0], ':', nmb.strerror(ex[1], ex[2])[1]
-                
+
         print
 
 if __name__ == '__main__':
@@ -166,4 +165,3 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         pass
-
