@@ -1,23 +1,22 @@
 # -*- mode: python; tab-width: 4 -*-
-# $Id: smb.py,v 1.15 2003-02-22 08:03:19 miketeo Exp $
 #
-# Copyright (C) 2001 Michael Teo <michaelteo@bigfoot.com>
+# Copyright (C) 2001-2009 Michael Teo <miketeo (a) miketeo.net>
 # smb.py - SMB/CIFS library
 #
-# This software is provided 'as-is', without any express or implied warranty. 
-# In no event will the author be held liable for any damages arising from the 
+# This software is provided 'as-is', without any express or implied warranty.
+# In no event will the author be held liable for any damages arising from the
 # use of this software.
 #
-# Permission is granted to anyone to use this software for any purpose, 
-# including commercial applications, and to alter it and redistribute it 
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
 # freely, subject to the following restrictions:
 #
-# 1. The origin of this software must not be misrepresented; you must not 
-#    claim that you wrote the original software. If you use this software 
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
 #    in a product, an acknowledgment in the product documentation would be
 #    appreciated but is not required.
 #
-# 2. Altered source versions must be plainly marked as such, and must not be 
+# 2. Altered source versions must be plainly marked as such, and must not be
 #    misrepresented as being the original software.
 #
 # 3. This notice cannot be removed or altered from any source distribution.
@@ -28,12 +27,17 @@ import nmb
 from random import randint
 from struct import *
 
-# Try to load mxCrypto's DES module to perform password encryption if required.
-# Password will not be encrypted if mxCrypto's DES module is not loaded.
+# Try to load amkCrypto's DES module to perform password encryption if required.
 try:
-    from Crypto.Ciphers import DES
+    from Crypto.Cipher import DES
+    amk_crypto = 1
 except ImportError:
-    DES = None
+    # Try to load mxCrypto's DES module to perform password encryption if required.
+    try:
+        from Crypto.Ciphers import DES
+        amk_crypto = 0
+    except ImportError:
+        DES = None
 
 try:
     from cStringIO import StringIO
@@ -122,7 +126,7 @@ def strerror(errclass, errcode):
     else:
         return 'Unknown error', 'Unknown error'
 
-    
+
 
 # Raised when an error has occured during a session
 class SessionError(Exception): pass
@@ -287,12 +291,12 @@ class SMB:
     SMB_COM_SESSION_SETUP_ANDX = 0x73
     SMB_COM_LOGOFF = 0x74
     SMB_COM_TREE_CONNECT_ANDX = 0x75
-    
+
     # Security Share Mode (Used internally by SMB class)
     SECURITY_SHARE_MASK = 0x01
     SECURITY_SHARE_SHARE = 0x00
     SECURITY_SHARE_USER = 0x01
-    
+
     # Security Auth Mode (Used internally by SMB class)
     SECURITY_AUTH_MASK = 0x02
     SECURITY_AUTH_ENCRYPTED = 0x02
@@ -323,19 +327,20 @@ class SMB:
         self.__server_lanman = ''
         self.__server_domain = ''
         self.__remote_name = string.upper(remote_name)
-        
+        self.__mid = 1
+
         if not my_name:
             my_name = socket.gethostname()
             i = string.find(my_name, '.')
             if i > -1:
                 my_name = my_name[:i]
-            
+
         self.__sess = nmb.NetBIOSSession(my_name, remote_name, remote_host, host_type, sess_port)
         # __neg_session will initialize the following attributes -- __can_read_raw, __can_write_raw,
         # __share_mode, __max_transmit_size, __max_raw_size, __enc_key, __session_key, __auth_mode,
         # __is_pathcaseless
         self.__neg_session()
-        
+
         # If the following assertion fails, then mean that the encryption key is not sent when
         # encrypted authentication is required by the server.
         assert (self.__auth_mode == SMB.SECURITY_AUTH_PLAINTEXT) or (self.__auth_mode == SMB.SECURITY_AUTH_ENCRYPTED and self.__enc_key and len(self.__enc_key) >= 8)
@@ -375,12 +380,12 @@ class SMB:
     def __send_smb_packet(self, cmd, status, flags, flags2, tid, mid, params = '', data = ''):
         wordcount = len(params)
         assert wordcount & 0x1 == 0
-        
+
         self.__sess.send_packet(pack('<4sBLBH12sHHHHB', '\xffSMB', cmd, status, flags, flags2, '\0' * 12, tid, os.getpid(), self.__uid, mid, wordcount / 2) + params + pack('<H', len(data)) + data)
 
     def __neg_session(self, timeout = None):
         self.__send_smb_packet(SMB.SMB_COM_NEGOTIATE, 0, 0, 0, 0, 0, data = '\x02NT LM 0.12\x00')
-        
+
         while 1:
             data = self.__sess.recv_packet(timeout)
             if data:
@@ -390,7 +395,7 @@ class SMB:
                         sel_dialect = unpack('<H', params[:2])
                         if sel_dialect == 0xffff:
                             raise UnsupportedFeature, "Remote server does not know NT LM 0.12. Please file a request for backward compatibility support."
-                        
+
                         # NT LM 0.12 dialect selected
                         auth, self.__maxmpx, self.__maxvc, self.__max_transmit_size, self.__max_raw_size, self.__session_key, capability, _, keylength = unpack('<BHHllll10sB', params[2:34])
 
@@ -414,7 +419,7 @@ class SMB:
 
     def __logoff(self):
         self.__send_smb_packet(SMB.SMB_COM_LOGOFF, 0, 0, 0, 0, 0, '\xff\x00\x00\x00', '')
-            
+
     def __connect_tree(self, path, service, password, timeout = None):
         if password:
             # Password is only encrypted if the server passed us an "encryption" during protocol dialect
@@ -440,7 +445,7 @@ class SMB:
 
     def __open_file(self, tid, filename, open_mode, access_mode, timeout = None):
         self.__send_smb_packet(SMB.SMB_COM_OPEN_ANDX, 0, 0x08, SMB.FLAGS2_LONG_FILENAME, tid, 0, pack('<BBHHHHHLHLLL', 0xff, 0, 0, 0, access_mode, ATTR_READONLY | ATTR_HIDDEN | ATTR_ARCHIVE, 0, 0, open_mode, 0, 0, 0), filename + '\x00')
-        
+
         while 1:
             data = self.__sess.recv_packet(timeout)
             if data:
@@ -451,7 +456,7 @@ class SMB:
                         return fid, attrib, lastwritetime, datasize, grantedaccess, filetype, devicestate, action, serverfid
                     else:
                         raise SessionError, ( 'Open file failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
-        
+
     def __close_file(self, tid, fid):
         self.__send_smb_packet(SMB.SMB_COM_CLOSE, 0, 0, 0, tid, 0, pack('<HL', fid, 0), '')
 
@@ -465,8 +470,9 @@ class SMB:
 
         param_offset = name_len + setup_len + 63
         data_offset = param_offset + param_len
-            
-        self.__send_smb_packet(SMB.SMB_COM_TRANSACTION, 0, self.__is_pathcaseless, SMB.FLAGS2_LONG_FILENAME, tid, 0, pack('<HHHHBBHLHHHHHBB', param_len, data_len, 1024, 65504, 0, 0, 0, 0, 0, param_len, param_offset, data_len, data_offset, setup_len / 2, 0) + setup, name + param + data)
+
+        self.__mid = self.__mid + 1
+        self.__send_smb_packet(SMB.SMB_COM_TRANSACTION, 0, self.__is_pathcaseless, SMB.FLAGS2_LONG_FILENAME, tid, self.__mid, pack('<HHHHBBHLHHHHHBB', param_len, data_len, 1024, 65504, 0, 0, 0, 0, 0, param_len, param_offset, data_len, data_offset, setup_len / 2, 0) + setup, name + param + data)
 
     def __trans2(self, tid, setup, name, param, data, timeout = None):
         data_len = len(data)
@@ -478,8 +484,9 @@ class SMB:
 
         param_offset = name_len + setup_len + 63
         data_offset = param_offset + param_len
-            
-        self.__send_smb_packet(SMB.SMB_COM_TRANSACTION2, 0, self.__is_pathcaseless, SMB.FLAGS2_LONG_FILENAME, tid, 0, pack('<HHHHBBHLHHHHHBB', param_len, data_len, 1024, self.__max_transmit_size, 0, 0, 0, 0, 0, param_len, param_offset, data_len, data_offset, setup_len / 2, 0) + setup, name  + param + data)
+
+        self.__mid = self.__mid + 1
+        self.__send_smb_packet(SMB.SMB_COM_TRANSACTION2, 0, self.__is_pathcaseless, SMB.FLAGS2_LONG_FILENAME, tid, self.__mid, pack('<HHHHBBHLHHHHHBB', param_len, data_len, 1024, self.__max_transmit_size, 0, 0, 0, 0, 0, param_len, param_offset, data_len, data_offset, setup_len / 2, 0) + setup, name  + param + data)
 
     def __query_file_info(self, tid, fid, timeout = None):
         self.__trans2(tid, '\x07\x00', '\x00', pack('<HH', fid, 0x107), '', timeout)
@@ -560,9 +567,9 @@ class SMB:
             data = callback(max_buf_size)
             if not data:
                 break
-            
+
             self.__send_smb_packet(SMB.SMB_COM_WRITE_ANDX, 0, 0, 0, tid, 0, pack('<BBHHLLHHHHH', 0xff, 0, 0, fid, write_offset, 0, 0, 0, 0, len(data), 59), data)
-            
+
             while 1:
                 data = self.__sess.recv_packet(timeout)
                 if data:
@@ -617,7 +624,7 @@ class SMB:
                 self.__trans(tid, '', '\\PIPE\\LANMAN\x00', '\x68\x00WrLehDz\x00' + 'B16BBDz\x00\x01\x00\xff\xff\x00\x00\x00\x80', '', timeout)
             else:
                 self.__trans(tid, '', '\\PIPE\\LANMAN\x00', '\x68\x00WrLehDz\x00' + 'B16BBDz\x00\x01\x00\xff\xff' + pack('<l', server_flags)  + domain + '\x00', '', timeout)
-                
+
             servers = [ ]
             entry_count = 0
             while 1:
@@ -648,8 +655,8 @@ class SMB:
                             raise SessionError, ( 'Browse domains failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
         finally:
             buf.close()
-            self.__disconnect_tree(tid)            
-        
+            self.__disconnect_tree(tid)
+
 
     def __expand_des_key(self, key):
         # Expand the key from a 7-byte password key into a 8-byte DES key
@@ -669,8 +676,12 @@ class SMB:
             p14 = string.upper(password[:14])
         else:
             p14 = string.upper(password) + '\0' * (14 - len(password))
-        p21 = DES(self.__expand_des_key(p14[:7])).encrypt('\x4b\x47\x53\x21\x40\x23\x24\x25') + DES(self.__expand_des_key(p14[7:])).encrypt('\x4b\x47\x53\x21\x40\x23\x24\x25') + '\0' * 5
-        return DES(self.__expand_des_key(p21[:7])).encrypt(self.__enc_key) + DES(self.__expand_des_key(p21[7:14])).encrypt(self.__enc_key) + DES(self.__expand_des_key(p21[14:])).encrypt(self.__enc_key)
+        if amk_crypto:
+            p21 = DES.new(self.__expand_des_key(p14[:7])).encrypt('\x4b\x47\x53\x21\x40\x23\x24\x25') + DES.new(self.__expand_des_key(p14[7:])).encrypt('\x4b\x47\x53\x21\x40\x23\x24\x25') + '\0' * 5
+            return DES.new(self.__expand_des_key(p21[:7])).encrypt(self.__enc_key) + DES.new(self.__expand_des_key(p21[7:14])).encrypt(self.__enc_key) + DES.new(self.__expand_des_key(p21[14:])).encrypt(self.__enc_key)
+        else:
+            p21 = DES(self.__expand_des_key(p14[:7])).encrypt('\x4b\x47\x53\x21\x40\x23\x24\x25') + DES(self.__expand_des_key(p14[7:])).encrypt('\x4b\x47\x53\x21\x40\x23\x24\x25') + '\0' * 5
+            return DES(self.__expand_des_key(p21[:7])).encrypt(self.__enc_key) + DES(self.__expand_des_key(p21[7:14])).encrypt(self.__enc_key) + DES(self.__expand_des_key(p21[14:])).encrypt(self.__enc_key)
 
     def get_server_domain(self):
         return self.__server_domain
@@ -788,28 +799,57 @@ class SMB:
 
         tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + service, SERVICE_ANY, password, timeout)
         try:
-            self.__trans2(tid, '\x01\x00', '\x00', '\x16\x00\x00\x02\x06\x00\x04\x01\x00\x00\x00\x00' + path + '\x00', '')
+            self.__trans2(tid, '\x01\x00', '\x00', '\x16\x00\x56\x05\x06\x00\x04\x01\x00\x00\x00\x00' + path + '\x00', '')
 
-            while 1:
-                data = self.__sess.recv_packet(timeout)
-                if data:
-                    cmd, err_class, err_code, flags1, flags2, _, _, mid, params, d = self.__decode_smb(data)
-                    if cmd == SMB.SMB_COM_TRANSACTION2:
-                        if err_class == 0x00 and err_code == 0x00:
-                            has_more, _, transparam, transdata = self.__decode_trans(params, d)
-                            sid, searchcnt, eos, erroffset, lastnameoffset = unpack('<HHHHH', transparam)
-                            files = [ ]
-                            offset = 0
-                            data_len = len(transdata)
-                            while offset < data_len:
-                                nextentry, fileindex, lowct, highct, lowat, highat, lowmt, highmt, lowcht, hightcht, loweof, higheof, lowsz, highsz, attrib, longnamelen, easz, shortnamelen = unpack('<lL12LLlLB', transdata[offset:offset + 69])
-                                files.append(SharedFile(highct << 32 | lowct, highat << 32 | lowat, highmt << 32 | lowmt, higheof << 32 | loweof, highsz << 32 | lowsz, attrib, transdata[offset + 70:offset + 70 + shortnamelen], transdata[offset + 94:offset + 94 + longnamelen]))
-                                offset = offset + nextentry
-                                if not nextentry:
-                                    break
+            resume_filename = ''
+            files = [ ]
+            data = self.__sess.recv_packet(timeout)
+            if data:
+                cmd, err_class, err_code, flags1, flags2, _, _, mid, params, d = self.__decode_smb(data)
+                if cmd == SMB.SMB_COM_TRANSACTION2:
+                    if err_class == 0x00 and err_code == 0x00:
+                        has_more, _, transparam, transdata = self.__decode_trans(params, d)
+                        sid, searchcnt, eos, erroffset, lastnameoffset = unpack('<HHHHH', transparam)
+                        offset = 0
+                        data_len = len(transdata)
+                        while offset < data_len:
+                            nextentry, fileindex, lowct, highct, lowat, highat, lowmt, highmt, lowcht, hightcht, loweof, higheof, lowsz, highsz, attrib, longnamelen, easz, shortnamelen = unpack('<lL12LLlLB', transdata[offset:offset + 69])
+                            if not nextentry:
+                                break
+                            files.append(SharedFile(highct << 32 | lowct, highat << 32 | lowat, highmt << 32 | lowmt, higheof << 32 | loweof, highsz << 32 | lowsz, attrib, transdata[offset + 70:offset + 70 + shortnamelen], transdata[offset + 94:offset + 94 + longnamelen]))
+                            resume_filename = transdata[offset + 94:offset + 94 + longnamelen]
+                            offset = offset + nextentry
+                            print ':', resume_filename
+                        if eos:
                             return files
                         else:
-                            raise SessionError, ( 'List path failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
+                            while resume_filename:
+                                self.__trans2(tid, '\x02\x00', '\x00', pack('<H', sid) + '\x56\x05\x04\x01\x00\x00\x00\x00\x06\x00' + resume_filename, '')
+                                resume_filename = ''
+                                data = self.__sess.recv_packet(timeout)
+                                if data:
+                                    cmd, err_class, err_code, flags1, flags2, _, _, mid, params, d = self.__decode_smb(data)
+                                    if cmd == SMB.SMB_COM_TRANSACTION2:
+                                        if err_class == 0x00 and err_code == 0x00:
+                                            has_more, _, transparam, transdata = self.__decode_trans(params, d)
+                                            searchcnt, eos, erroffset, lastnameoffset = unpack('<HHHH', transparam)
+                                            offset = 0
+                                            data_len = len(transdata)
+                                            while offset < data_len:
+                                                nextentry, fileindex, lowct, highct, lowat, highat, lowmt, highmt, lowcht, hightcht, loweof, higheof, lowsz, highsz, attrib, longnamelen, easz, shortnamelen = unpack('<lL12LLlLB', transdata[offset:offset + 69])
+                                                if not nextentry:
+                                                    break
+                                                files.append(SharedFile(highct << 32 | lowct, highat << 32 | lowat, highmt << 32 | lowmt, higheof << 32 | loweof, highsz << 32 | lowsz, attrib, transdata[offset + 70:offset + 70 + shortnamelen], transdata[offset + 94:offset + 94 + longnamelen]))
+                                                resume_filename = transdata[offset + 94:offset + 94 + longnamelen]
+                                                offset = offset + nextentry
+                                                print '-', resume_filename
+
+                                            if eos:
+                                                return files
+                                    else:
+                                        raise SessionError, ( 'List path failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
+                    else:
+                        raise SessionError, ( 'List path failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
         finally:
             self.__disconnect_tree(tid)
 
@@ -865,7 +905,7 @@ class SMB:
                 dest_tid = src_tid
             else:
                 dest_tid = self.__connect_tree('\\\\' + self.__remote_name + '\\' + dest_service, SERVICE_ANY, dest_password, timeout)
-            
+
             dest_fid = self.__open_file(dest_tid, dest_path, write_mode, SMB_ACCESS_WRITE | SMB_SHARE_DENY_WRITE)[0]
             src_fid, _, _, src_datasize, _, _, _, _, _ = self.__open_file(src_tid, src_path, SMB_O_OPEN, SMB_ACCESS_READ | SMB_SHARE_DENY_WRITE)
 
@@ -906,7 +946,7 @@ class SMB:
                                 break
                             else:
                                 raise SessionError, ( 'Copy (read) failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
-                
+
         finally:
             self.__disconnect_tree(src_tid)
             if dest_tid > -1 and src_service != dest_service:
@@ -997,7 +1037,7 @@ class SMB:
                     cmd, err_class, err_code, flags1, flags2, _, _, mid, params, d = self.__decode_smb(data)
                     if cmd == SMB.SMB_COM_RENAME:
                         if err_class == 0x00 and err_code == 0x00:
-                            return 
+                            return
                         else:
                             raise SessionError, ( 'Rename failed. (ErrClass: %d and ErrCode: %d)' % ( err_class, err_code ), err_class, err_code )
         finally:
