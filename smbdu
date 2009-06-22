@@ -150,7 +150,7 @@ def main():
             elif k == '--help':
                 help = 1
             elif k == '--version':
-                print 'smbdu version', VERSION,'(smb:', smb.CVS_REVISION, 'and nmb:', nmb.CVS_REVISION, ')'
+                print 'smbdu version', VERSION
                 return
     except getopt.error, ex:
         print_usage_screen()

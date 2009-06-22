@@ -1,16 +1,23 @@
 
+pysmb-0.4.5, 22 Jun 2009
+========================
+
+- Prevents pysmb from failing when there are too many files/folders to
+  be returned in a single SMB TRANS2 call. pysmb will "resume" requesting
+  for more files/folders information in subsequent SMB TRANS2 requests.
+
 pysmb-0.4.4, 12 Jan 2004
 ========================
 
 - Add in support for AMK's Python Cryptography Toolkit which will be used
-  for DES password hashing. If AMK's pycrypto is found, it will be used 
+  for DES password hashing. If AMK's pycrypto is found, it will be used
   instead of mxCrypto.
 
 pysmb-0.4.3, 22 Feb 2003
 ========================
 
 - Fix a bug which fails to close the socket in nmb.py on socket exception
-- Fix a bug which fails to close the NetBIOSSession in smb.py if the session 
+- Fix a bug which fails to close the NetBIOSSession in smb.py if the session
   has not been properly established yet.
 
 pysmb-0.4.2, 03 Aug 2002
@@ -26,8 +33,8 @@ pysmb-0.4.2, 03 Aug 2002
 pysmb-0.4.1, 22 Jun 2002
 ========================
 
-- Fix a bug in smb.py which does not return the correct file size for files 
-  with their archive bits turned off. This results in these files not being 
+- Fix a bug in smb.py which does not return the correct file size for files
+  with their archive bits turned off. This results in these files not being
   retrieved or sent properly.
 - Fix some typo error in the documentations
 
@@ -80,11 +87,11 @@ pysmb-0.1.2, 01 Sep 2001
 pysmb-0.1.1, 25 Aug 2001
 ========================
 
-- Change nmb's NetBIOS and NetBIOSSession class such that they raise a NetBIOSError 
+- Change nmb's NetBIOS and NetBIOSSession class such that they raise a NetBIOSError
   with a tuple of ( err_msg, err_class, err_code )
 - Add a function strerror() in both smb and nmb to return human readable messages
   for error codes.
-- Fix a bug in smbcp which fails to print an error message and terminate when the 
+- Fix a bug in smbcp which fails to print an error message and terminate when the
   remote source path is not found.
 - Add in another utility, smblistshare.
 

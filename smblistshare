@@ -64,7 +64,7 @@ def main():
             elif k == '-I':
                 remote_ip_addr = v
             elif k == '--version':
-                print 'smblistshare version', VERSION,'(smb:', smb.CVS_REVISION, 'and nmb:', nmb.CVS_REVISION, ')'
+                print 'smblistshare version', VERSION
                 return
             elif k == '-h':
                 raise getopt.error
