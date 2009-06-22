@@ -61,6 +61,9 @@ def remote2local_copy(src, src_service, src_path, dest_path, is_dest_dir, passwo
 
     try:
         info = src.list_path(src_service, src_path, password = password)
+        if not info:
+            # No files/folders in src_path
+            return
         is_src_dir = info[0].is_directory()
     except smb.SessionError, ex:
         print ex[0], ':', smb.strerror(ex[1], ex[2])[1]
