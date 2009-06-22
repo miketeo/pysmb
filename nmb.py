@@ -28,8 +28,6 @@ from struct import *
 
 
 
-CVS_REVISION = '$Revision: 1.9 $'
-
 # Taken from socket module reference
 INADDR_ANY = ''
 BROADCAST_ADDR = '<broadcast>'

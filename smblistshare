@@ -25,8 +25,7 @@
 
 import os, sys, string, getopt, getpass
 import smb, nmb
-
-VERSION = '0.1.0'
+from pysmb_version import VERSION
 
 
 

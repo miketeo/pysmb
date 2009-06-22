@@ -44,7 +44,6 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-CVS_REVISION = '$Revision: 1.15 $'
 
 # Shared Device Type
 SHARED_DISK = 0x00
