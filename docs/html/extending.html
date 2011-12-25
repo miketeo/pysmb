@@ -1,0 +1,124 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Extending pysmb For Other Frameworks &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="index.html" />
+    <link rel="prev" title="SMB Exceptions" href="api/smb_exceptions.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="api/smb_exceptions.html" title="SMB Exceptions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api/smb_exceptions.html"
+                        title="previous chapter">SMB Exceptions</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/extending.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="extending-pysmb-for-other-frameworks">
+<h1>Extending pysmb For Other Frameworks<a class="headerlink" href="#extending-pysmb-for-other-frameworks" title="Permalink to this headline">¶</a></h1>
+<p>This page briefly describes the steps involved in extending pysmb for other frameworks.</p>
+<p>In general, you need to take care of the SMB TCP connection setup, i.e. finding the IP address of the remote server and connect to the SMB/CIFS service.
+Then you need to read/write synchronously or asynchronously from and to the SMB socket. And you need to handle post-authentication callback methods, and from these methods,
+initiate file operations with the remote SMB/CIFS server.</p>
+<dl class="docutils">
+<dt>Now the above steps in more technical details:</dt>
+<dd><ol class="first arabic simple">
+<li>Create a new class which subclasses the <em>smb.base.SMB</em> class. Most often, the connection setup will be part of the <em>__init__</em> method.</li>
+<li>Override the <em>write(self, data)</em> method to provide an implementation which will write <em>data</em> to the socket.</li>
+<li>Write your own loop handling method to read data from the socket. Once data have been read, call <em>feedData</em> method with the parameter.
+The <em>feedData</em> method has its own internal buffer, so it can accept incomplete NetBIOS session packet data.</li>
+<li>Override</li>
+</ol>
+<blockquote class="last">
+<div><ul class="simple">
+<li><em>onAuthOK</em> method to include your own operations to perform when authentication is successful. You can initiate file operations in this method.</li>
+<li><em>onAuthFailed</em> method to include your own processing on what to do when authentication fails. You can report this as an error, or to try a different NTLM authentication algorithm (<em>use_ntlm_v2</em> parameter in the constructor).</li>
+<li><em>onNMBSessionFailed</em> method to include your own processing on what to do when pysmb fails to setup the NetBIOS session with the remote server. Usually, this is due to a wrong <em>remote_name</em> parameter in the constructor.</li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="api/smb_exceptions.html" title="SMB Exceptions"
+             >previous</a> |</li>
+        <li><a href="index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

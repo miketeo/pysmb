@@ -1,0 +1,213 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to pysmb’s documentation! &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="#" />
+    <link rel="next" title="NBNSProtocol Class" href="api/nmb_NBNSProtocol.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="api/nmb_NBNSProtocol.html" title="NBNSProtocol Class"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to pysmb&#8217;s documentation!</a><ul>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#credits">Credits</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#package-contents-and-description">Package Contents and Description</a></li>
+<li><a class="reference internal" href="#using-pysmb">Using pysmb</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a><ul>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api/nmb_NBNSProtocol.html"
+                        title="next chapter">NBNSProtocol Class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="welcome-to-pysmb-s-documentation">
+<h1>Welcome to pysmb&#8217;s documentation!<a class="headerlink" href="#welcome-to-pysmb-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>pysmb is a pure Python implementation of the client-side SMB/CIFS protocol which is the underlying protocol that facilitates file sharing and printing between Windows machines,
+as well as with Linux machines via the Samba server application.
+pysmb is developed in Python 2.4.6 (and Python 2.7.1) and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.</p>
+<div class="section" id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<p>pysmb itself is licensed under an opensource license.
+You are free to use pysmb in any applications, including for commercial purposes.
+For more details on the terms of use, please read the LICENSE file that comes with your pysmb source.</p>
+<p>pysmb depends on other 3rd-party modules whose terms of use are not covered by pysmb.
+Use of these modules could possibly conflict with your licensing needs. Please exercise your own discretion to determine their suitabilities.
+I have listed these modules in the following section.</p>
+</div>
+<div class="section" id="credits">
+<h2>Credits<a class="headerlink" href="#credits" title="Permalink to this headline">¶</a></h2>
+<p>pysmb is not alone. It is made possible with support from other modules.</p>
+<ul class="simple">
+<li><strong>pyasn1</strong> : Pure Python implementation of ASN.1 parsing and encoding (not included together with pysmb; needs to be installed separately)</li>
+<li><strong>md4</strong> and <strong>U32</strong> : Pure Python implementation of MD4 hashing algorithm and 32-bit unsigned integer by Dmitry Rozmanov. Licensed under LGPL and included together with pysmb.</li>
+<li><strong>pyDes</strong> : Pure python implementation of the DES encryption algorithm by Todd Whiteman. Free domain and included together with pysmb.</li>
+</ul>
+<p>In various places, there are references to different specifications. Most of these referenced specifications
+can be downloaded from Microsoft web site under Microsoft&#8217;s &#8220;Open Specification Promise&#8221;. If you need to download
+a copy of these specifications, please google for it. For example, google for &#8220;MS-CIFS&#8221; to download the CIFS specification for NT LM dialect.</p>
+</div>
+</div>
+<div class="section" id="package-contents-and-description">
+<h1>Package Contents and Description<a class="headerlink" href="#package-contents-and-description" title="Permalink to this headline">¶</a></h1>
+<p>pysmb is organized into 2 main packages: smb and nmb.
+The smb package contains all the functionalities related to Server Message Block (SMB) implementation.
+As an application developer, you will be importing this module into your application.
+Hence, please take some time to familiarize yourself with the smb package contents.</p>
+<ul class="simple">
+<li><strong>nmb/base.py</strong> :
+Contains the NetBIOSSession and NBNS abstract class which implements NetBIOS session and NetBIOS Name Service communication
+without any network transport specifics.</li>
+<li><strong>nmb/NetBIOS.py</strong>:
+Provides a NBNS implementation to query IP addresses for machine names. All operations are blocking I/O.</li>
+<li><strong>nmb/NetBIOSProtocol.py</strong> :
+Provides the NBNS protocol implementation for use in Twisted framework.</li>
+<li><strong>smb/base.py</strong> :
+Contains the SMB abstract class which implements the SMB communication without any network transport specifics.</li>
+<li><strong>smb/ntlm.py</strong> :
+Contains the NTLMv1 and NTLMv2 authentication routines and the decoding/encoding of NTLM authentication messages within SMB messages.</li>
+<li><strong>smb/securityblob.py</strong> :
+Provides routines to encode/decode the NTLMSSP security blob in the SMB messages.</li>
+<li><strong>smb/smb_constants.py</strong> :
+All the constants used in the smb package</li>
+<li><strong>smb/smb_structs.py</strong> :
+Contains the internal classes used in the SMB package. These classes are usually used to encode/decode the parameter and data blocks of specific SMB message.</li>
+<li><strong>smb/SMBConnection.py</strong> :
+Contains a SMB protocol implementation. All operations are blocking I/O.</li>
+<li><strong>smb/SMBProtocol.py</strong> :
+Contains the SMB protocol implementation for use in the Twisted framework.</li>
+</ul>
+</div>
+<div class="section" id="using-pysmb">
+<h1>Using pysmb<a class="headerlink" href="#using-pysmb" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>As an application developer who is looking to use pysmb to translate NetBIOS names to IP addresses,</dt>
+<dd><ul class="first last simple">
+<li>To use pysmb in applications where you want the file operations to return after they have completed (synchronous style), please read
+<a class="reference internal" href="api/nmb_NetBIOS.html"><em>nmb.NetBIOS.NetBIOS</em></a> documentation.</li>
+<li>To use pysmb in Twisted, please read <a class="reference internal" href="api/nmb_NBNSProtocol.html"><em>nmb.NetBIOSProtocol.NBNSProtocol</em></a> documentation.</li>
+</ul>
+</dd>
+<dt>As an application developer who is looking to use pysmb to implement file transfer or authentication over SMB:</dt>
+<dd><ul class="first last simple">
+<li>To use pysmb in applications where you want the file operations to return after they have completed (synchronous style), please read
+<a class="reference internal" href="api/smb_SMBConnection.html"><em>smb.SMBConnection.SMBConnection</em></a> documentation.</li>
+<li>To use pysmb in Twisted, please read <a class="reference internal" href="api/smb_SMBProtocolFactory.html"><em>smb.SMBProtocol.SMBProtocolFactory</em></a> documentation.</li>
+</ul>
+</dd>
+<dt>As a software developer who is looking to modify pysmb so that you can integrate it to other network frameworks:</dt>
+<dd><ul class="first last simple">
+<li>Read <a class="reference internal" href="extending.html"><em>Extending pysmb For Other Frameworks</em></a></li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/nmb_NBNSProtocol.html">NBNSProtocol Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/nmb_NetBIOS.html">NetBIOS class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/smb_SMBConnection.html">SMBConnection Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/smb_SMBProtocolFactory.html">SMBProtocolFactory Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/smb_SharedDevice.html">SharedDevice Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/smb_SharedFile.html">SharedFile Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/smb_exceptions.html">SMB Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending.html">Extending pysmb For Other Frameworks</a></li>
+</ul>
+</div>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="api/nmb_NBNSProtocol.html" title="NBNSProtocol Class"
+             >next</a> |</li>
+        <li><a href="#">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

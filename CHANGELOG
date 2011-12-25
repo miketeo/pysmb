@@ -1,0 +1,110 @@
+
+pysmb-1.0.0, 25 Dec 2011
+========================
+
+- Completely rewrites pysmb. API is not compatible with previous pysmb-0.x.x
+- Supports NTLMv1 and NTLMv2 authentication
+- Adds in NMB/SMB protocol implementation for use with Twisted framework
+- Tested with Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x
+- Requires Python 2.4.4 or later, and pyasn1. Not tested with Python3
+
+pysmb-0.4.5, 22 Jun 2009
+========================
+
+- Prevents pysmb from failing when there are too many files/folders to
+  be returned in a single SMB TRANS2 call. pysmb will "resume" requesting
+  for more files/folders information in subsequent SMB TRANS2 requests.
+
+pysmb-0.4.4, 12 Jan 2004
+========================
+
+- Add in support for AMK's Python Cryptography Toolkit which will be used
+  for DES password hashing. If AMK's pycrypto is found, it will be used
+  instead of mxCrypto.
+
+pysmb-0.4.3, 22 Feb 2003
+========================
+
+- Fix a bug which fails to close the socket in nmb.py on socket exception
+- Fix a bug which fails to close the NetBIOSSession in smb.py if the session
+  has not been properly established yet.
+
+pysmb-0.4.2, 03 Aug 2002
+========================
+
+- Add new methods to SharedFile instances, get_mtime_epoch, get_atime_epoch
+  and get_ctime_epoch. These methods will return the mtime, atime and ctime in
+  epoch time rather than SMB time.
+- Remove debugging printout in smb.py which has been released accidentally
+  with the last release.
+- Fix a bug in smbcp which causes to local to remote copy to fail
+
+pysmb-0.4.1, 22 Jun 2002
+========================
+
+- Fix a bug in smb.py which does not return the correct file size for files
+  with their archive bits turned off. This results in these files not being
+  retrieved or sent properly.
+- Fix some typo error in the documentations
+
+pysmb-0.4.0, 17 Apr 2002
+========================
+
+- Use NT LM0.12 dialect.
+- New smb.SMBMachine class
+- Add SMB.get_server_domain(), smb.get_server_os(), SMB.get_server_lanman()
+
+pysmb-0.3.1, 12 Nov 2001
+========================
+
+- Fix a problem with some Windows server where an UID is required when server is in share mode.
+  Now, pysmb calls login() with empty authentication information when server is in share mode.
+- Add TYPE_DOMAIN_MASTER constant and description to nmb.py.
+
+pysmb-0.3.0, 10 Nov 2001
+========================
+
+- Add support for services in share mode. Minor changes to smb.SMB class API.
+- Fix a bug in smb.py's __raw_retr_file which has failed to initialize the max_buf_size prior to usage.
+- Fix a bug in smblistshare which fails to print the correct NMB error message
+- Modify smb.py not throw AttributeError in the destructor when there is an error while creating a session
+  in the constructor
+
+pysmb-0.2.0, 04 Oct 2001
+========================
+
+- Add support for encrypted authentication using DES
+- Fix a bug(?) which treats all services and filenames as case-sensitive
+
+pysmb-0.1.3, 03 Sep 2001
+========================
+
+- Fix a bug in smblistshare and smbdu which fails to catch the nmb.NetBIOSError raised when session
+  setup fails.
+- Fix a bug in smb.SMB that arises from the change in nmb.NetBIOSSession which sends
+  the session port number as the remote host type.
+
+pysmb-0.1.2, 01 Sep 2001
+========================
+
+- Fix a bug in nmb.NetBIOSSession which specifies a TYPE_WORKSTATION for remote host instead of TYPE_SERVER.
+- Minor change to nmb.NetBIOSSession constructor API.
+- Fix a bug in smbdu which raises OverflowError when printing long file size values.
+- Fix a bug in smbcp which does not handle the destination path correctly when
+  the source file is copied to a different filename.
+
+pysmb-0.1.1, 25 Aug 2001
+========================
+
+- Change nmb's NetBIOS and NetBIOSSession class such that they raise a NetBIOSError
+  with a tuple of ( err_msg, err_class, err_code )
+- Add a function strerror() in both smb and nmb to return human readable messages
+  for error codes.
+- Fix a bug in smbcp which fails to print an error message and terminate when the
+  remote source path is not found.
+- Add in another utility, smblistshare.
+
+pysmb-0.1.0, 20 Aug 2001
+========================
+
+- First public release

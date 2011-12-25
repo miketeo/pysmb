@@ -1,0 +1,990 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>smb.base &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">pysmb 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for smb.base</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">binascii</span><span class="o">,</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">smb_constants</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">smb_structs</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">nmb.base</span> <span class="kn">import</span> <span class="n">NMBSession</span>
+<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">convertFILETIMEtoEpoch</span>
+<span class="kn">import</span> <span class="nn">ntlm</span><span class="o">,</span> <span class="nn">securityblob</span>
+
+<span class="k">class</span> <span class="nc">NotReadyError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="viewcode-block" id="NotReadyError"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.base.NotReadyError">[docs]</a>    <span class="sd">&quot;&quot;&quot;Raised when SMB connection is not ready (i.e. not authenticated or authentication failed)&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">NotConnectedError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span></div>
+<div class="viewcode-block" id="NotConnectedError"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.base.NotConnectedError">[docs]</a>    <span class="sd">&quot;&quot;&quot;Raised when underlying SMB connection has been disconnected or not connected yet&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">SMBTimeout</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBTimeout"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.base.SMBTimeout">[docs]</a>    <span class="sd">&quot;&quot;&quot;Raised when a timeout has occurred while waiting for a response or for a SMB/CIFS operation to complete.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">SMB</span><span class="p">(</span><span class="n">NMBSession</span><span class="p">):</span></div>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class represents a &quot;connection&quot; to the remote SMB/CIFS server.</span>
+<span class="sd">    It is not meant to be used directly in an application as it does not have any network transport implementations.</span>
+
+<span class="sd">    For application use, please refer to</span>
+<span class="sd">      - L{SMBProtocol.SMBProtocolFactory&lt;smb.SMBProtocol&gt;} if you are using Twisted framework</span>
+
+<span class="sd">    In [MS-CIFS], this class will contain attributes of Client, Client.Connection and Client.Session abstract data models.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">      - [MS-CIFS]: 3.2.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;SMB.SMB&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">my_name</span><span class="p">,</span> <span class="n">remote_name</span><span class="p">,</span> <span class="n">domain</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+        <span class="n">NMBSession</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">my_name</span><span class="p">,</span> <span class="n">remote_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="n">use_ntlm_v2</span> <span class="c">#: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>  <span class="c">#: MID mapped to _PendingRequest instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span> <span class="o">=</span> <span class="p">{</span> <span class="p">}</span>   <span class="c">#: Share name mapped to TID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next_rpc_call_id</span> <span class="o">=</span> <span class="mi">0</span>    <span class="c">#: Next RPC callID value. Not used directly in SMB message. Usually encapsulated in sub-commands under SMB_COM_TRANSACTION or SMB_COM_TRANSACTION2 messages</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_negotiated</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mid</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># Most of the following attributes will be initialized upon receipt of SMB_COM_NEGOTIATE message from server (via self._updateServerInfo method)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_plaintext_authentication</span> <span class="o">=</span> <span class="bp">False</span>  <span class="c">#: Similar to PlaintextAuthenticationPolicy in in [MS-CIFS] 3.2.1.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_raw_size</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_buffer_size</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c">#: Similar to MaxBufferSize as described in [MS-CIFS] 3.2.1.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_mpx_count</span> <span class="o">=</span> <span class="mi">0</span>     <span class="c">#: Similar to MaxMpxCount as described in [MS-CIFS] 3.2.1.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Authetication with remote machine &quot;</span><span class="si">%s</span><span class="s">&quot; for user &quot;</span><span class="si">%s</span><span class="s">&quot; will be using NTLM </span><span class="si">%s</span><span class="s"> authentication (</span><span class="si">%s</span><span class="s"> extended security)&#39;</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+                      <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">use_ntlm_v2</span> <span class="ow">and</span> <span class="s">&#39;v2&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="s">&#39;v1&#39;</span><span class="p">,</span>
+                      <span class="p">(</span><span class="n">SUPPORT_EXTENDED_SECURITY</span> <span class="ow">and</span> <span class="s">&#39;with&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="s">&#39;without&#39;</span><span class="p">)</span>
+
+
+    <span class="c">#</span>
+    <span class="c"># NMBSession Methods</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">onNMBSessionOK</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComNegotiateRequest</span><span class="p">()))</span>
+
+    <span class="k">def</span> <span class="nf">onNMBSessionFailed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">onNMBSessionMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Received SMB message &quot;</span><span class="si">%s</span><span class="s">&quot; (command:0x</span><span class="si">%2X</span><span class="s"> flags:0x</span><span class="si">%02X</span><span class="s"> flags2:0x</span><span class="si">%04X</span><span class="s"> TID:</span><span class="si">%d</span><span class="s"> UID:</span><span class="si">%d</span><span class="s">)&#39;</span><span class="p">,</span>
+                           <span class="n">SMB_COMMAND_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="s">&#39;&lt;unknown&gt;&#39;</span><span class="p">),</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="o">.</span><span class="n">flags2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="o">.</span><span class="n">uid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_updateState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">()</span>
+
+    <span class="c">#</span>
+    <span class="c"># Public Methods for Overriding in Subclasses</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">onAuthOK</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">onAuthFailed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="c">#</span>
+    <span class="c"># Protected Methods</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">_sendSMBMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smb_message</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">smb_message</span><span class="o">.</span><span class="n">mid</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">smb_message</span><span class="o">.</span><span class="n">mid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNextMID</span><span class="p">()</span>
+        <span class="n">smb_message</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span>
+        <span class="n">smb_message</span><span class="o">.</span><span class="n">raw_data</span> <span class="o">=</span> <span class="n">smb_message</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sendNMBMessage</span><span class="p">(</span><span class="n">smb_message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_getNextMID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mid</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mid</span> <span class="o">&gt;=</span> <span class="mh">0xFFFF</span><span class="p">:</span> <span class="c"># MID cannot be 0xFFFF. [MS-CIFS]: 2.2.1.6.2</span>
+            <span class="c"># We don&#39;t use MID of 0 as MID can be reused for SMB_COM_TRANSACTION2_SECONDARY messages</span>
+            <span class="c"># where if mid=0, _sendSMBMessage will re-assign new MID values again</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mid</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mid</span>
+
+    <span class="k">def</span> <span class="nf">_getNextRPCCallID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next_rpc_call_id</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_rpc_call_id</span>
+
+    <span class="k">def</span> <span class="nf">_updateState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">isReply</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_NEGOTIATE</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">has_negotiated</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;SMB dialect negotiation successful (ExtendedSecurity:</span><span class="si">%s</span><span class="s">)&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">hasExtendedSecurity</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_updateServerInfo</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_handleNegotiateResponse</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_SESSION_SETUP_ANDX</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">hasExtendedSecurity</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">result</span> <span class="o">=</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">decodeAuthResponseSecurityBlob</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">security_blob</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">RESULT_ACCEPT_COMPLETED</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span> <span class="o">=</span> <span class="bp">True</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Authentication (with extended security) successful!&#39;</span><span class="p">)</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">onAuthOK</span><span class="p">()</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;SMB_COM_SESSION_SETUP_ANDX status is 0 but security blob negResult value is </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">result</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">BadSecurityBlobError</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">==</span> <span class="mh">0xc0000016</span><span class="p">:</span>  <span class="c"># STATUS_MORE_PROCESSING_REQUIRED</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">result</span><span class="p">,</span> <span class="n">ntlm_token</span> <span class="o">=</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">decodeChallengeSecurityBlob</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">security_blob</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">RESULT_ACCEPT_INCOMPLETE</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_handleSessionChallenge</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">ntlm_token</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="p">(</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">BadSecurityBlobError</span><span class="p">,</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">UnsupportedSecurityProvider</span> <span class="p">),</span> <span class="n">ex</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">),</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">==</span> <span class="mh">0xc000006d</span><span class="p">:</span>  <span class="c"># STATUS_LOGON_FAILURE</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span> <span class="o">=</span> <span class="bp">False</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Authentication (with extended security) failed. Please check username and password. You may need to enable/disable NTLMv2 authentication.&#39;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">onAuthFailed</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Unknown status value (0x</span><span class="si">%08X</span><span class="s">) in SMB_COM_SESSION_SETUP_ANDX (with extended security)&#39;</span> <span class="o">%</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">internal_value</span><span class="p">,</span>
+                                            <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span> <span class="o">=</span> <span class="bp">True</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Authentication (without extended security) successful!&#39;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">onAuthOK</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span> <span class="o">=</span> <span class="bp">False</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Authentication (without extended security) failed. Please check username and password&#39;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">onAuthFailed</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_TREE_CONNECT_ANDX</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">message</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">req</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;path&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">tid</span>
+
+            <span class="n">req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">req</span><span class="p">:</span>
+                <span class="n">req</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="o">**</span><span class="n">req</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">True</span>
+
+
+    <span class="k">def</span> <span class="nf">_updateServerInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">capabilities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_raw_size</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">max_raw_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_buffer_size</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">max_buffer_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_mpx_count</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">max_mpx_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_plaintext_authentication</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">security_mode</span> <span class="o">&amp;</span> <span class="n">NEGOTIATE_ENCRYPT_PASSWORDS</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_plaintext_authentication</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Remote server only supports plaintext authentication. Your password can be stolen easily over the network.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">security_mode</span> <span class="o">&amp;</span> <span class="n">NEGOTIATE_SECURITY_SIGNATURES_REQUIRE</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedFeature</span><span class="p">(</span><span class="s">&#39;Remote server requires secure SMB message signing but current version pysmb does not support this yet.&#39;</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_handleSessionChallenge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">ntlm_token</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">hasExtendedSecurity</span>
+
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">uid</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;SMB uid is now </span><span class="si">%d</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">uid</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">uid</span>
+
+        <span class="n">server_challenge</span><span class="p">,</span> <span class="n">server_flags</span><span class="p">,</span> <span class="n">server_info</span> <span class="o">=</span> <span class="n">ntlm</span><span class="o">.</span><span class="n">decodeChallengeMessage</span><span class="p">(</span><span class="n">ntlm_token</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ntlm_v2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Performing NTLMv2 authentication (with extended security) with server challenge &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span><span class="p">,</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">server_challenge</span><span class="p">))</span>
+            <span class="n">nt_challenge_response</span><span class="p">,</span> <span class="n">lm_challenge_response</span><span class="p">,</span> <span class="n">session_key</span> <span class="o">=</span> <span class="n">ntlm</span><span class="o">.</span><span class="n">generateChallengeResponseV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span>
+                                                                                                         <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+                                                                                                         <span class="n">server_challenge</span><span class="p">,</span>
+                                                                                                         <span class="n">server_info</span><span class="p">,</span>
+                                                                                                         <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Performing NTLMv1 authentication (with extended security) with server challenge &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span><span class="p">,</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">server_challenge</span><span class="p">))</span>
+            <span class="n">nt_challenge_response</span><span class="p">,</span> <span class="n">lm_challenge_response</span><span class="p">,</span> <span class="n">session_key</span> <span class="o">=</span> <span class="n">ntlm</span><span class="o">.</span><span class="n">generateChallengeResponseV1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="n">server_challenge</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+        <span class="n">ntlm_data</span> <span class="o">=</span> <span class="n">ntlm</span><span class="o">.</span><span class="n">generateAuthenticateMessage</span><span class="p">(</span><span class="n">server_flags</span><span class="p">,</span>
+                                                     <span class="n">nt_challenge_response</span><span class="p">,</span>
+                                                     <span class="n">lm_challenge_response</span><span class="p">,</span>
+                                                     <span class="n">session_key</span><span class="p">,</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;NT challenge response is &quot;</span><span class="si">%s</span><span class="s">&quot; (</span><span class="si">%d</span><span class="s"> bytes)&#39;</span><span class="p">,</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">nt_challenge_response</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">nt_challenge_response</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;LM challenge response is &quot;</span><span class="si">%s</span><span class="s">&quot; (</span><span class="si">%d</span><span class="s"> bytes)&#39;</span><span class="p">,</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">lm_challenge_response</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">lm_challenge_response</span><span class="p">))</span>
+
+        <span class="n">blob</span> <span class="o">=</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">generateAuthSecurityBlob</span><span class="p">(</span><span class="n">ntlm_data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComSessionSetupAndxRequest__WithSecurityExtension</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">blob</span><span class="p">)))</span>
+
+
+    <span class="k">def</span> <span class="nf">_handleNegotiateResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">uid</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;SMB uid is now </span><span class="si">%d</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">uid</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">uid</span>
+
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">hasExtendedSecurity</span><span class="p">:</span>
+            <span class="n">ntlm_data</span> <span class="o">=</span> <span class="n">ntlm</span><span class="o">.</span><span class="n">generateNegotiateMessage</span><span class="p">()</span>
+            <span class="n">blob</span> <span class="o">=</span> <span class="n">securityblob</span><span class="o">.</span><span class="n">generateNegotiateSecurityBlob</span><span class="p">(</span><span class="n">ntlm_data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComSessionSetupAndxRequest__WithSecurityExtension</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">session_key</span><span class="p">,</span> <span class="n">blob</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nt_password</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ntlm</span><span class="o">.</span><span class="n">generateChallengeResponseV1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">challenge</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Performing NTLMv1 authentication (without extended security) with challenge &quot;</span><span class="si">%s</span><span class="s">&quot; and hashed password of &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span><span class="p">,</span>
+                          <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">challenge</span><span class="p">),</span>
+                          <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">nt_password</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComSessionSetupAndxRequest__NoSecurityExtension</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">session_key</span><span class="p">,</span>
+                                                                                           <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+                                                                                           <span class="n">nt_password</span><span class="p">,</span>
+                                                                                           <span class="bp">True</span><span class="p">,</span>
+                                                                                           <span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">domain</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">_listShares</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotReadyError</span><span class="p">(</span><span class="s">&#39;SMB connection not authenticated&#39;</span><span class="p">)</span>
+
+        <span class="n">expiry_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s">&#39;IPC$&#39;</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">connectSrvSvc</span><span class="p">(</span><span class="n">tid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComNTCreateAndxRequest</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\\</span><span class="s">srvsvc&#39;</span><span class="p">,</span>
+                                                  <span class="n">flags</span> <span class="o">=</span> <span class="n">NT_CREATE_REQUEST_EXTENDED_RESPONSE</span><span class="p">,</span>
+                                                  <span class="n">access_mask</span> <span class="o">=</span> <span class="n">READ_CONTROL</span> <span class="o">|</span> <span class="n">FILE_WRITE_ATTRIBUTES</span> <span class="o">|</span> <span class="n">FILE_READ_ATTRIBUTES</span> <span class="o">|</span> <span class="n">FILE_WRITE_EA</span> <span class="o">|</span> <span class="n">FILE_READ_EA</span> <span class="o">|</span> <span class="n">FILE_APPEND_DATA</span> <span class="o">|</span> <span class="n">FILE_WRITE_DATA</span> <span class="o">|</span> <span class="n">FILE_READ_DATA</span><span class="p">,</span>
+                                                  <span class="n">share_access</span> <span class="o">=</span> <span class="n">FILE_SHARE_READ</span> <span class="o">|</span> <span class="n">FILE_SHARE_WRITE</span><span class="p">,</span>
+                                                  <span class="n">create_disp</span> <span class="o">=</span> <span class="n">FILE_OPEN</span><span class="p">,</span>
+                                                  <span class="n">create_options</span> <span class="o">=</span> <span class="n">FILE_OPEN_NO_RECALL</span> <span class="o">|</span> <span class="n">FILE_NON_DIRECTORY_FILE</span><span class="p">,</span>
+                                                  <span class="n">impersonation</span> <span class="o">=</span> <span class="n">SEC_IMPERSONATE</span><span class="p">,</span>
+                                                  <span class="n">security_flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">connectSrvSvcCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">connectSrvSvcCB</span><span class="p">(</span><span class="n">create_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">create_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">create_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">call_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNextRPCCallID</span><span class="p">()</span>
+                <span class="c"># See [MS-CIFS]: 2.2.5.6.1 for more information on TRANS_TRANSACT_NMPIPE (0x0026) parameters</span>
+                <span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;HH&#39;</span><span class="p">,</span> <span class="mh">0x0026</span><span class="p">,</span> <span class="n">create_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">fid</span><span class="p">)</span>
+                <span class="c"># The data_bytes are binding call to Server Service RPC using DCE v1.1 RPC over SMB. See [MS-SRVS] and [C706]</span>
+                <span class="c"># If you wish to understand the meanings of the byte stream, I would suggest you use a recent version of WireShark to packet capture the stream</span>
+                <span class="n">data_bytes</span> <span class="o">=</span> \
+                    <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="s">&quot;&quot;&quot;05 00 0b 03 10 00 00 00 48 00 00 00&quot;&quot;&quot;</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span> <span class="o">+</span> \
+                    <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="n">call_id</span><span class="p">)</span> <span class="o">+</span> \
+                    <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">b8 10 b8 10 00 00 00 00 01 00 00 00 00 00 01 00</span>
+<span class="s">c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88</span>
+<span class="s">03 00 00 00 04 5d 88 8a eb 1c c9 11 9f e8 08 00</span>
+<span class="s">2b 10 48 60 02 00 00 00&quot;&quot;&quot;</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTransactionRequest</span><span class="p">(</span><span class="n">max_params_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                                                     <span class="n">max_data_count</span> <span class="o">=</span> <span class="mi">4280</span><span class="p">,</span>
+                                                     <span class="n">max_setup_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                                                     <span class="n">data_bytes</span> <span class="o">=</span> <span class="n">data_bytes</span><span class="p">,</span>
+                                                     <span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">setup_bytes</span><span class="p">))</span>
+                <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">create_message</span><span class="o">.</span><span class="n">tid</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">rpcBindCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">fid</span> <span class="o">=</span> <span class="n">create_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">fid</span><span class="p">)</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to list shares: Unable to locate Server Service RPC endpoint&#39;</span><span class="p">,</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">rpcBindCB</span><span class="p">(</span><span class="n">trans_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trans_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">trans_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">call_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNextRPCCallID</span><span class="p">()</span>
+
+                <span class="n">padding</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+                <span class="n">server_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">server_bytes_len</span> <span class="o">=</span> <span class="n">server_len</span> <span class="o">*</span> <span class="mi">2</span>
+                <span class="k">if</span> <span class="n">server_len</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">padding</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span>
+                    <span class="n">server_bytes_len</span> <span class="o">+=</span> <span class="mi">2</span>
+
+                <span class="c"># See [MS-CIFS]: 2.2.5.6.1 for more information on TRANS_TRANSACT_NMPIPE (0x0026) parameters</span>
+                <span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;HH&#39;</span><span class="p">,</span> <span class="mh">0x0026</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">])</span>
+                <span class="c"># The data bytes are the RPC call to NetrShareEnum (Opnum 15) at Server Service RPC.</span>
+                <span class="c"># If you wish to understand the meanings of the byte stream, I would suggest you use a recent version of WireShark to packet capture the stream</span>
+                <span class="n">data_bytes</span> <span class="o">=</span> \
+                    <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="s">&quot;&quot;&quot;05 00 00 03 10 00 00 00&quot;&quot;&quot;</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span> <span class="o">+</span> \
+                    <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;HHI&#39;</span><span class="p">,</span> <span class="mi">72</span><span class="o">+</span><span class="n">server_bytes_len</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">call_id</span><span class="p">)</span> <span class="o">+</span> \
+                    <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="s">&quot;&quot;&quot;4c 00 00 00 00 00 0f 00 00 00 02 00&quot;&quot;&quot;</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span> <span class="o">+</span> \
+                    <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;III&#39;</span><span class="p">,</span> <span class="n">server_len</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">server_len</span><span class="p">)</span> <span class="o">+</span> \
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">padding</span> <span class="o">+</span> \
+                    <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">01 00 00 00 01 00 00 00 04 00 02 00 00 00 00 00</span>
+<span class="s">00 00 00 00 ff ff ff ff 08 00 02 00 00 00 00 00</span>
+<span class="s">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTransactionRequest</span><span class="p">(</span><span class="n">max_params_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                                                     <span class="n">max_data_count</span> <span class="o">=</span> <span class="mi">4280</span><span class="p">,</span>
+                                                     <span class="n">max_setup_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                                                     <span class="n">data_bytes</span> <span class="o">=</span> <span class="n">data_bytes</span><span class="p">,</span>
+                                                     <span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">setup_bytes</span><span class="p">))</span>
+                <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">trans_message</span><span class="o">.</span><span class="n">tid</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">listShareResultsCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">fid</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">])</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">closeFid</span><span class="p">(</span><span class="n">trans_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">])</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to list shares: Unable to bind to Server Service RPC endpoint&#39;</span><span class="p">,</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">listShareResultsCB</span><span class="p">(</span><span class="n">result_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">result_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="c"># The payload.data_bytes will contain the results of the RPC call to NetrShareEnum (Opnum 15) at Server Service RPC.</span>
+                <span class="n">data_bytes</span> <span class="o">=</span> <span class="n">result_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data_bytes</span>
+                <span class="n">shares_count</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="n">data_bytes</span><span class="p">[</span><span class="mi">36</span><span class="p">:</span><span class="mi">40</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">results</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>     <span class="c"># A list of SharedDevice instances</span>
+                <span class="n">offset</span> <span class="o">=</span> <span class="mi">36</span> <span class="o">+</span> <span class="mi">12</span>  <span class="c"># You need to study the byte stream to understand the meaning of these constants</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shares_count</span><span class="p">):</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SharedDevice</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="n">data_bytes</span><span class="p">[</span><span class="n">offset</span><span class="o">+</span><span class="mi">4</span><span class="p">:</span><span class="n">offset</span><span class="o">+</span><span class="mi">8</span><span class="p">])[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
+                    <span class="n">offset</span> <span class="o">+=</span> <span class="mi">12</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shares_count</span><span class="p">):</span>
+                    <span class="n">max_length</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">length</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;III&#39;</span><span class="p">,</span> <span class="n">data_bytes</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span><span class="o">+</span><span class="mi">12</span><span class="p">])</span>
+                    <span class="n">offset</span> <span class="o">+=</span> <span class="mi">12</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span><span class="o">+</span><span class="n">length</span><span class="o">*</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">length</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">offset</span> <span class="o">+=</span> <span class="p">(</span><span class="n">length</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">offset</span> <span class="o">+=</span> <span class="p">(</span><span class="n">length</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+
+                    <span class="n">max_length</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">length</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;III&#39;</span><span class="p">,</span> <span class="n">data_bytes</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span><span class="o">+</span><span class="mi">12</span><span class="p">])</span>
+                    <span class="n">offset</span> <span class="o">+=</span> <span class="mi">12</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">comments</span> <span class="o">=</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span><span class="o">+</span><span class="n">length</span><span class="o">*</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">length</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">offset</span> <span class="o">+=</span> <span class="p">(</span><span class="n">length</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">offset</span> <span class="o">+=</span> <span class="p">(</span><span class="n">length</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="n">closeFid</span><span class="p">(</span><span class="n">result_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">])</span>
+                <span class="n">callback</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">closeFid</span><span class="p">(</span><span class="n">result_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">])</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to list shares: Unable to retrieve shared device list&#39;</span><span class="p">,</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">closeFid</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">fid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComCloseRequest</span><span class="p">(</span><span class="n">fid</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">connectCB</span><span class="p">(</span><span class="n">connect_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">connect_message</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">connect_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                    <span class="n">connectSrvSvc</span><span class="p">(</span><span class="n">connect_message</span><span class="o">.</span><span class="n">tid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to list shares: Unable to connect to IPC$&#39;</span><span class="p">,</span> <span class="n">messages_history</span><span class="p">))</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="si">%s</span><span class="s">\</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">path</span> <span class="p">),</span> <span class="n">SERVICE_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">connectCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">connectSrvSvc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">path</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_listPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">search</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotReadyError</span><span class="p">(</span><span class="s">&#39;SMB connection not authenticated&#39;</span><span class="p">)</span>
+
+        <span class="n">expiry_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">sendFindFirst</span><span class="p">(</span><span class="n">tid</span><span class="p">):</span>
+            <span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="mh">0x0001</span><span class="p">)</span>  <span class="c"># TRANS2_FIND_FIRST2 sub-command. See [MS-CIFS]: 2.2.6.2.1</span>
+            <span class="n">params_bytes</span> <span class="o">=</span> \
+                <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;HHHHI&#39;</span><span class="p">,</span>
+                            <span class="n">search</span><span class="p">,</span> <span class="c"># SearchAttributes</span>
+                            <span class="mi">100</span><span class="p">,</span>    <span class="c"># SearchCount</span>
+                            <span class="mh">0x0006</span><span class="p">,</span> <span class="c"># Flags: SMB_FIND_CLOSE_AT_EOS | SMB_FIND_RETURN_RESUME_KEYS</span>
+                            <span class="mh">0x0104</span><span class="p">,</span> <span class="c"># InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO</span>
+                            <span class="mh">0x0000</span><span class="p">)</span> <span class="c"># SearchStorageType</span>
+            <span class="n">params_bytes</span> <span class="o">+=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTransaction2Request</span><span class="p">(</span><span class="n">max_params_count</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                                                  <span class="n">max_data_count</span> <span class="o">=</span> <span class="mi">16644</span><span class="p">,</span>
+                                                  <span class="n">max_setup_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                                                  <span class="n">params_bytes</span> <span class="o">=</span> <span class="n">params_bytes</span><span class="p">,</span>
+                                                  <span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">setup_bytes</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">findFirstCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">decodeFindStruct</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">):</span>
+            <span class="c"># SMB_FIND_FILE_BOTH_DIRECTORY_INFO structure. See [MS-CIFS]: 2.2.8.1.7 and [MS-SMB]: 2.2.8.1.1</span>
+            <span class="n">info_format</span> <span class="o">=</span> <span class="s">&#39;&lt;IIQQQQQQIIIBB24s&#39;</span>
+            <span class="n">info_size</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">info_format</span><span class="p">)</span>
+
+            <span class="n">data_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="n">data_length</span><span class="p">:</span>
+                <span class="n">next_offset</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> \
+                <span class="n">create_time</span><span class="p">,</span> <span class="n">last_access_time</span><span class="p">,</span> <span class="n">last_write_time</span><span class="p">,</span> <span class="n">last_attr_change_time</span><span class="p">,</span> \
+                <span class="n">file_size</span><span class="p">,</span> <span class="n">alloc_size</span><span class="p">,</span> <span class="n">file_attributes</span><span class="p">,</span> <span class="n">filename_length</span><span class="p">,</span> <span class="n">ea_size</span><span class="p">,</span> \
+                <span class="n">short_name_length</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">short_name</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">info_format</span><span class="p">,</span> <span class="n">data_bytes</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span><span class="o">+</span><span class="n">info_size</span><span class="p">])</span>
+
+                <span class="n">offset2</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">info_size</span>
+
+                <span class="n">filename</span> <span class="o">=</span> <span class="n">data_bytes</span><span class="p">[</span><span class="n">offset2</span><span class="p">:</span><span class="n">offset2</span><span class="o">+</span><span class="n">filename_length</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+                <span class="n">short_name</span> <span class="o">=</span> <span class="n">short_name</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SharedFile</span><span class="p">(</span><span class="n">create_time</span><span class="p">,</span> <span class="n">last_access_time</span><span class="p">,</span> <span class="n">last_write_time</span><span class="p">,</span> <span class="n">last_attr_change_time</span><span class="p">,</span>
+                                          <span class="n">file_size</span><span class="p">,</span> <span class="n">alloc_size</span><span class="p">,</span> <span class="n">file_attributes</span><span class="p">,</span> <span class="n">short_name</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">next_offset</span><span class="p">:</span>
+                    <span class="n">offset</span> <span class="o">+=</span> <span class="n">next_offset</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+        <span class="k">def</span> <span class="nf">findFirstCB</span><span class="p">(</span><span class="n">find_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">find_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">find_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="c"># TRANS2_FIND_FIRST2 response. [MS-CIFS]: 2.2.6.2.2</span>
+                <span class="n">sid</span><span class="p">,</span> <span class="n">search_count</span><span class="p">,</span> <span class="n">end_of_search</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">last_name_offset</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;HHHHH&#39;</span><span class="p">,</span> <span class="n">find_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">params_bytes</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">find_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data_bytes</span><span class="p">:</span>
+                    <span class="n">decodeFindStruct</span><span class="p">(</span><span class="n">find_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data_bytes</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">end_of_search</span><span class="p">:</span>
+                    <span class="n">callback</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sendFindNext</span><span class="p">(</span><span class="n">find_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">sid</span><span class="p">,</span> <span class="n">last_name_offset</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to list </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to retrieve file list&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">sendFindNext</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">sid</span><span class="p">,</span> <span class="n">resume_key</span><span class="p">):</span>
+            <span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="mh">0x0002</span><span class="p">)</span>  <span class="c"># TRANS2_FIND_NEXT2 sub-command. See [MS-CIFS]: 2.2.6.3.1</span>
+            <span class="n">params_bytes</span> <span class="o">=</span> \
+                <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;HHHIH&#39;</span><span class="p">,</span>
+                            <span class="n">sid</span><span class="p">,</span>        <span class="c"># SID</span>
+                            <span class="mi">100</span><span class="p">,</span>        <span class="c"># SearchCount</span>
+                            <span class="mh">0x0104</span><span class="p">,</span>     <span class="c"># InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO</span>
+                            <span class="n">resume_key</span><span class="p">,</span> <span class="c"># ResumeKey</span>
+                            <span class="mh">0x000a</span><span class="p">)</span>     <span class="c"># Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS | SMB_FIND_RETURN_RESUME_KEYS</span>
+            <span class="n">params_bytes</span> <span class="o">+=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTransaction2Request</span><span class="p">(</span><span class="n">max_params_count</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                                                  <span class="n">max_data_count</span> <span class="o">=</span> <span class="mi">16644</span><span class="p">,</span>
+                                                  <span class="n">max_setup_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                                                  <span class="n">params_bytes</span> <span class="o">=</span> <span class="n">params_bytes</span><span class="p">,</span>
+                                                  <span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">setup_bytes</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">findNextCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">sid</span> <span class="o">=</span> <span class="n">sid</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">findNextCB</span><span class="p">(</span><span class="n">find_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">find_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">find_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="c"># TRANS2_FIND_NEXT2 response. [MS-CIFS]: 2.2.6.3.2</span>
+                <span class="n">search_count</span><span class="p">,</span> <span class="n">end_of_search</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">last_name_offset</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;HHHH&#39;</span><span class="p">,</span> <span class="n">find_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">params_bytes</span><span class="p">[:</span><span class="mi">8</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">find_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data_bytes</span><span class="p">:</span>
+                    <span class="n">decodeFindStruct</span><span class="p">(</span><span class="n">find_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data_bytes</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">end_of_search</span><span class="p">:</span>
+                    <span class="n">callback</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sendFindNext</span><span class="p">(</span><span class="n">find_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;sid&#39;</span><span class="p">],</span> <span class="n">last_name_offset</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to list </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to retrieve file list&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">service_name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">connectCB</span><span class="p">(</span><span class="n">connect_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">connect_message</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">connect_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                    <span class="n">sendFindFirst</span><span class="p">(</span><span class="n">connect_message</span><span class="o">.</span><span class="n">tid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to list </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to connect to shared device&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="si">%s</span><span class="s">\</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">SERVICE_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">connectCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">service_name</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sendFindFirst</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">service_name</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_retrieveFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotReadyError</span><span class="p">(</span><span class="s">&#39;SMB connection not authenticated&#39;</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">sendOpen</span><span class="p">(</span><span class="n">tid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComOpenAndxRequest</span><span class="p">(</span><span class="n">filename</span> <span class="o">=</span> <span class="n">path</span><span class="p">,</span>
+                                              <span class="n">access_mode</span> <span class="o">=</span> <span class="mh">0x0040</span><span class="p">,</span>  <span class="c"># Sharing mode: Deny nothing to others</span>
+                                              <span class="n">open_mode</span> <span class="o">=</span> <span class="mh">0x0001</span><span class="p">,</span>    <span class="c"># Failed if file does not exist</span>
+                                              <span class="n">search_attributes</span> <span class="o">=</span> <span class="n">SMB_FILE_ATTRIBUTE_HIDDEN</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_SYSTEM</span><span class="p">,</span>
+                                              <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">openCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">openCB</span><span class="p">(</span><span class="n">open_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">open_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">open_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">sendRead</span><span class="p">(</span><span class="n">open_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">open_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">fid</span><span class="p">,</span> <span class="il">0L</span><span class="p">,</span> <span class="n">open_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">file_attributes</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to retrieve </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to open file&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">sendRead</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">file_attributes</span><span class="p">):</span>
+            <span class="n">read_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_raw_size</span> <span class="o">-</span> <span class="mi">2</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComReadAndxRequest</span><span class="p">(</span><span class="n">fid</span> <span class="o">=</span> <span class="n">fid</span><span class="p">,</span>
+                                              <span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span><span class="p">,</span>
+                                              <span class="n">max_return_bytes_count</span> <span class="o">=</span> <span class="n">read_count</span><span class="p">,</span>
+                                              <span class="n">min_return_bytes_count</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mh">0xFFFF</span><span class="p">,</span> <span class="n">read_count</span><span class="p">)))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">readCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">fid</span> <span class="o">=</span> <span class="n">fid</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span><span class="p">,</span> <span class="n">file_attributes</span> <span class="o">=</span> <span class="n">file_attributes</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">readCB</span><span class="p">(</span><span class="n">read_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="c"># To avoid crazy memory usage when retrieving large files, we do not save every read_message in messages_history.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">read_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">file_obj</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">read_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">read_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data_length</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_raw_size</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+                    <span class="n">closeFid</span><span class="p">(</span><span class="n">read_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">])</span>
+                    <span class="n">callback</span><span class="p">((</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;file_attributes&#39;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;offset&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">read_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data_length</span> <span class="p">))</span>  <span class="c"># Note that this is a tuple of 3-elements</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sendRead</span><span class="p">(</span><span class="n">read_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;offset&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">read_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data_length</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;file_attributes&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">read_message</span><span class="p">)</span>
+                <span class="n">closeFid</span><span class="p">(</span><span class="n">read_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">])</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to retrieve </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Read failed&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">closeFid</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">fid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComCloseRequest</span><span class="p">(</span><span class="n">fid</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">service_name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">connectCB</span><span class="p">(</span><span class="n">connect_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">connect_message</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">connect_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                    <span class="n">sendOpen</span><span class="p">(</span><span class="n">connect_message</span><span class="o">.</span><span class="n">tid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to retrieve </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to connect to shared device&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="si">%s</span><span class="s">\</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">SERVICE_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">connectCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">service_name</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sendOpen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">service_name</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_storeFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotReadyError</span><span class="p">(</span><span class="s">&#39;SMB connection not authenticated&#39;</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">sendOpen</span><span class="p">(</span><span class="n">tid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComOpenAndxRequest</span><span class="p">(</span><span class="n">filename</span> <span class="o">=</span> <span class="n">path</span><span class="p">,</span>
+                                              <span class="n">access_mode</span> <span class="o">=</span> <span class="mh">0x0041</span><span class="p">,</span>  <span class="c"># Sharing mode: Deny nothing to others + Open for writing</span>
+                                              <span class="n">open_mode</span> <span class="o">=</span> <span class="mh">0x0010</span><span class="p">,</span>    <span class="c"># Create file if file does not exist</span>
+                                              <span class="n">search_attributes</span> <span class="o">=</span> <span class="n">SMB_FILE_ATTRIBUTE_HIDDEN</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_SYSTEM</span><span class="p">,</span>
+                                              <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">openCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">openCB</span><span class="p">(</span><span class="n">open_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">open_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">open_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">sendWrite</span><span class="p">(</span><span class="n">open_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">open_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">fid</span><span class="p">,</span> <span class="il">0L</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to store </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to open file&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">sendWrite</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+            <span class="n">write_count</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_raw_size</span><span class="p">,</span> <span class="mh">0xFFFF</span><span class="p">)</span>
+            <span class="n">data_bytes</span> <span class="o">=</span> <span class="n">file_obj</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">write_count</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data_bytes</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComWriteAndxRequest</span><span class="p">(</span><span class="n">fid</span> <span class="o">=</span> <span class="n">fid</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span><span class="p">,</span> <span class="n">data_bytes</span> <span class="o">=</span> <span class="n">data_bytes</span><span class="p">))</span>
+                <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">writeCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">fid</span> <span class="o">=</span> <span class="n">fid</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">closeFid</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">fid</span><span class="p">)</span>
+                <span class="n">callback</span><span class="p">((</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">offset</span> <span class="p">))</span>  <span class="c"># Note that this is a tuple of 2-elements</span>
+
+        <span class="k">def</span> <span class="nf">writeCB</span><span class="p">(</span><span class="n">write_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="c"># To avoid crazy memory usage when saving large files, we do not save every write_message in messages_history.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">write_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">sendWrite</span><span class="p">(</span><span class="n">write_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;offset&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">write_message</span><span class="p">)</span>
+                <span class="n">closeFid</span><span class="p">(</span><span class="n">write_message</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fid&#39;</span><span class="p">])</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to store </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Write failed&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">closeFid</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">fid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComCloseRequest</span><span class="p">(</span><span class="n">fid</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">service_name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">connectCB</span><span class="p">(</span><span class="n">connect_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">connect_message</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">connect_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                    <span class="n">sendOpen</span><span class="p">(</span><span class="n">connect_message</span><span class="o">.</span><span class="n">tid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to store </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to connect to shared device&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="si">%s</span><span class="s">\</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">SERVICE_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">connectCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">service_name</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sendOpen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">service_name</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_deleteFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path_file_pattern</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotReadyError</span><span class="p">(</span><span class="s">&#39;SMB connection not authenticated&#39;</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">sendDelete</span><span class="p">(</span><span class="n">tid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComDeleteRequest</span><span class="p">(</span><span class="n">filename_pattern</span> <span class="o">=</span> <span class="n">path</span><span class="p">,</span>
+                                            <span class="n">search_attributes</span> <span class="o">=</span> <span class="n">SMB_FILE_ATTRIBUTE_HIDDEN</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_SYSTEM</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">deleteCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">deleteCB</span><span class="p">(</span><span class="n">delete_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delete_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">delete_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">(</span><span class="n">path_file_pattern</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to store </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Delete failed&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">service_name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">connectCB</span><span class="p">(</span><span class="n">connect_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">connect_message</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">connect_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                    <span class="n">sendDelete</span><span class="p">(</span><span class="n">connect_message</span><span class="o">.</span><span class="n">tid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to delete </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to connect to shared device&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="si">%s</span><span class="s">\</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">SERVICE_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">connectCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">service_name</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sendDelete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">service_name</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_createDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotReadyError</span><span class="p">(</span><span class="s">&#39;SMB connection not authenticated&#39;</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">sendCreate</span><span class="p">(</span><span class="n">tid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComCreateDirectoryRequest</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">createCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">createCB</span><span class="p">(</span><span class="n">create_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">create_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">create_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to create directory </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Create failed&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">service_name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">connectCB</span><span class="p">(</span><span class="n">connect_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">connect_message</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">connect_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                    <span class="n">sendCreate</span><span class="p">(</span><span class="n">connect_message</span><span class="o">.</span><span class="n">tid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to create directory </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to connect to shared device&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="si">%s</span><span class="s">\</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">SERVICE_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">connectCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">service_name</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sendCreate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">service_name</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_deleteDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotReadyError</span><span class="p">(</span><span class="s">&#39;SMB connection not authenticated&#39;</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">sendDelete</span><span class="p">(</span><span class="n">tid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComDeleteDirectoryRequest</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">deleteCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">deleteCB</span><span class="p">(</span><span class="n">delete_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delete_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">delete_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to delete directory </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Delete failed&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">service_name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">connectCB</span><span class="p">(</span><span class="n">connect_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">connect_message</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">connect_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                    <span class="n">sendDelete</span><span class="p">(</span><span class="n">connect_message</span><span class="o">.</span><span class="n">tid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to delete </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to connect to shared device&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="si">%s</span><span class="s">\</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">SERVICE_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">connectCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">service_name</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sendDelete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">service_name</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">new_path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotReadyError</span><span class="p">(</span><span class="s">&#39;SMB connection not authenticated&#39;</span><span class="p">)</span>
+
+        <span class="n">new_path</span> <span class="o">=</span> <span class="n">new_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">old_path</span> <span class="o">=</span> <span class="n">old_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">sendRename</span><span class="p">(</span><span class="n">tid</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComRenameRequest</span><span class="p">(</span><span class="n">old_path</span> <span class="o">=</span> <span class="n">old_path</span><span class="p">,</span>
+                                            <span class="n">new_path</span> <span class="o">=</span> <span class="n">new_path</span><span class="p">,</span>
+                                            <span class="n">search_attributes</span> <span class="o">=</span> <span class="n">SMB_FILE_ATTRIBUTE_HIDDEN</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_SYSTEM</span><span class="p">))</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="n">tid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">renameCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">renameCB</span><span class="p">(</span><span class="n">rename_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rename_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">rename_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">((</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">new_path</span> <span class="p">))</span>  <span class="c"># Note that this is a tuple of 2-elements</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to rename </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Rename failed&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">service_name</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">connectCB</span><span class="p">(</span><span class="n">connect_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">connect_message</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">connect_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                    <span class="n">sendRename</span><span class="p">(</span><span class="n">connect_message</span><span class="o">.</span><span class="n">tid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Failed to rename </span><span class="si">%s</span><span class="s"> on </span><span class="si">%s</span><span class="s">: Unable to connect to shared device&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">messages_history</span><span class="p">))</span>
+
+            <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="si">%s</span><span class="s">\</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">service_name</span> <span class="p">),</span> <span class="n">SERVICE_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">connectCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">service_name</span><span class="p">)</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sendRename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connected_trees</span><span class="p">[</span><span class="n">service_name</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_echo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="n">messages_history</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">echoCB</span><span class="p">(</span><span class="n">echo_message</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">echo_message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">echo_message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">(</span><span class="n">echo_message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errback</span><span class="p">(</span><span class="n">OperationFailure</span><span class="p">(</span><span class="s">&#39;Echo failed&#39;</span><span class="p">,</span> <span class="n">messages_history</span><span class="p">))</span>
+
+        <span class="n">m</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="p">(</span><span class="n">ComEchoRequest</span><span class="p">(</span><span class="n">echo_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sendSMBMessage</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">]</span> <span class="o">=</span> <span class="n">_PendingRequest</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">echoCB</span><span class="p">,</span> <span class="n">errback</span><span class="p">)</span>
+        <span class="n">messages_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SharedDevice</span><span class="p">:</span>
+<div class="viewcode-block" id="SharedDevice"><a class="viewcode-back" href="../../api/smb_SharedDevice.html#smb.base.SharedDevice">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains information about a single shared device on the remote server.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># The following constants are taken from [MS-SRVS]: 2.2.2.4</span>
+    <span class="c"># They are used to identify the type of shared resource from the results from the NetrShareEnum in Server Service RPC</span>
+    <span class="n">DISK_TREE</span>   <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">PRINT_QUEUE</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">COMM_DEVICE</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">IPC</span>         <span class="o">=</span> <span class="mh">0x03</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">comments</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>         <span class="c">#: An unicode string containing the name of the shared device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comments</span> <span class="o">=</span> <span class="n">comments</span> <span class="c">#: An unicode string containing the user description of the shared device</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SharedDevice.type"><a class="viewcode-back" href="../../api/smb_SharedDevice.html#smb.base.SharedDevice.type">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns one of the following integral constants.</span>
+<span class="sd">         - SharedDevice.DISK_TREE</span>
+<span class="sd">         - SharedDevice.PRINT_QUEUE</span>
+<span class="sd">         - SharedDevice.COMM_DEVICE</span>
+<span class="sd">         - SharedDevice.IPC</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span>
+
+    <span class="nd">@property</span></div>
+    <span class="k">def</span> <span class="nf">isSpecial</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SharedDevice.isSpecial"><a class="viewcode-back" href="../../api/smb_SharedDevice.html#smb.base.SharedDevice.isSpecial">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if this shared device is a special share reserved for interprocess communication (IPC$)</span>
+<span class="sd">        or remote administration of the server (ADMIN$). Can also refer to administrative shares such as</span>
+<span class="sd">        C$, D$, E$, and so forth</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="o">&amp;</span> <span class="mh">0x80000000</span><span class="p">)</span>
+
+    <span class="nd">@property</span></div>
+    <span class="k">def</span> <span class="nf">isTemporary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SharedDevice.isTemporary"><a class="viewcode-back" href="../../api/smb_SharedDevice.html#smb.base.SharedDevice.isTemporary">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if this is a temporary share that is not persisted for creation each time the file server initializes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_type</span> <span class="o">&amp;</span> <span class="mh">0x40000000</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+        <span class="k">return</span> <span class="s">u&#39;Shared device: </span><span class="si">%s</span><span class="s"> (type:0x</span><span class="si">%02x</span><span class="s"> comments:</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">comments</span> <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SharedFile</span><span class="p">:</span></div>
+<div class="viewcode-block" id="SharedFile"><a class="viewcode-back" href="../../api/smb_SharedFile.html#smb.base.SharedFile">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contain information about a file/folder entry that is shared on the shared device.</span>
+
+<span class="sd">    As an application developer, you should not need to instantiate a *SharedFile* instance directly in your application.</span>
+<span class="sd">    These *SharedFile* instances are usually returned via a call to *listPath* method in :doc:`smb.SMBProtocol.SMBProtocolFactory&lt;smb_SMBProtocolFactory&gt;`.</span>
+
+<span class="sd">    If you encounter *SharedFile* instance where its short_name attribute is empty but the filename attribute contains a short name which does not correspond</span>
+<span class="sd">    to any files/folders on your remote shared device, it could be that the original filename on the file/folder entry on the shared device contains</span>
+<span class="sd">    one of these prohibited characters: &quot;\/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2.2.1.1.1 for more details).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">create_time</span><span class="p">,</span> <span class="n">last_access_time</span><span class="p">,</span> <span class="n">last_write_time</span><span class="p">,</span> <span class="n">last_attr_change_time</span><span class="p">,</span> <span class="n">file_size</span><span class="p">,</span> <span class="n">alloc_size</span><span class="p">,</span> <span class="n">file_attributes</span><span class="p">,</span> <span class="n">short_name</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_time</span> <span class="o">=</span> <span class="n">create_time</span>  <span class="c">#: Float value in number of seconds since 1970-01-01 00:00:00 to the time of creation of this file resource on the remote server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_access_time</span> <span class="o">=</span> <span class="n">last_access_time</span>  <span class="c">#: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last access of this file resource on the remote server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_write_time</span> <span class="o">=</span> <span class="n">last_write_time</span>    <span class="c">#: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last modification of this file resource on the remote server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_attr_change_time</span> <span class="o">=</span> <span class="n">last_attr_change_time</span>  <span class="c">#: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_size</span> <span class="o">=</span> <span class="n">file_size</span>   <span class="c">#: File size in number of bytes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alloc_size</span> <span class="o">=</span> <span class="n">alloc_size</span> <span class="c">#: Total number of bytes allocated to store this file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_attributes</span> <span class="o">=</span> <span class="n">file_attributes</span> <span class="c">#: A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span> <span class="o">=</span> <span class="n">short_name</span> <span class="c">#: Unicode string containing the short name of this file (usually in 8.3 notation)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>     <span class="c">#: Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">isDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SharedFile.isDirectory"><a class="viewcode-back" href="../../api/smb_SharedFile.html#smb.base.SharedFile.isDirectory">[docs]</a>        <span class="sd">&quot;&quot;&quot;A convenience property to return True if this file resource is a directory on the remote server&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_attributes</span> <span class="o">&amp;</span> <span class="n">ATTR_DIRECTORY</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+        <span class="k">return</span> <span class="s">u&#39;Shared file: </span><span class="si">%s</span><span class="s"> (FileSize:</span><span class="si">%d</span><span class="s"> bytes, isDirectory:</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">isDirectory</span> <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_PendingRequest</span><span class="p">:</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">errback</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mid</span> <span class="o">=</span> <span class="n">mid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expiry_time</span> <span class="o">=</span> <span class="n">expiry_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errback</span> <span class="o">=</span> <span class="n">errback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">pysmb 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

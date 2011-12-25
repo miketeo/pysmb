@@ -1,0 +1,159 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SharedDevice Class &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="../index.html" />
+    <link rel="next" title="SharedFile Class" href="smb_SharedFile.html" />
+    <link rel="prev" title="SMBProtocolFactory Class" href="smb_SMBProtocolFactory.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="smb_SharedFile.html" title="SharedFile Class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="smb_SMBProtocolFactory.html" title="SMBProtocolFactory Class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="smb_SMBProtocolFactory.html"
+                        title="previous chapter">SMBProtocolFactory Class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="smb_SharedFile.html"
+                        title="next chapter">SharedFile Class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/smb_SharedDevice.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="shareddevice-class">
+<h1>SharedDevice Class<a class="headerlink" href="#shareddevice-class" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="smb.base.SharedDevice">
+<em class="property">class </em><tt class="descclassname">smb.base.</tt><tt class="descname">SharedDevice</tt><big>(</big><em>type</em>, <em>name</em>, <em>comments</em><big>)</big><a class="reference internal" href="../_modules/smb/base.html#SharedDevice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedDevice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains information about a single shared device on the remote server.</p>
+<dl class="attribute">
+<dt id="smb.base.SharedDevice.comments">
+<tt class="descname">comments</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedDevice.comments" title="Permalink to this definition">¶</a></dt>
+<dd><p>An unicode string containing the user description of the shared device</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.base.SharedDevice.isSpecial">
+<tt class="descname">isSpecial</tt><a class="reference internal" href="../_modules/smb/base.html#SharedDevice.isSpecial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedDevice.isSpecial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if this shared device is a special share reserved for interprocess communication (IPC$)
+or remote administration of the server (ADMIN$). Can also refer to administrative shares such as
+C$, D$, E$, and so forth</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.base.SharedDevice.isTemporary">
+<tt class="descname">isTemporary</tt><a class="reference internal" href="../_modules/smb/base.html#SharedDevice.isTemporary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedDevice.isTemporary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if this is a temporary share that is not persisted for creation each time the file server initializes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.base.SharedDevice.name">
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedDevice.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>An unicode string containing the name of the shared device</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.base.SharedDevice.type">
+<tt class="descname">type</tt><a class="reference internal" href="../_modules/smb/base.html#SharedDevice.type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedDevice.type" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Returns one of the following integral constants.</dt>
+<dd><ul class="first last simple">
+<li>SharedDevice.DISK_TREE</li>
+<li>SharedDevice.PRINT_QUEUE</li>
+<li>SharedDevice.COMM_DEVICE</li>
+<li>SharedDevice.IPC</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="smb_SharedFile.html" title="SharedFile Class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="smb_SMBProtocolFactory.html" title="SMBProtocolFactory Class"
+             >previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

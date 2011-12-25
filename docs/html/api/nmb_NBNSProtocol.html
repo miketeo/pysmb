@@ -1,0 +1,177 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>NBNSProtocol Class &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="../index.html" />
+    <link rel="next" title="NetBIOS class" href="nmb_NetBIOS.html" />
+    <link rel="prev" title="Welcome to pysmb’s documentation!" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="nmb_NetBIOS.html" title="NetBIOS class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Welcome to pysmb’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">Welcome to pysmb&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="nmb_NetBIOS.html"
+                        title="next chapter">NetBIOS class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/nmb_NBNSProtocol.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="nbnsprotocol-class">
+<h1>NBNSProtocol Class<a class="headerlink" href="#nbnsprotocol-class" title="Permalink to this headline">¶</a></h1>
+<p>pysmb has a <em>NBNSProtocol</em> implementation for Twisted framework.
+This allows you to perform name query asynchronously without having your application to block and wait for the results.</p>
+<dl class="docutils">
+<dt>In your project,</dt>
+<dd><ol class="first last arabic simple">
+<li>Create a NBNSProtocol instance.</li>
+<li>Just call <em>queryName</em> method which will return a <em>Deferred</em> instance. Add your callback function to the <em>Deferred</em> instance via <em>addCallback</em> method to receive the results of the name query.</li>
+<li>When you are done with the NBNSProtocol instance, call its &lt;NBNSProtocol instance&gt;.transport.stopListening method to remove this instance from the reactor.</li>
+</ol>
+</dd>
+</dl>
+<dl class="class">
+<dt id="nmb.NetBIOSProtocol.NBNSProtocol">
+<em class="property">class </em><tt class="descclassname">nmb.NetBIOSProtocol.</tt><tt class="descname">NBNSProtocol</tt><big>(</big><em>broadcast=True</em>, <em>listen_port=0</em><big>)</big><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="nmb.NetBIOSProtocol.NBNSProtocol.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>broadcast=True</em>, <em>listen_port=0</em><big>)</big><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiate a NBNSProtocol instance.</p>
+<p>This automatically calls reactor.listenUDP method to start listening for incoming packets, so you <strong>must not</strong> call the listenUDP method again.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>broadcast</strong> (<em>boolean</em>) &#8211; A boolean flag to indicate if we should setup the listening UDP port in broadcast mode</li>
+<li><strong>listen_port</strong> (<em>integer</em>) &#8211; Specifies the UDP port number to bind to for listening. If zero, OS will automatically select a free port number.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nmb.NetBIOSProtocol.NBNSProtocol.queryName">
+<tt class="descname">queryName</tt><big>(</big><em>name</em>, <em>ip=''</em>, <em>port=137</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol.queryName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol.queryName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a query on the network and hopes that if machine matching the <em>name</em> will reply with its IP address.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ip</strong> (<em>string</em>) &#8211; If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.
+If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</li>
+<li><strong>port</strong> (<em>integer</em>) &#8211; The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.</li>
+<li><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds to wait for a reply, after which the returned Deferred instance will be called with a NetBIOSTimeout exception.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a list of IP addresses in dotted notation (aaa.bbb.ccc.ddd).
+On timeout, the errback function will be called with a Failure instance wrapping around a NetBIOSTimeout exception</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nmb.NetBIOSProtocol.NetBIOSTimeout">
+<em class="property">class </em><tt class="descclassname">nmb.NetBIOSProtocol.</tt><tt class="descname">NetBIOSTimeout</tt><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NetBIOSTimeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NetBIOSTimeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised in NBNSProtocol via Deferred.errback method when queryName method has timeout waiting for reply</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="nmb_NetBIOS.html" title="NetBIOS class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Welcome to pysmb’s documentation!"
+             >previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

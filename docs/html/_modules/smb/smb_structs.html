@@ -1,0 +1,1367 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>smb.smb_structs &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">pysmb 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for smb.smb_structs</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">struct</span><span class="o">,</span> <span class="nn">types</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">binascii</span><span class="o">,</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">StringIO</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span> <span class="nn">smb_constants</span> <span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="c"># Set to True if you want to enable support for extended security. Required for Windows Vista and later</span>
+<span class="n">SUPPORT_EXTENDED_SECURITY</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c"># Supported dialects</span>
+<span class="n">DIALECTS</span> <span class="o">=</span> <span class="p">[</span> <span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">dialect</span> <span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span> <span class="p">(</span> <span class="s">&#39;NT_LAN_MANAGER_DIALECT&#39;</span><span class="p">,</span> <span class="s">&#39;NT LM 0.12&#39;</span> <span class="p">),</span> <span class="p">]):</span>
+    <span class="n">DIALECTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dialect</span><span class="p">)</span>
+    <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+
+
+<span class="k">class</span> <span class="nc">UnsupportedFeature</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="viewcode-block" id="UnsupportedFeature"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.UnsupportedFeature">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Raised when an supported feature is present/required in the protocol but is not</span>
+<span class="sd">    currently supported by pysmb</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">ProtocolError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span></div>
+<div class="viewcode-block" id="ProtocolError"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.ProtocolError">[docs]</a>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">data_buf</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">smb_message</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_buf</span> <span class="o">=</span> <span class="n">data_buf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span> <span class="o">=</span> <span class="n">smb_message</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="p">:</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">20</span> <span class="o">+</span> <span class="s">&#39; SMB Message &#39;</span> <span class="o">+</span> <span class="s">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">20</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_buf</span><span class="p">:</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">20</span> <span class="o">+</span> <span class="s">&#39; SMB Data Packet (hex) &#39;</span> <span class="o">+</span> <span class="s">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">20</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buf</span><span class="p">))</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">OperationFailure</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span></div>
+<div class="viewcode-block" id="OperationFailure"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.OperationFailure">[docs]</a>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">smb_messages</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smb_messages</span> <span class="o">=</span> <span class="n">smb_messages</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smb_messages</span><span class="p">):</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">20</span> <span class="o">+</span> <span class="s">&#39; SMB Message </span><span class="si">%d</span><span class="s"> &#39;</span> <span class="o">%</span> <span class="n">idx</span> <span class="o">+</span> <span class="s">&#39;=&#39;</span> <span class="o">*</span> <span class="mi">20</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SMB Header:&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;-----------&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SMB Data Packet (hex):&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;----------------------&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">raw_data</span><span class="p">))</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">SMBError</span><span class="p">:</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">=</span> <span class="il">0L</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_ntstatus</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_ntstatus</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;NTSTATUS=0x</span><span class="si">%08X</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;ErrorClass=0x</span><span class="si">%02X</span><span class="s"> ErrorCode=0x</span><span class="si">%04X</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span> <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hasError</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">!=</span> <span class="mi">0</span>
+
+
+<span class="k">class</span> <span class="nc">SMBMessage</span><span class="p">:</span>
+
+    <span class="n">HEADER_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&quot;&lt;4sBIBHHQxxHHHHB&quot;</span>
+    <span class="n">HEADER_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">HEADER_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;SMB.SMBMessage&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">payload</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Command: 0x</span><span class="si">%02X</span><span class="s"> (</span><span class="si">%s</span><span class="s">) </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">SMB_COMMAND_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="s">&#39;&lt;unknown&gt;&#39;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Status: </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Flags: 0x</span><span class="si">%02X</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Flags2: 0x</span><span class="si">%04X</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags2</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;PID: </span><span class="si">%d</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;UID: </span><span class="si">%d</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;MID: </span><span class="si">%d</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;TID: </span><span class="si">%d</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Security: 0x</span><span class="si">%016X</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">security</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Parameters: </span><span class="si">%d</span><span class="s"> bytes </span><span class="si">%s%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">,</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;Data: </span><span class="si">%d</span><span class="s"> bytes </span><span class="si">%s%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">,</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
+        <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">SMBError</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mid</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">security</span> <span class="o">=</span> <span class="il">0L</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">isReply</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">SMB_FLAGS_REPLY</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hasExtendedSecurity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags2</span> <span class="o">&amp;</span> <span class="n">SMB_FLAGS2_EXTENDED_SECURITY</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Encode this SMB message into a series of bytes suitable to be embedded with a NetBIOS session message.</span>
+<span class="sd">        AssertionError will be raised if this SMB message has not been initialized with a Payload instance</span>
+
+<span class="sd">        @return: a string containing the encoded SMB message</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">parameters_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">parameters_len</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
+
+        <span class="n">headers_data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">HEADER_STRUCT_FORMAT</span><span class="p">,</span>
+                                   <span class="s">&#39;</span><span class="se">\xFF</span><span class="s">SMB&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">internal_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">flags2</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">security</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">parameters_len</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">headers_data</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Decodes the SMB message in buf.</span>
+<span class="sd">        All fields of the SMBMessage object will be reset to default values before decoding.</span>
+<span class="sd">        On errors, do not assume that the fields will be reinstated back to what they are before</span>
+<span class="sd">        this method is invoked.</span>
+
+<span class="sd">        @param buf: data containing one complete SMB message</span>
+<span class="sd">        @type buf: string</span>
+<span class="sd">        @return: a positive integer indicating the number of bytes used in buf to decode this SMB message</span>
+<span class="sd">        @raise ProtocolError: raised when decoding fails</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">buf_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">buf_len</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span><span class="p">:</span>
+            <span class="c"># We need at least 32 bytes (header) + 1 byte (parameter count)</span>
+            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB header&#39;</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+        <span class="n">protocol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span> \
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags2</span><span class="p">,</span> <span class="n">pid_high</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">security</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tid</span><span class="p">,</span> \
+        <span class="n">pid_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">params_count</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">HEADER_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">buf</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">protocol</span> <span class="o">!=</span> <span class="s">&#39;</span><span class="se">\xFF</span><span class="s">SMB&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Invalid 4-byte protocol field&#39;</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">pid_high</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="n">pid_low</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">is_ntstatus</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags2</span> <span class="o">&amp;</span> <span class="n">SMB_FLAGS2_NT_STATUS</span><span class="p">)</span>
+
+        <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span>
+        <span class="k">if</span> <span class="n">buf_len</span> <span class="o">&lt;</span> <span class="n">params_count</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c"># Not enough data in buf to decode up to body length</span>
+            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data. Parameters list decoding failed&#39;</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+
+        <span class="n">datalen_offset</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">params_count</span><span class="o">*</span><span class="mi">2</span>
+        <span class="n">body_len</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="n">buf</span><span class="p">[</span><span class="n">datalen_offset</span><span class="p">:</span><span class="n">datalen_offset</span><span class="o">+</span><span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">body_len</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">buf_len</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">datalen_offset</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">body_len</span><span class="p">):</span>
+            <span class="c"># Not enough data in buf to decode body</span>
+            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data. Body decoding failed&#39;</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">datalen_offset</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">body_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="n">datalen_offset</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span><span class="n">datalen_offset</span><span class="o">+</span><span class="mi">2</span><span class="o">+</span><span class="n">body_len</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_data</span> <span class="o">=</span> <span class="n">buf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_decodePayload</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="n">params_count</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">body_len</span>
+
+    <span class="k">def</span> <span class="nf">_decodePayload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_READ_ANDX</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComReadAndxResponse</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_WRITE_ANDX</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComWriteAndxResponse</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_TRANSACTION</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComTransactionResponse</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_TRANSACTION2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComTransaction2Response</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_OPEN_ANDX</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComOpenAndxResponse</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_NT_CREATE_ANDX</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComNTCreateAndxResponse</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_TREE_CONNECT_ANDX</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComTreeConnectAndxResponse</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_ECHO</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComEchoResponse</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_SESSION_SETUP_ANDX</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComSessionSetupAndxResponse</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_NEGOTIATE</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">ComNegotiateResponse</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Payload</span><span class="p">:</span>
+
+    <span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\xFF\x00\x00\x00</span><span class="s">&#39;</span>
+    <span class="n">DEFAULT_ANDX_PARAM_SIZE</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="c"># SMB_FLAGS2_UNICODE must always be enabled. Without this, almost all the Payload subclasses will need to be</span>
+        <span class="c"># rewritten to check for OEM/Unicode strings which will be tedious. Fortunately, almost all tested CIFS services</span>
+        <span class="c"># support SMB_FLAGS2_UNICODE by default.</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">payload</span> <span class="o">==</span> <span class="bp">self</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span>  <span class="n">SMB_FLAGS_CASE_INSENSITIVE</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">=</span> <span class="n">SMB_FLAGS2_UNICODE</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_NT_STATUS</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_IS_LONG_NAME</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_LONG_NAMES</span>
+
+        <span class="k">if</span> <span class="n">SUPPORT_EXTENDED_SECURITY</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">|=</span> <span class="n">SMB_FLAGS2_EXTENDED_SECURITY</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+
+<span class="k">class</span> <span class="nc">ComNegotiateRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.52.1</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.5.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_NEGOTIATE</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">payload</span> <span class="o">==</span> <span class="bp">self</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s">&#39;</span><span class="se">\x02</span><span class="s">&#39;</span><span class="o">+</span><span class="n">s</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\x00</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">DIALECTS</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">ComNegotiateResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains information on the SMB_COM_NEGOTIATE response from server</span>
+
+<span class="sd">    After calling the decode method, each instance will contain the following attributes,</span>
+<span class="sd">    - security_mode (integer)</span>
+<span class="sd">    - max_mpx_count (integer)</span>
+<span class="sd">    - max_number_vcs (integer)</span>
+<span class="sd">    - max_buffer_size (long)</span>
+<span class="sd">    - max_raw_size (long)</span>
+<span class="sd">    - session_key (long)</span>
+<span class="sd">    - capabilities (long)</span>
+<span class="sd">    - system_time (long)</span>
+<span class="sd">    - server_time_zone (integer)</span>
+<span class="sd">    - challenge_length (integer)</span>
+
+<span class="sd">    If the underlying SMB message&#39;s flag2 does not have SMB_FLAGS2_EXTENDED_SECURITY bit enabled,</span>
+<span class="sd">    then the instance will have the following additional attributes,</span>
+<span class="sd">    - challenge (string)</span>
+<span class="sd">    - domain (unicode)</span>
+
+<span class="sd">    If the underlying SMB message&#39;s flags2 has SMB_FLAGS2_EXTENDED_SECURITY bit enabled,</span>
+<span class="sd">    then the instance will have the following additional attributes,</span>
+<span class="sd">    - server_guid (string)</span>
+<span class="sd">    - security_blob (string)</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.5.2.1</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.52.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HBHHIIIIQHB&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_NEGOTIATE</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">isReply</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not a SMB_COM_NEGOTIATE reply&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">security_mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mpx_count</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_number_vcs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_buffer_size</span><span class="p">,</span> \
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_raw_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">server_time_zone</span><span class="p">,</span> \
+        <span class="bp">self</span><span class="o">.</span><span class="n">challenge_length</span> <span class="o">=</span> <span class="p">(</span> <span class="mi">0</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">10</span>
+
+        <span class="n">data_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data_len</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_NEGOTIATE dialect_index field&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dialect_index</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dialect_index</span> <span class="o">==</span> <span class="n">NT_LAN_MANAGER_DIALECT</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data_len</span> <span class="o">!=</span> <span class="p">(</span><span class="mh">0x11</span> <span class="o">*</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;NT LAN Manager dialect selected in SMB_COM_NEGOTIATE but parameters bytes count (</span><span class="si">%d</span><span class="s">) does not meet specs&#39;</span> <span class="o">%</span> <span class="n">data_len</span><span class="p">,</span>
+                                    <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">security_mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_mpx_count</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_number_vcs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_buffer_size</span><span class="p">,</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">max_raw_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">server_time_zone</span><span class="p">,</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">challenge_length</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dialect_index</span> <span class="o">==</span> <span class="mh">0xFFFF</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Server does not support any of the pysmb dialects. Please email pysmb to add in support for your OS&#39;</span><span class="p">,</span>
+                                <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Unknown dialect index (0x</span><span class="si">%04X</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">dialect_index</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+        <span class="n">data_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">hasExtendedSecurity</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">challenge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">challenge_length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data_len</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">challenge_length</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">challenge</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">challenge_length</span><span class="p">]</span>
+
+                    <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+                    <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">challenge_length</span>
+                    <span class="k">while</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="n">data_len</span><span class="p">:</span>
+                        <span class="n">_s</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">_s</span> <span class="o">==</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+                            <span class="k">break</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">s</span> <span class="o">+=</span> <span class="n">_s</span>
+                            <span class="n">offset</span> <span class="o">+=</span> <span class="mi">2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_NEGOTIATE (without security extensions) Challenge field&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data_len</span> <span class="o">&lt;</span> <span class="mi">16</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_NEGOTIATE (with security extensions) ServerGUID field&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">server_guid</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="mi">16</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">security_blob</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">16</span><span class="p">:]</span>
+
+
+<span class="k">class</span> <span class="nc">ComSessionSetupAndxRequest__WithSecurityExtension</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.6.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HHHIHII&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_key</span><span class="p">,</span> <span class="n">security_blob</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_key</span> <span class="o">=</span> <span class="n">session_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">security_blob</span> <span class="o">=</span> <span class="n">security_blob</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_SESSION_SETUP_ANDX</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">hasExtendedSecurity</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">|=</span> <span class="n">SMB_FLAGS2_UNICODE</span>
+
+        <span class="n">cap</span> <span class="o">=</span> <span class="n">CAP_UNICODE</span> <span class="o">|</span> <span class="n">CAP_STATUS32</span> <span class="o">|</span> <span class="n">CAP_EXTENDED_SECURITY</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="mi">16644</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_key</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">security_blob</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cap</span><span class="p">)</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">security_blob</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">SMBMessage</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">))</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span> <span class="o">*</span> <span class="mi">4</span>
+
+
+<span class="k">class</span> <span class="nc">ComSessionSetupAndxRequest__NoSecurityExtension</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.53.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HHHIHHII&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_key</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">is_unicode</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session_key</span> <span class="o">=</span> <span class="n">session_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_unicode</span> <span class="o">=</span> <span class="n">is_unicode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_SESSION_SETUP_ANDX</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_unicode</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">|=</span> <span class="n">SMB_FLAGS2_UNICODE</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">&amp;=</span> <span class="p">(</span><span class="o">~</span><span class="n">SMB_FLAGS2_UNICODE</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">)</span>
+
+        <span class="n">password_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="mi">16644</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_key</span><span class="p">,</span>
+                        <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_unicode</span> <span class="ow">and</span> <span class="n">password_len</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_unicode</span> <span class="ow">and</span> <span class="n">password_len</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="mi">0</span><span class="p">,</span>
+                        <span class="n">CAP_UNICODE</span> <span class="o">|</span> <span class="n">CAP_LARGE_FILES</span> <span class="o">|</span> <span class="n">CAP_STATUS32</span><span class="p">)</span>
+
+        <span class="n">est_offset</span> <span class="o">=</span> <span class="n">SMBMessage</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span>  <span class="c"># To check if data until SMB paramaters are aligned to a 16-bit boundary</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">est_offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">))</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">&amp;</span> <span class="n">SMB_FLAGS2_UNICODE</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">&amp;</span> <span class="n">SMB_FLAGS2_UNICODE</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">est_offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">))</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">&amp;</span> <span class="n">SMB_FLAGS2_UNICODE</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">&amp;</span> <span class="n">SMB_FLAGS2_UNICODE</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span> <span class="o">+</span> <span class="s">&#39;pysmb&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">pysmb</span><span class="se">\0</span><span class="s">&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComSessionSetupAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains information on the SMB_COM_SESSION_SETUP_ANDX response from server</span>
+
+<span class="sd">    If the underlying SMB message&#39;s flags2 does not have SMB_FLAGS2_EXTENDED_SECURITY bit enabled,</span>
+<span class="sd">    then the instance will have the following attributes,</span>
+<span class="sd">    - action</span>
+
+<span class="sd">    If the underlying SMB message&#39;s flags2 has SMB_FLAGS2_EXTENDED_SECURITY bit enabled</span>
+<span class="sd">    and the message status is STATUS_MORE_PROCESSING_REQUIRED or equals to 0x00 (no error),</span>
+<span class="sd">    then the instance will have the following attributes,</span>
+<span class="sd">    - action</span>
+<span class="sd">    - securityblob</span>
+
+<span class="sd">    If the underlying SMB message&#39;s flags2 has SMB_FLAGS2_EXTENDED_SECURITY bit enabled but</span>
+<span class="sd">    the message status is not STATUS_MORE_PROCESSING_REQUIRED</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.6.2</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.53.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NOSECURE_PARAMETER_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;BBHH&#39;</span>
+    <span class="n">NOSECURE_PARAMETER_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">NOSECURE_PARAMETER_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="n">SECURE_PARAMETER_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;BBHHH&#39;</span>
+    <span class="n">SECURE_PARAMETER_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">SECURE_PARAMETER_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_SESSION_SETUP_ANDX</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">hasExtendedSecurity</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">NOSECURE_PARAMETER_STRUCT_SIZE</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_SESSION_SETUP_ANDX (no security extensions) parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+                <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NOSECURE_PARAMETER_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">NOSECURE_PARAMETER_STRUCT_SIZE</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span> <span class="ow">or</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">==</span> <span class="mh">0xc0000016</span><span class="p">:</span>   <span class="c"># STATUS_MORE_PROCESSING_REQUIRED</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">SECURE_PARAMETER_STRUCT_SIZE</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_SESSION_SETUP_ANDX (with security extensions) parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+                <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span><span class="p">,</span> <span class="n">blob_length</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SECURE_PARAMETER_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">SECURE_PARAMETER_STRUCT_SIZE</span><span class="p">])</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">blob_length</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_SESSION_SETUP_ANDX (with security extensions) security blob&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">security_blob</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[:</span><span class="n">blob_length</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.55.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HH&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">service</span> <span class="o">=</span> <span class="n">service</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_TREE_CONNECT_ANDX</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">password_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="mh">0x08</span> <span class="o">|</span> <span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">tid</span> <span class="ow">and</span> <span class="mh">0x0001</span><span class="p">)</span> <span class="ow">or</span> <span class="mh">0x00</span><span class="p">,</span>  <span class="c"># Disconnect tid, if message.tid must be non-zero</span>
+                        <span class="n">password_len</span><span class="p">)</span>
+
+        <span class="n">padding</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">password_len</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padding</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+
+        <span class="c"># Note that service field is never encoded in UTF-16LE. [MS-CIFS]: 2.2.1.1</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">+</span> <span class="n">padding</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">service</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComTreeConnectAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains information about the SMB_COM_TREE_CONNECT_ANDX response from the server.</span>
+
+<span class="sd">    If the message has no errors, each instance contains the following attributes:</span>
+<span class="sd">    - optional_support</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.55.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;BBHH&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_TREE_CONNECT_ANDX</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_TREE_CONNECT_ANDX parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optional_support</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">])</span>
+
+
+<span class="k">class</span> <span class="nc">ComNTCreateAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.64.1</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.9.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;BHIIIQIIIIIB&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">root_fid</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">access_mask</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">allocation_size</span> <span class="o">=</span> <span class="il">0L</span><span class="p">,</span> <span class="n">ext_attr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">share_access</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">create_disp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">create_options</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">impersonation</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">security_flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_fid</span> <span class="o">=</span> <span class="n">root_fid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_mask</span> <span class="o">=</span> <span class="n">access_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allocation_size</span> <span class="o">=</span> <span class="n">allocation_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ext_attr</span> <span class="o">=</span> <span class="n">ext_attr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">share_access</span> <span class="o">=</span> <span class="n">share_access</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_disp</span> <span class="o">=</span> <span class="n">create_disp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_options</span> <span class="o">=</span> <span class="n">create_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impersonation</span> <span class="o">=</span> <span class="n">impersonation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">security_flags</span> <span class="o">=</span> <span class="n">security_flags</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_NT_CREATE_ANDX</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">filename_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="mh">0x00</span><span class="p">,</span>                  <span class="c"># reserved</span>
+                        <span class="n">filename_len</span><span class="p">,</span>          <span class="c"># NameLength</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span>            <span class="c"># Flags</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">root_fid</span><span class="p">,</span>         <span class="c"># RootDirectoryFID</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">access_mask</span><span class="p">,</span>      <span class="c"># DesiredAccess</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">allocation_size</span><span class="p">,</span>  <span class="c"># AllocationSize</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ext_attr</span><span class="p">,</span>         <span class="c"># ExtFileAttributes</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">share_access</span><span class="p">,</span>     <span class="c"># ShareAccess</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">create_disp</span><span class="p">,</span>      <span class="c"># CreateDisposition</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">create_options</span><span class="p">,</span>   <span class="c"># CreateOptions</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">impersonation</span><span class="p">,</span>    <span class="c"># ImpersonationLevel</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">security_flags</span><span class="p">)</span>   <span class="c"># SecurityFlags</span>
+
+        <span class="n">padding</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">))</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padding</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">padding</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span>
+
+
+<span class="k">class</span> <span class="nc">ComNTCreateAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains (partial) information about the SMB_COM_NT_CREATE_ANDX response from the server.</span>
+
+<span class="sd">    Each instance contains the following attributes after decoding:</span>
+<span class="sd">    - oplock_level</span>
+<span class="sd">    - fid</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.64.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;BBHBH&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_NT_CREATE_ANDX</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_NT_CREATE_ANDX parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">oplock_level</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">])</span>
+
+
+<span class="k">class</span> <span class="nc">ComTransactionRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.33.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HHHHBBHIHHHHHH&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_params_count</span><span class="p">,</span> <span class="n">max_data_count</span><span class="p">,</span> <span class="n">max_setup_count</span><span class="p">,</span>
+                 <span class="n">total_params_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_data_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">params_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">data_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">setup_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span>
+                 <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\\</span><span class="s">PIPE</span><span class="se">\\</span><span class="s">&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_params_count</span> <span class="o">=</span> <span class="n">total_params_count</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_bytes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_data_count</span> <span class="o">=</span> <span class="n">total_data_count</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_params_count</span> <span class="o">=</span> <span class="n">max_params_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_data_count</span> <span class="o">=</span> <span class="n">max_data_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_setup_count</span> <span class="o">=</span> <span class="n">max_setup_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span> <span class="o">=</span> <span class="n">params_bytes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span> <span class="o">=</span> <span class="n">data_bytes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">setup_bytes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_TRANSACTION</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span>
+        <span class="n">name_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">setup_bytes_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span><span class="p">)</span>
+        <span class="n">params_bytes_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span><span class="p">)</span>
+        <span class="n">data_bytes_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span><span class="p">)</span>
+
+        <span class="n">padding0</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">+</span> <span class="n">setup_bytes_len</span> <span class="o">+</span> <span class="mi">2</span> <span class="c"># constant 2 is for the ByteCount field in the SMB header (i.e. field which indicates number of data bytes after the SMB parameters)</span>
+        <span class="k">if</span> <span class="n">offset</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padding0</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">offset</span> <span class="o">+=</span> <span class="n">name_len</span>  <span class="c"># For the name field</span>
+        <span class="n">padding1</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">offset</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padding1</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span><span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">offset</span><span class="o">%</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">offset</span><span class="o">%</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">params_bytes_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">params_bytes_offset</span> <span class="o">=</span> <span class="n">offset</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="n">params_bytes_len</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">params_bytes_offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">padding2</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">offset</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padding2</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span><span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">offset</span><span class="o">%</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">offset</span><span class="o">%</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">data_bytes_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">data_bytes_offset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data_bytes_offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">total_params_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">total_data_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_params_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_data_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_setup_count</span><span class="p">,</span>
+                        <span class="mh">0x00</span><span class="p">,</span>           <span class="c"># Reserved1. Must be 0x00</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
+                        <span class="mh">0x0000</span><span class="p">,</span>         <span class="c"># Reserved2. Must be 0x0000</span>
+                        <span class="n">params_bytes_len</span><span class="p">,</span>
+                        <span class="n">params_bytes_offset</span><span class="p">,</span>
+                        <span class="n">data_bytes_len</span><span class="p">,</span>
+                        <span class="n">data_bytes_offset</span><span class="p">,</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">setup_bytes_len</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">padding0</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="n">padding1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span> <span class="o">+</span> <span class="n">padding2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span>
+
+
+<span class="k">class</span> <span class="nc">ComTransactionResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains information about a SMB_COM_TRANSACTION response from the server</span>
+
+<span class="sd">    After decoding, each instance contains the following attributes:</span>
+<span class="sd">    - total_params_count (integer)</span>
+<span class="sd">    - total_data_count (integer)</span>
+<span class="sd">    - setup_bytes (string)</span>
+<span class="sd">    - data_bytes (string)</span>
+<span class="sd">    - params_bytes (string)</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.33.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HHHHHHHHHH&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_TRANSACTION</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_TRANSACTION parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_params_count</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_data_count</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> \
+            <span class="n">params_bytes_len</span><span class="p">,</span> <span class="n">params_bytes_offset</span><span class="p">,</span> <span class="n">params_bytes_displ</span><span class="p">,</span> \
+            <span class="n">data_bytes_len</span><span class="p">,</span> <span class="n">data_bytes_offset</span><span class="p">,</span> <span class="n">data_bytes_displ</span><span class="p">,</span> \
+            <span class="n">setup_count</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">setup_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">setup_bytes_len</span> <span class="o">=</span> <span class="n">setup_count</span> <span class="o">*</span> <span class="mi">2</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">+</span> <span class="n">setup_bytes_len</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_TRANSACTION parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="o">+</span><span class="n">setup_bytes_len</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">+</span> <span class="n">setup_count</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="c"># constant 2 is for the ByteCount field in the SMB header (i.e. field which indicates number of data bytes after the SMB parameters)</span>
+
+            <span class="k">if</span> <span class="n">params_bytes_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">params_bytes_offset</span><span class="o">-</span><span class="n">offset</span><span class="p">:</span><span class="n">params_bytes_offset</span><span class="o">-</span><span class="n">offset</span><span class="o">+</span><span class="n">params_bytes_len</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+            <span class="k">if</span> <span class="n">data_bytes_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">data_bytes_offset</span><span class="o">-</span><span class="n">offset</span><span class="p">:</span><span class="n">data_bytes_offset</span><span class="o">-</span><span class="n">offset</span><span class="o">+</span><span class="n">data_bytes_len</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComTransaction2Request</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.46.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;HHHHBBHIHHHHHH&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_params_count</span><span class="p">,</span> <span class="n">max_data_count</span><span class="p">,</span> <span class="n">max_setup_count</span><span class="p">,</span>
+                 <span class="n">total_params_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_data_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">params_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">data_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">setup_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span>
+                 <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_params_count</span> <span class="o">=</span> <span class="n">total_params_count</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_bytes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_data_count</span> <span class="o">=</span> <span class="n">total_data_count</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_params_count</span> <span class="o">=</span> <span class="n">max_params_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_data_count</span> <span class="o">=</span> <span class="n">max_data_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_setup_count</span> <span class="o">=</span> <span class="n">max_setup_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span> <span class="o">=</span> <span class="n">params_bytes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span> <span class="o">=</span> <span class="n">data_bytes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">setup_bytes</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_TRANSACTION2</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">setup_bytes_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span><span class="p">)</span>
+        <span class="n">params_bytes_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span><span class="p">)</span>
+        <span class="n">data_bytes_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span>
+
+        <span class="n">padding0</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">+</span> <span class="n">setup_bytes_len</span> <span class="o">+</span> <span class="mi">2</span> <span class="c"># constant 2 is for the ByteCount field in the SMB header (i.e. field which indicates number of data bytes after the SMB parameters)</span>
+        <span class="k">if</span> <span class="n">offset</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padding0</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">2</span>  <span class="c"># For the name field</span>
+        <span class="n">padding1</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">offset</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padding1</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span><span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">offset</span><span class="o">%</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">params_bytes_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">params_bytes_offset</span> <span class="o">=</span> <span class="n">offset</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="n">params_bytes_len</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">params_bytes_offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">padding2</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">offset</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">padding2</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span><span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">offset</span><span class="o">%</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">data_bytes_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">data_bytes_offset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data_bytes_offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">total_params_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">total_data_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_params_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_data_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_setup_count</span><span class="p">,</span>
+                        <span class="mh">0x00</span><span class="p">,</span>           <span class="c"># Reserved1. Must be 0x00</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
+                        <span class="mh">0x0000</span><span class="p">,</span>         <span class="c"># Reserved2. Must be 0x0000</span>
+                        <span class="n">params_bytes_len</span><span class="p">,</span>
+                        <span class="n">params_bytes_offset</span><span class="p">,</span>
+                        <span class="n">data_bytes_len</span><span class="p">,</span>
+                        <span class="n">data_bytes_offset</span><span class="p">,</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">setup_bytes_len</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">padding0</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="n">padding1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span> <span class="o">+</span> <span class="n">padding2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span>
+
+
+<span class="k">class</span> <span class="nc">ComTransaction2Response</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains information about a SMB_COM_TRANSACTION2 response from the server</span>
+
+<span class="sd">    After decoding, each instance contains the following attributes:</span>
+<span class="sd">    - total_params_count (integer)</span>
+<span class="sd">    - total_data_count (integer)</span>
+<span class="sd">    - setup_bytes (string)</span>
+<span class="sd">    - data_bytes (string)</span>
+<span class="sd">    - params_bytes (string)</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.46.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HHHHHHHHHBB&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_TRANSACTION2</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_TRANSACTION2 parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_params_count</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_data_count</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> \
+            <span class="n">params_bytes_len</span><span class="p">,</span> <span class="n">params_bytes_offset</span><span class="p">,</span> <span class="n">params_bytes_displ</span><span class="p">,</span> \
+            <span class="n">data_bytes_len</span><span class="p">,</span> <span class="n">data_bytes_offset</span><span class="p">,</span> <span class="n">data_bytes_displ</span><span class="p">,</span> \
+            <span class="n">setup_count</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">setup_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">setup_bytes_len</span> <span class="o">=</span> <span class="n">setup_count</span> <span class="o">*</span> <span class="mi">2</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">+</span> <span class="n">setup_bytes_len</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_TRANSACTION parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="o">+</span><span class="n">setup_bytes_len</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setup_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">+</span> <span class="n">setup_count</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span> <span class="c"># constant 2 is for the ByteCount field in the SMB header (i.e. field which indicates number of data bytes after the SMB parameters)</span>
+
+            <span class="k">if</span> <span class="n">params_bytes_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">params_bytes_offset</span><span class="o">-</span><span class="n">offset</span><span class="p">:</span><span class="n">params_bytes_offset</span><span class="o">-</span><span class="n">offset</span><span class="o">+</span><span class="n">params_bytes_len</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+            <span class="k">if</span> <span class="n">data_bytes_len</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">data_bytes_offset</span><span class="o">-</span><span class="n">offset</span><span class="p">:</span><span class="n">data_bytes_offset</span><span class="o">-</span><span class="n">offset</span><span class="o">+</span><span class="n">data_bytes_len</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComCloseRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.5.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HI&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">last_modified_time</span> <span class="o">=</span> <span class="mh">0xFFFFFFFF</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="n">fid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_modified_time</span> <span class="o">=</span> <span class="n">last_modified_time</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_CLOSE</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_modified_time</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComOpenAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.41.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HHHHIHIII&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">access_mode</span><span class="p">,</span> <span class="n">open_mode</span><span class="p">,</span> <span class="n">flags</span> <span class="o">=</span> <span class="mh">0x0000</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">file_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">create_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @param create_time: Epoch time value to indicate the time of creation for this file. If zero, we will automatically assign the current time</span>
+<span class="sd">        @type create_time: int</span>
+<span class="sd">        @param timeout: Number of milliseconds to wait for blocked open request before failing</span>
+<span class="sd">        @type timeout: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_mode</span> <span class="o">=</span> <span class="n">access_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span> <span class="o">=</span> <span class="n">open_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_attributes</span> <span class="o">=</span> <span class="n">search_attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_attributes</span> <span class="o">=</span> <span class="n">file_attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_time</span> <span class="o">=</span> <span class="n">create_time</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_OPEN_ANDX</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">access_mode</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">search_attributes</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">file_attributes</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">create_time</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">open_mode</span><span class="p">,</span>
+                        <span class="mi">0</span><span class="p">,</span>  <span class="c"># AllocationSize</span>
+                        <span class="mi">0</span><span class="p">,</span>  <span class="c"># Timeout (in milli-secs)</span>
+                        <span class="mi">0</span><span class="p">)</span>  <span class="c"># Reserved</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComOpenAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains information about a SMB_COM_OPEN_ANDX response from the server</span>
+
+<span class="sd">    After decoding, each instance will contain the following attributes:</span>
+<span class="sd">    - fid (integer)</span>
+<span class="sd">    - file_attributes (integer)</span>
+<span class="sd">    - last_write_time (long)</span>
+<span class="sd">    - access_rights (integer)</span>
+<span class="sd">    - resource_type (integer)</span>
+<span class="sd">    - open_results (integer)</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.41.2</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.1.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;BBHHHIIHHHHHHH&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_OPEN_ANDX</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_OPEN_ANDX parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_attributes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_write_time</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">access_rights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource_type</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_results</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                                                                                                  <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">])</span>
+
+
+<span class="k">class</span> <span class="nc">ComWriteAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.43.1</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.3.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HIIHHHHHI&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">data_bytes</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">write_mode</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @param timeout: Number of milliseconds to wait for blocked write request before failing. Must be zero for writing to regular file</span>
+<span class="sd">        @type timeout: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="n">fid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span> <span class="o">=</span> <span class="n">data_bytes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_mode</span> <span class="o">=</span> <span class="n">write_mode</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_WRITE_ANDX</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="c"># constant 1 is to account for the pad byte in the message.data</span>
+        <span class="c"># constant 2 is for the ByteCount field in the SMB header (i.e. field which indicates number of data bytes after the SMB parameters)</span>
+        <span class="n">data_offset</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_SIZE</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span>
+        <span class="n">data_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span><span class="p">)</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">fid</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">write_mode</span><span class="p">,</span>
+                        <span class="n">data_len</span><span class="p">,</span>   <span class="c"># Remaining</span>
+                        <span class="mh">0x0000</span><span class="p">,</span>     <span class="c"># Reserved</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span><span class="p">),</span>  <span class="c"># DataLength</span>
+                        <span class="n">data_offset</span><span class="p">,</span>           <span class="c"># DataOffset</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span>     <span class="c"># OffsetHigh field defined in [MS-SMB]: 2.2.4.3.1</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span>
+
+
+<span class="k">class</span> <span class="nc">ComWriteAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.43.2</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.3.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;BBHHHHH&#39;</span>  <span class="c"># We follow the SMB_COM_WRITEX_ANDX server extensions in [MS-SMB]: 2.2.4.3.2</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_WRITE_ANDX</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_WRITE_ANDX parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">available</span><span class="p">,</span> <span class="n">high_count</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="p">(</span><span class="n">count</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">high_count</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ComReadAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.42.1</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.2.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HIHHIHI&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">max_return_bytes_count</span><span class="p">,</span> <span class="n">min_return_bytes_count</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @param timeout: If reading from a regular file, this parameter must be 0.</span>
+<span class="sd">        @type timeout: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="n">fid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span> <span class="o">=</span> <span class="n">remaining</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_return_bytes_count</span> <span class="o">=</span> <span class="n">max_return_bytes_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_return_bytes_count</span> <span class="o">=</span> <span class="n">min_return_bytes_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_READ_ANDX</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
+            <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">fid</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">max_return_bytes_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">min_return_bytes_count</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_return_bytes_count</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">),</span>  <span class="c"># Note that in [MS-SMB]: 2.2.4.2.1, this field can also act as MaxCountHigh field</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span><span class="p">,</span> <span class="c"># In [MS-CIFS]: 2.2.4.42.1, this field must be set to 0x0000</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span>
+
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComReadAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.42.2</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.2.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;BBHHHHHHHHHHH&#39;</span>
+    <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">==</span> <span class="n">SMB_COM_READ_ANDX</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">hasError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProtocolError</span><span class="p">(</span><span class="s">&#39;Not enough data to decode SMB_COM_READ_ANDX parameters&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_length</span><span class="p">,</span> <span class="n">data_offset</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
+                                                                                           <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span><span class="p">])</span>
+
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">data_offset</span> <span class="o">-</span> <span class="n">message</span><span class="o">.</span><span class="n">HEADER_STRUCT_SIZE</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">-</span> <span class="mi">2</span>  <span class="c"># constant 2 is for the ByteCount field in the SMB header (i.e. field which indicates number of data bytes after the SMB parameters)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">data_length</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_length</span>
+
+
+<span class="k">class</span> <span class="nc">ComDeleteRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.7.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename_pattern</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename_pattern</span> <span class="o">=</span> <span class="n">filename_pattern</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_attributes</span> <span class="o">=</span> <span class="n">search_attributes</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_DELETE</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_attributes</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\x04</span><span class="s">&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename_pattern</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComCreateDirectoryRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Although this command has been marked deprecated in [MS-CIFS], we continue to use it for its simplicity</span>
+<span class="sd">    as compared to its replacement TRANS2_CREATE_DIRECTORY sub-command [MS-CIFS]: 2.2.6.14</span>
+
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.1.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_CREATE_DIRECTORY</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\x04</span><span class="s">&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComDeleteDirectoryRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.2.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_DELETE_DIRECTORY</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\x04</span><span class="s">&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\0\0</span><span class="s">&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComRenameRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.8.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">new_path</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_path</span> <span class="o">=</span> <span class="n">old_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_path</span> <span class="o">=</span> <span class="n">new_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_attributes</span> <span class="o">=</span> <span class="n">search_attributes</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_RENAME</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_attributes</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\x04</span><span class="s">&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_path</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\x00\x00\x04\x00</span><span class="s">&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_path</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;UTF-16LE&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\x00\x00</span><span class="s">&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">ComEchoRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.39.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">echo_data</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">echo_count</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">echo_count</span> <span class="o">=</span> <span class="n">echo_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">echo_data</span> <span class="o">=</span> <span class="n">echo_data</span>
+
+    <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">Payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">SMB_COM_ECHO</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">tid</span> <span class="o">=</span> <span class="mh">0xFFFF</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">echo_count</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">echo_data</span>
+
+
+<span class="k">class</span> <span class="nc">ComEchoResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References:</span>
+<span class="sd">    ===========</span>
+<span class="sd">    - [MS-CIFS]: 2.2.4.39.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequence_number</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span><span class="p">[:</span><span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">pysmb 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+include LICENSE
+include CHANGELOG
+recursive-include nmb *
+recursive-exclude nmb *.pyc
+recursive-include smb *
+recursive-exclude smb *.pyc
+recursive-include tests *
+recursive-exclude tests *.pyc
+recursive-include sphinx *
+recursive-include docs *

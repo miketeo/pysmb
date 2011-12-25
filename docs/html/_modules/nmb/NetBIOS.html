@@ -1,0 +1,174 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>nmb.NetBIOS &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">pysmb 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for nmb.NetBIOS</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">random</span><span class="o">,</span> <span class="nn">socket</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">select</span>
+<span class="kn">from</span> <span class="nn">base</span> <span class="kn">import</span> <span class="n">NBNS</span>
+
+<span class="k">class</span> <span class="nc">NetBIOS</span><span class="p">(</span><span class="n">NBNS</span><span class="p">):</span>
+<div class="viewcode-block" id="NetBIOS"><a class="viewcode-back" href="../../api/nmb_NetBIOS.html#nmb.NetBIOS.NetBIOS">[docs]</a>
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;NMB.NetBIOS&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">broadcast</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">listen_port</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="NetBIOS.__init__"><a class="viewcode-back" href="../../api/nmb_NetBIOS.html#nmb.NetBIOS.NetBIOS.__init__">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instantiate a NetBIOS instance, and creates a IPv4 UDP socket to listen/send NBNS packets.</span>
+
+<span class="sd">        :param boolean broadcast: A boolean flag to indicate if we should setup the listening UDP port in broadcast mode</span>
+<span class="sd">        :param integer listen_port: Specifies the UDP port number to bind to for listening. If zero, OS will automatically select a free port number.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">broadcast</span> <span class="o">=</span> <span class="n">broadcast</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">broadcast</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_BROADCAST</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">listen_port</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">listen_port</span> <span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+<div class="viewcode-block" id="NetBIOS.close"><a class="viewcode-back" href="../../api/nmb_NetBIOS.html#nmb.NetBIOS.NetBIOS.close">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close the underlying and free resources.</span>
+
+<span class="sd">        The NetBIOS instance should not be used to perform any operations after this method returns.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span></div>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">,</span> <span class="s">&#39;Socket is already closed&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span> <span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">queryName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ip</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="mi">137</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+<div class="viewcode-block" id="NetBIOS.queryName"><a class="viewcode-back" href="../../api/nmb_NetBIOS.html#nmb.NetBIOS.NetBIOS.queryName">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send a query on the network and hopes that if machine matching the *name* will reply with its IP address.</span>
+
+<span class="sd">        :param string ip: If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.</span>
+<span class="sd">                          If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</span>
+<span class="sd">        :param integer port: The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds to wait for a reply, after which the method will return None</span>
+<span class="sd">        :return: A list of IP addresses in dotted notation (aaa.bbb.ccc.ddd). On timeout, returns None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">,</span> <span class="s">&#39;Socket is already closed&#39;</span>
+
+        <span class="n">trn_id</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0xFFFF</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepareNameQuery</span><span class="p">(</span><span class="n">trn_id</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">broadcast</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ip</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="s">&#39;&lt;broadcast&gt;&#39;</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">ip</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;queryName: ip parameter is empty. OS might not transmit this query to the network&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pollForNetBIOSPacket</span><span class="p">(</span><span class="n">trn_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+
+    <span class="c">#</span>
+    <span class="c"># Protected Methods</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">_pollForNetBIOSPacket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_trn_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span></div>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">timeout</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_timeout</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">end_time</span>
+                <span class="k">if</span> <span class="n">_timeout</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">None</span>
+
+                <span class="n">ready</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span> <span class="p">],</span> <span class="p">[</span> <span class="p">],</span> <span class="p">[</span> <span class="p">],</span> <span class="n">_timeout</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ready</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">None</span>
+
+                <span class="n">data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mh">0xFFFF</span><span class="p">)</span>
+                <span class="n">trn_id</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decodePacket</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">trn_id</span> <span class="o">==</span> <span class="n">wait_trn_id</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ret</span>
+            <span class="k">except</span> <span class="n">select</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span> <span class="ow">is</span> <span class="n">types</span><span class="o">.</span><span class="n">TupleType</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">EINTR</span> <span class="ow">and</span> <span class="n">ex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">EAGAIN</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">ex</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ex</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">pysmb 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,405 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>smb.SMBProtocol &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">pysmb 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for smb.SMBProtocol</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">reactor</span><span class="p">,</span> <span class="n">defer</span>
+<span class="kn">from</span> <span class="nn">twisted.internet.protocol</span> <span class="kn">import</span> <span class="n">ClientFactory</span><span class="p">,</span> <span class="n">Protocol</span>
+<span class="kn">from</span> <span class="nn">smb_constants</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">smb_structs</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">base</span> <span class="kn">import</span> <span class="n">SMB</span><span class="p">,</span> <span class="n">NotConnectedError</span><span class="p">,</span> <span class="n">NotReadyError</span><span class="p">,</span> <span class="n">SMBTimeout</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;SMBProtocolFactory&#39;</span><span class="p">,</span> <span class="s">&#39;NotConnectedError&#39;</span><span class="p">,</span> <span class="s">&#39;NotReadyError&#39;</span> <span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">SMBProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">,</span> <span class="n">SMB</span><span class="p">):</span>
+
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;SMB.SMBProtocol&#39;</span><span class="p">)</span>
+
+    <span class="c">#</span>
+    <span class="c"># Protocol Methods</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">connectionMade</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">instance</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">requestNMBSession</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">connectionLost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reason</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">instance</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instance</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">dataReceived</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">feedData</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c">#</span>
+    <span class="c"># SMB (and its superclass) Methods</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">onAuthOK</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">instance</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">onAuthOK</span><span class="p">()</span>
+            <span class="n">reactor</span><span class="o">.</span><span class="n">callLater</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanupPendingRequests</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">onAuthFailed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">instance</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">onAuthFailed</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">onNMBSessionFailed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Cannot establish NetBIOS session. You might have provided a wrong remote_name&#39;</span><span class="p">)</span>
+
+    <span class="c">#</span>
+    <span class="c"># Protected Methods</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">_cleanupPendingRequests</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">instance</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">mid</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">expiry_time</span> <span class="o">&lt;</span> <span class="n">now</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">r</span><span class="o">.</span><span class="n">errback</span><span class="p">(</span><span class="n">SMBTimeout</span><span class="p">())</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span> <span class="k">pass</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span>
+
+            <span class="n">reactor</span><span class="o">.</span><span class="n">callLater</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanupPendingRequests</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SMBProtocolFactory</span><span class="p">(</span><span class="n">ClientFactory</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBProtocolFactory"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory">[docs]</a>
+    <span class="n">protocol</span> <span class="o">=</span> <span class="n">SMBProtocol</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;SMB.SMBFactory&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">my_name</span><span class="p">,</span> <span class="n">remote_name</span><span class="p">,</span> <span class="n">domain</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBProtocolFactory.__init__"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.__init__">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new SMBProtocolFactory instance.</span>
+
+<span class="sd">        *username* and *password* are the user credentials required to authenticate the underlying SMB connection with the remote server.</span>
+<span class="sd">        File operations can only be proceeded after the connection has been authenticated successfully.</span>
+
+<span class="sd">        :param string my_name: The local NetBIOS machine name that will identify where this connection is originating from.</span>
+<span class="sd">                               You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of ``\/:*?&quot;;|+``</span>
+<span class="sd">        :param string remote_name: The NetBIOS machine name of the remote server.</span>
+<span class="sd">                                   On windows, you can find out the machine name by right-clicking on the &quot;My Computer&quot; and selecting &quot;Properties&quot;.</span>
+<span class="sd">                                   This parameter must be the same as what has been configured on the remote server, or else the connection will be rejected.</span>
+<span class="sd">        :param string domain: The network domain. On windows, it is known as the workgroup. Usually, it is safe to leave this parameter as an empty string.</span>
+<span class="sd">        :param boolean use_ntlm_v2: Indicates whether pysmb should be NTLMv1 or NTLMv2 authentication algorithm for authentication.</span>
+<span class="sd">                                    The choice of NTLMv1 and NTLMv2 is configured on the remote server, and there is no mechanism to auto-detect which algorithm has been configured.</span>
+<span class="sd">                                    Hence, we can only &quot;guess&quot; or try both algorithms.</span>
+<span class="sd">                                    On Sambda, Windows Vista and Windows 7, NTLMv2 is enabled by default. On Windows XP, we can use NTLMv1 before NTLMv2.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">my_name</span> <span class="o">=</span> <span class="n">my_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span> <span class="o">=</span> <span class="n">remote_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="n">use_ntlm_v2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span> <span class="o">=</span> <span class="bp">None</span>    <span class="c">#: The single SMBProtocol instance for each SMBProtocolFactory instance. Usually, you should not need to touch this attribute directly.</span>
+
+    <span class="c">#</span>
+    <span class="c"># Public Property</span>
+    <span class="c">#</span>
+
+    <span class="nd">@property</span></div>
+    <span class="k">def</span> <span class="nf">isReady</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBProtocolFactory.isReady"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.isReady">[docs]</a>        <span class="sd">&quot;&quot;&quot;A convenient property to return True if the underlying SMB connection has connected to remote server, has successfully authenticated itself and is ready for file operations.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">)</span>
+
+    <span class="c">#</span>
+    <span class="c"># Public Methods for Callbacks</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">onAuthOK</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.onAuthOK"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.onAuthOK">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override this method in your *SMBProtocolFactory* subclass to add in post-authentication handling.</span>
+<span class="sd">        This method will be called when the server has replied that the SMB connection has been successfully authenticated.</span>
+<span class="sd">        File operations can proceed when this method has been called.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">onAuthFailed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.onAuthFailed"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.onAuthFailed">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override this method in your *SMBProtocolFactory* subclass to add in post-authentication handling.</span>
+<span class="sd">        This method will be called when the server has replied that the SMB connection has been successfully authenticated.</span>
+
+<span class="sd">        If you want to retry authenticating from this method,</span>
+<span class="sd">         1. Disconnect the underlying SMB connection (call ``self.instance.transport.loseConnection()``)</span>
+<span class="sd">         2. Create a new SMBProtocolFactory subclass instance with different user credientials or different NTLM algorithm flag.</span>
+<span class="sd">         3. Call ``reactor.connectTCP`` with the new instance to re-establish the SMB connection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="c">#</span>
+    <span class="c"># Public Methods</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">listShares</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.listShares"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.listShares">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve a list of shared resources on remote server.</span>
+
+<span class="sd">        :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance&#39;s *errback* method.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a list of :doc:`smb.base.SharedDevice&lt;smb_SharedDevice&gt;` instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_listShares</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">listPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.listPath"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.listPath">[docs]</a>                 <span class="n">search</span> <span class="o">=</span> <span class="n">SMB_FILE_ATTRIBUTE_READONLY</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_HIDDEN</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_SYSTEM</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_DIRECTORY</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_ARCHIVE</span><span class="p">,</span>
+                 <span class="n">pattern</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">*&#39;</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve a directory listing of files/folders at *path*</span>
+
+<span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
+<span class="sd">        :param string/unicode path: path relative to the *service_name* where we are interested to learn about its files/sub-folders.</span>
+<span class="sd">        :param integer search: integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py).</span>
+<span class="sd">                               The default *search* value will query for all read-only, hidden, system, archive files and directories.</span>
+<span class="sd">        :param string/unicode pattern: the filter to apply to the results before returning to the client.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance&#39;s *errback* method.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a list of :doc:`smb.base.SharedFile&lt;smb_SharedFile&gt;` instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_listPath</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">search</span> <span class="o">=</span> <span class="n">search</span><span class="p">,</span> <span class="n">pattern</span> <span class="o">=</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">retrieveFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.retrieveFile"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.retrieveFile">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.</span>
+
+<span class="sd">        The meaning of the *timeout* parameter will be different from other file operation methods. As the downloaded file usually exceeeds the maximum size</span>
+<span class="sd">        of each SMB/CIFS data message, it will be packetized into a series of request messages (each message will request about about 60kBytes).</span>
+<span class="sd">        The *timeout* parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and downloaded from the remote SMB/CIFS server.</span>
+
+<span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
+<span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be called in the returned *Deferred* errback.</span>
+<span class="sd">        :param file_obj: A file-like object that has a *write* method. Data will be written continuously to *file_obj* until EOF is received from the remote service.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a 3-element tuple of ( *file_obj*, file attributes of the file on server, number of bytes retrieved ).</span>
+<span class="sd">                 The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_retrieveFile</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">storeFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.storeFile"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.storeFile">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Store the contents of the *file_obj* at *path* on the *service_name*.</span>
+
+<span class="sd">        The meaning of the *timeout* parameter will be different from other file operation methods. As the uploaded file usually exceeeds the maximum size</span>
+<span class="sd">        of each SMB/CIFS data message, it will be packetized into a series of messages (usually about 60kBytes).</span>
+<span class="sd">        The *timeout* parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and acknowledged</span>
+<span class="sd">        by the remote SMB/CIFS server.</span>
+
+<span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
+<span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file at *path* does not exist, it will be created. Otherwise, it will be overwritten.</span>
+<span class="sd">                                    If the *path* refers to a folder or the file cannot be opened for writing, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be called in the returned *Deferred* errback.</span>
+<span class="sd">        :param file_obj: A file-like object that has a *read* method. Data will read continuously from *file_obj* until EOF.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a 2-element tuple of ( *file_obj*, number of bytes uploaded ).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_storeFile</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">deleteFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path_file_pattern</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.deleteFiles"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.deleteFiles">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.</span>
+
+<span class="sd">        :param string/unicode service_name: Contains the name of the shared folder.</span>
+<span class="sd">        :param string/unicode path_file_pattern: The pathname of the file(s) to be deleted, relative to the service_name.</span>
+<span class="sd">                                                 Wildcards may be used in th filename component of the path.</span>
+<span class="sd">                                                 If your path/filename contains non-English characters, you must pass in an unicode string.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance&#39;s *errback* method.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with the *path_file_pattern* parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_deleteFiles</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path_file_pattern</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">createDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.createDirectory"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.createDirectory">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new directory *path* on the *service_name*.</span>
+
+<span class="sd">        :param string/unicode service_name: Contains the name of the shared folder.</span>
+<span class="sd">        :param string/unicode path: The path of the new folder (relative to) the shared folder.</span>
+<span class="sd">                                    If the path contains non-English characters, an unicode string must be used to pass in the path.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance&#39;s *errback* method.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with the *path* parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_createDirectory</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">deleteDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.deleteDirectory"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.deleteDirectory">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete the empty folder at *path* on *service_name*</span>
+
+<span class="sd">        :param string/unicode service_name: Contains the name of the shared folder.</span>
+<span class="sd">        :param string/unicode path: The path of the to-be-deleted folder (relative to) the shared folder.</span>
+<span class="sd">                                    If the path contains non-English characters, an unicode string must be used to pass in the path.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance&#39;s *errback* method.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with the *path* parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_deleteDirectory</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">new_path</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.rename"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.rename">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rename a file or folder at *old_path* to *new_path* shared at *service_name*. Note that this method cannot be used to rename file/folder across different shared folders</span>
+
+<span class="sd">        *old_path* and *new_path* are string/unicode referring to the old and new path of the renamed resources (relative to) the shared folder.</span>
+<span class="sd">        If the path contains non-English characters, an unicode string must be used to pass in the path.</span>
+
+<span class="sd">        :param string/unicode service_name: Contains the name of the shared folder.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance&#39;s *errback* method.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a 2-element tuple of ( *old_path*, *new_path* ).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_rename</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">new_path</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">echo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.echo"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.echo">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send an echo command containing *data* to the remote SMB/CIFS server. The remote SMB/CIFS will reply with the same *data*.</span>
+
+<span class="sd">        :param string data: Data to send to the remote server.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance&#39;s *errback* method.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with the *data* parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_echo</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">closeConnection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.closeConnection"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.closeConnection">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disconnect from the remote SMB/CIFS server. The TCP connection will be closed at the earliest opportunity after this method returns.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">loseConnection</span><span class="p">()</span>
+
+    <span class="c">#</span>
+    <span class="c"># ClientFactory methods</span>
+    <span class="c"># (Do not touch these unless you know what you are doing)</span>
+    <span class="c">#</span>
+
+    <span class="k">def</span> <span class="nf">buildProtocol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span></div>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">my_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ntlm_v2</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">p</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">pysmb 1.0.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

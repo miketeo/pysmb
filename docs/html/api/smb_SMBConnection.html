@@ -1,0 +1,373 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SMBConnection Class &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="../index.html" />
+    <link rel="next" title="SMBProtocolFactory Class" href="smb_SMBProtocolFactory.html" />
+    <link rel="prev" title="NetBIOS class" href="nmb_NetBIOS.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="smb_SMBProtocolFactory.html" title="SMBProtocolFactory Class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="nmb_NetBIOS.html" title="NetBIOS class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">SMBConnection Class</a><ul>
+<li><a class="reference internal" href="#caveats">Caveats</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="nmb_NetBIOS.html"
+                        title="previous chapter">NetBIOS class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="smb_SMBProtocolFactory.html"
+                        title="next chapter">SMBProtocolFactory Class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/smb_SMBConnection.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="smbconnection-class">
+<h1>SMBConnection Class<a class="headerlink" href="#smbconnection-class" title="Permalink to this headline">¶</a></h1>
+<p>The SMBConnection is suitable for developers who wish to use pysmb to perform file operations with a remote SMB/CIFS server sequentially.</p>
+<p>Each file operation method, when invoked, will block and return after it has completed or has encountered an error.</p>
+<div class="section" id="caveats">
+<h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>It is not meant to be used asynchronously.</li>
+<li>A single <em>SMBConnection</em> instance should not be used to perform more than one operation concurrently at the same time.</li>
+<li>Do not keep a <em>SMBConnection</em> instance &#8220;idle&#8221; for too long, i.e. keeping a <em>SMBConnection</em> instance but not using it.
+Most SMB/CIFS servers have some sort of keepalive mechanism and impose a timeout limit.
+If the clients fail to respond within the timeout limit, the SMB/CIFS server may disconnect the client.</li>
+</ul>
+<dl class="class">
+<dt id="smb.SMBConnection.SMBConnection">
+<em class="property">class </em><tt class="descclassname">smb.SMBConnection.</tt><tt class="descname">SMBConnection</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new SMBConnection instance.</p>
+<p><em>username</em> and <em>password</em> are the user credentials required to authenticate the underlying SMB connection with the remote server.
+File operations can only be proceeded after the connection has been authenticated successfully.</p>
+<p>Note that you need to call <em>connect</em> method to actually establish the SMB connection to the remote server and perform authentication.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>my_name</strong> (<em>string</em>) &#8211; The local NetBIOS machine name that will identify where this connection is originating from.
+You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of <tt class="docutils literal"><span class="pre">\/:*?&quot;;|+</span></tt></li>
+<li><strong>remote_name</strong> (<em>string</em>) &#8211; The NetBIOS machine name of the remote server.
+On windows, you can find out the machine name by right-clicking on the &#8220;My Computer&#8221; and selecting &#8220;Properties&#8221;.
+This parameter must be the same as what has been configured on the remote server, or else the connection will be rejected.</li>
+<li><strong>domain</strong> (<em>string</em>) &#8211; The network domain. On windows, it is known as the workgroup. Usually, it is safe to leave this parameter as an empty string.</li>
+<li><strong>use_ntlm_v2</strong> (<em>boolean</em>) &#8211; Indicates whether pysmb should be NTLMv1 or NTLMv2 authentication algorithm for authentication.
+The choice of NTLMv1 and NTLMv2 is configured on the remote server, and there is no mechanism to auto-detect which algorithm has been configured.
+Hence, we can only &#8220;guess&#8221; or try both algorithms.
+On Sambda, Windows Vista and Windows 7, NTLMv2 is enabled by default. On Windows XP, we can use NTLMv1 before NTLMv2.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminate the SMB connection (if it has been started) and release any sources held by the underlying socket.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.connect">
+<tt class="descname">connect</tt><big>(</big><em>ip</em>, <em>port</em>, <em>sock_family=2</em>, <em>timeout=60</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Establish the SMB connection to the remote SMB/CIFS server.</p>
+<p>You must call this method before attempting any of the file operations with the remote server.
+This method will block until the SMB connection has attempted at least one authentication.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean value indicating the result of the authentication atttempt: True if authentication is successful; False, if otherwise.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.createDirectory">
+<tt class="descname">createDirectory</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.createDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.createDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new directory <em>path</em> on the <em>service_name</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; The path of the new folder (relative to) the shared folder.
+If the path contains non-English characters, an unicode string must be used to pass in the path.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.deleteDirectory">
+<tt class="descname">deleteDirectory</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the empty folder at <em>path</em> on <em>service_name</em></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; The path of the to-be-deleted folder (relative to) the shared folder.
+If the path contains non-English characters, an unicode string must be used to pass in the path.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.deleteFiles">
+<tt class="descname">deleteFiles</tt><big>(</big><em>service_name</em>, <em>path_file_pattern</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteFiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</li>
+<li><strong>path_file_pattern</strong> (<em>string/unicode</em>) &#8211; The pathname of the file(s) to be deleted, relative to the service_name.
+Wildcards may be used in th filename component of the path.
+If your path/filename contains non-English characters, you must pass in an unicode string.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.echo">
+<tt class="descname">echo</tt><big>(</big><em>data</em>, <em>timeout=10</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.echo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.echo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send an echo command containing <em>data</em> to the remote SMB/CIFS server. The remote SMB/CIFS will reply with the same <em>data</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<em>string</em>) &#8211; Data to send to the remote server.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The <em>data</em> parameter</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.listPath">
+<tt class="descname">listPath</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>search=55</em>, <em>pattern='\*'</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a directory listing of files/folders at <em>path</em></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; path relative to the <em>service_name</em> where we are interested to learn about its files/sub-folders.</li>
+<li><strong>search</strong> (<em>integer</em>) &#8211; integer value made up from a bitwise-OR of <em>SMB_FILE_ATTRIBUTE_xxx</em> bits (see smb_constants.py).
+The default <em>search</em> value will query for all read-only, hidden, system, archive files and directories.</li>
+<li><strong>pattern</strong> (<em>string/unicode</em>) &#8211; the filter to apply to the results before returning to the client.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list of <a class="reference internal" href="smb_SharedFile.html"><em>smb.base.SharedFile</em></a> instances.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.listShares">
+<tt class="descname">listShares</tt><big>(</big><em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listShares"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listShares" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a list of shared resources on remote server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A list of <a class="reference internal" href="smb_SharedDevice.html"><em>smb.base.SharedDevice</em></a> instances describing the shared resource</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.rename">
+<tt class="descname">rename</tt><big>(</big><em>service_name</em>, <em>old_path</em>, <em>new_path</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.rename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.rename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rename a file or folder at <em>old_path</em> to <em>new_path</em> shared at <em>service_name</em>. Note that this method cannot be used to rename file/folder across different shared folders</p>
+<p><em>old_path</em> and <em>new_path</em> are string/unicode referring to the old and new path of the renamed resources (relative to) the shared folder.
+If the path contains non-English characters, an unicode string must be used to pass in the path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.retrieveFile">
+<tt class="descname">retrieveFile</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the contents of the file at <em>path</em> on the <em>service_name</em> and write these contents to the provided <em>file_obj</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; Path of the file on the remote server. If the file cannot be opened for reading, an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a> will be called in the returned <em>Deferred</em> errback.</li>
+<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>write</em> method. Data will be written continuously to <em>file_obj</em> until EOF is received from the remote service.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A 2-element tuple of ( file attributes of the file on server, number of bytes retrieved ).
+The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FILE_ATTRIBUTE_xxx</em> bits (see smb_constants.py)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.storeFile">
+<tt class="descname">storeFile</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; Path of the file on the remote server. If the file at <em>path</em> does not exist, it will be created. Otherwise, it will be overwritten.
+If the <em>path</em> refers to a folder or the file cannot be opened for writing, an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a> will be called in the returned <em>Deferred</em> errback.</li>
+<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>read</em> method. Data will read continuously from <em>file_obj</em> until EOF.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Number of bytes uploaded</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="smb_SMBProtocolFactory.html" title="SMBProtocolFactory Class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="nmb_NetBIOS.html" title="NetBIOS class"
+             >previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,442 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SMBProtocolFactory Class &mdash; pysmb 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.0.0 documentation" href="../index.html" />
+    <link rel="next" title="SharedDevice Class" href="smb_SharedDevice.html" />
+    <link rel="prev" title="SMBConnection Class" href="smb_SMBConnection.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="smb_SharedDevice.html" title="SharedDevice Class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="smb_SMBConnection.html" title="SMBConnection Class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">SMBProtocolFactory Class</a><ul>
+<li><a class="reference internal" href="#caveats">Caveats</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="smb_SMBConnection.html"
+                        title="previous chapter">SMBConnection Class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="smb_SharedDevice.html"
+                        title="next chapter">SharedDevice Class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/smb_SMBProtocolFactory.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="smbprotocolfactory-class">
+<h1>SMBProtocolFactory Class<a class="headerlink" href="#smbprotocolfactory-class" title="Permalink to this headline">¶</a></h1>
+<p>For those who want to utilize pysmb in Twisted framework, pysmb has a <em>smb.SMBProtocol.SMBProtocol</em> implementation.
+In most cases, you do not need to touch or import the <em>SMBProtocol</em> directly. All the SMB functionalities are exposed in the <em>SMBProtocolFactory</em>.</p>
+<dl class="docutils">
+<dt>In your project,</dt>
+<dd><ol class="first last arabic simple">
+<li>Create a new class and subclass <em>SMBProtocolFactory</em>.</li>
+<li>Override the <em>SMBProtocolFactory.onAuthOK</em> and <em>SMBProtocolFactory.onAuthFailed</em> instance methods to provide your own post-authenthentication handling.
+Once <em>SMBProtocolFactory.onAuthOK</em> has been called by pymsb internals, your application is ready to communicate with the remote SMB/CIFS service through
+the <em>SMBProtocolFactory</em> public methods such as <em>SMBProtocolFactory.storeFile</em>, <em>SMBProtocolFactory.retrieveFile</em>, etc.</li>
+<li>When you want to disconnect from the remote SMB/CIFS server, just call <em>SMBProtocolFactory.closeConnection</em> method.</li>
+</ol>
+</dd>
+</dl>
+<p>All the <em>SMBProtocolFactory</em> public methods that provide file functionlities will return a <em>twisted.internet.defer.Deferred</em> instance.
+A <a class="reference internal" href="smb_exceptions.html"><em>NotReadyError</em></a> exception is raised when the underlying SMB is not authenticated.
+If the underlying SMB connection has been terminated, a <a class="reference internal" href="smb_exceptions.html"><em>NotConnectedError</em></a> exception is raised.</p>
+<p>All the file operation methods in <em>SMBProtocolFactory</em> class accept a <em>timeout</em> parameter. This parameter specifies the time limit where pysmb will wait for the
+entire file operation (except <em>storeFile</em> and <em>retrieveFile</em> methods) to complete. If the file operation fails to complete within the timeout period, the returned
+<em>Deferred</em> instance&#8217;s <em>errback</em> method will be called with a <em>SMBTimeout</em> exception.</p>
+<p>If you are interested in learning the results of the operation or to know when the operation has completed, you should
+add a handling method to the returned <em>Deferred</em> instance via <em>Deferred.addCallback</em>. If the file operation fails, the <em>Deferred.errback</em> function will be called
+with an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a>; on timeout, it will be called with a <a class="reference internal" href="smb_exceptions.html"><em>SMBTimeout</em></a>.</p>
+<div class="section" id="caveats">
+<h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>A new factory instance must be created for each SMB connection to the remote SMB/CIFS service. Avoid reusing the same factory instance for more than one SMB connection.</li>
+<li>The remote SMB/CIFS server usually imposes a limit of the number of concurrent file operations for each client. For example, to transfer a thousand files, you may need to setup a queue in your application and call <em>storeFile</em> or <em>retrieveFile</em> in batches.</li>
+<li>The <em>timeout</em> parameter in the file operation methods are not precise; it is accurate to within 1 second interval, i.e. with a timeout of 0.5 sec, pysmb might raise
+<em>SMBTimeout</em> exception after 1.5 sec.</li>
+</ul>
+<dl class="class">
+<dt id="smb.SMBProtocol.SMBProtocolFactory">
+<em class="property">class </em><tt class="descclassname">smb.SMBProtocol.</tt><tt class="descname">SMBProtocolFactory</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new SMBProtocolFactory instance.</p>
+<p><em>username</em> and <em>password</em> are the user credentials required to authenticate the underlying SMB connection with the remote server.
+File operations can only be proceeded after the connection has been authenticated successfully.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>my_name</strong> (<em>string</em>) &#8211; The local NetBIOS machine name that will identify where this connection is originating from.
+You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of <tt class="docutils literal"><span class="pre">\/:*?&quot;;|+</span></tt></li>
+<li><strong>remote_name</strong> (<em>string</em>) &#8211; The NetBIOS machine name of the remote server.
+On windows, you can find out the machine name by right-clicking on the &#8220;My Computer&#8221; and selecting &#8220;Properties&#8221;.
+This parameter must be the same as what has been configured on the remote server, or else the connection will be rejected.</li>
+<li><strong>domain</strong> (<em>string</em>) &#8211; The network domain. On windows, it is known as the workgroup. Usually, it is safe to leave this parameter as an empty string.</li>
+<li><strong>use_ntlm_v2</strong> (<em>boolean</em>) &#8211; Indicates whether pysmb should be NTLMv1 or NTLMv2 authentication algorithm for authentication.
+The choice of NTLMv1 and NTLMv2 is configured on the remote server, and there is no mechanism to auto-detect which algorithm has been configured.
+Hence, we can only &#8220;guess&#8221; or try both algorithms.
+On Sambda, Windows Vista and Windows 7, NTLMv2 is enabled by default. On Windows XP, we can use NTLMv1 before NTLMv2.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.closeConnection">
+<tt class="descname">closeConnection</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.closeConnection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.closeConnection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect from the remote SMB/CIFS server. The TCP connection will be closed at the earliest opportunity after this method returns.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.createDirectory">
+<tt class="descname">createDirectory</tt><big>(</big><em>service_name</em>, <em>path</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.createDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.createDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new directory <em>path</em> on the <em>service_name</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; The path of the new folder (relative to) the shared folder.
+If the path contains non-English characters, an unicode string must be used to pass in the path.</li>
+<li><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds that pysmb will wait before raising <em>SMBTimeout</em> via the returned <em>Deferred</em> instance&#8217;s <em>errback</em> method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with the <em>path</em> parameter.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.deleteDirectory">
+<tt class="descname">deleteDirectory</tt><big>(</big><em>service_name</em>, <em>path</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.deleteDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.deleteDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the empty folder at <em>path</em> on <em>service_name</em></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; The path of the to-be-deleted folder (relative to) the shared folder.
+If the path contains non-English characters, an unicode string must be used to pass in the path.</li>
+<li><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds that pysmb will wait before raising <em>SMBTimeout</em> via the returned <em>Deferred</em> instance&#8217;s <em>errback</em> method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with the <em>path</em> parameter.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.deleteFiles">
+<tt class="descname">deleteFiles</tt><big>(</big><em>service_name</em>, <em>path_file_pattern</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.deleteFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.deleteFiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</li>
+<li><strong>path_file_pattern</strong> (<em>string/unicode</em>) &#8211; The pathname of the file(s) to be deleted, relative to the service_name.
+Wildcards may be used in th filename component of the path.
+If your path/filename contains non-English characters, you must pass in an unicode string.</li>
+<li><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds that pysmb will wait before raising <em>SMBTimeout</em> via the returned <em>Deferred</em> instance&#8217;s <em>errback</em> method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with the <em>path_file_pattern</em> parameter.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.echo">
+<tt class="descname">echo</tt><big>(</big><em>data</em>, <em>timeout=10</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.echo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.echo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send an echo command containing <em>data</em> to the remote SMB/CIFS server. The remote SMB/CIFS will reply with the same <em>data</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data</strong> (<em>string</em>) &#8211; Data to send to the remote server.</li>
+<li><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds that pysmb will wait before raising <em>SMBTimeout</em> via the returned <em>Deferred</em> instance&#8217;s <em>errback</em> method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with the <em>data</em> parameter.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.listPath">
+<tt class="descname">listPath</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>search=55</em>, <em>pattern='\*'</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.listPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.listPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a directory listing of files/folders at <em>path</em></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; path relative to the <em>service_name</em> where we are interested to learn about its files/sub-folders.</li>
+<li><strong>search</strong> (<em>integer</em>) &#8211; integer value made up from a bitwise-OR of <em>SMB_FILE_ATTRIBUTE_xxx</em> bits (see smb_constants.py).
+The default <em>search</em> value will query for all read-only, hidden, system, archive files and directories.</li>
+<li><strong>pattern</strong> (<em>string/unicode</em>) &#8211; the filter to apply to the results before returning to the client.</li>
+<li><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds that pysmb will wait before raising <em>SMBTimeout</em> via the returned <em>Deferred</em> instance&#8217;s <em>errback</em> method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a list of <a class="reference internal" href="smb_SharedFile.html"><em>smb.base.SharedFile</em></a> instances.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.listShares">
+<tt class="descname">listShares</tt><big>(</big><em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.listShares"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.listShares" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a list of shared resources on remote server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds that pysmb will wait before raising <em>SMBTimeout</em> via the returned <em>Deferred</em> instance&#8217;s <em>errback</em> method.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a list of <a class="reference internal" href="smb_SharedDevice.html"><em>smb.base.SharedDevice</em></a> instances.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.onAuthFailed">
+<tt class="descname">onAuthFailed</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.onAuthFailed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.onAuthFailed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override this method in your <em>SMBProtocolFactory</em> subclass to add in post-authentication handling.
+This method will be called when the server has replied that the SMB connection has been successfully authenticated.</p>
+<dl class="docutils">
+<dt>If you want to retry authenticating from this method,</dt>
+<dd><ol class="first last arabic simple">
+<li>Disconnect the underlying SMB connection (call <tt class="docutils literal"><span class="pre">self.instance.transport.loseConnection()</span></tt>)</li>
+<li>Create a new SMBProtocolFactory subclass instance with different user credientials or different NTLM algorithm flag.</li>
+<li>Call <tt class="docutils literal"><span class="pre">reactor.connectTCP</span></tt> with the new instance to re-establish the SMB connection</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.onAuthOK">
+<tt class="descname">onAuthOK</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.onAuthOK"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.onAuthOK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override this method in your <em>SMBProtocolFactory</em> subclass to add in post-authentication handling.
+This method will be called when the server has replied that the SMB connection has been successfully authenticated.
+File operations can proceed when this method has been called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.rename">
+<tt class="descname">rename</tt><big>(</big><em>service_name</em>, <em>old_path</em>, <em>new_path</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.rename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.rename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rename a file or folder at <em>old_path</em> to <em>new_path</em> shared at <em>service_name</em>. Note that this method cannot be used to rename file/folder across different shared folders</p>
+<p><em>old_path</em> and <em>new_path</em> are string/unicode referring to the old and new path of the renamed resources (relative to) the shared folder.
+If the path contains non-English characters, an unicode string must be used to pass in the path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</li>
+<li><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds that pysmb will wait before raising <em>SMBTimeout</em> via the returned <em>Deferred</em> instance&#8217;s <em>errback</em> method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a 2-element tuple of ( <em>old_path</em>, <em>new_path</em> ).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.retrieveFile">
+<tt class="descname">retrieveFile</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.retrieveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.retrieveFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the contents of the file at <em>path</em> on the <em>service_name</em> and write these contents to the provided <em>file_obj</em>.</p>
+<p>The meaning of the <em>timeout</em> parameter will be different from other file operation methods. As the downloaded file usually exceeeds the maximum size
+of each SMB/CIFS data message, it will be packetized into a series of request messages (each message will request about about 60kBytes).
+The <em>timeout</em> parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and downloaded from the remote SMB/CIFS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; Path of the file on the remote server. If the file cannot be opened for reading, an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a> will be called in the returned <em>Deferred</em> errback.</li>
+<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>write</em> method. Data will be written continuously to <em>file_obj</em> until EOF is received from the remote service.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a 3-element tuple of ( <em>file_obj</em>, file attributes of the file on server, number of bytes retrieved ).
+The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FILE_ATTRIBUTE_xxx</em> bits (see smb_constants.py)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.storeFile">
+<tt class="descname">storeFile</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.storeFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.storeFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.</p>
+<p>The meaning of the <em>timeout</em> parameter will be different from other file operation methods. As the uploaded file usually exceeeds the maximum size
+of each SMB/CIFS data message, it will be packetized into a series of messages (usually about 60kBytes).
+The <em>timeout</em> parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and acknowledged
+by the remote SMB/CIFS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; Path of the file on the remote server. If the file at <em>path</em> does not exist, it will be created. Otherwise, it will be overwritten.
+If the <em>path</em> refers to a folder or the file cannot be opened for writing, an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a> will be called in the returned <em>Deferred</em> errback.</li>
+<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>read</em> method. Data will read continuously from <em>file_obj</em> until EOF.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a 2-element tuple of ( <em>file_obj</em>, number of bytes uploaded ).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.instance">
+<tt class="descname">instance</tt><em class="property"> = None</em><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>The single SMBProtocol instance for each SMBProtocolFactory instance. Usually, you should not need to touch this attribute directly.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.isReady">
+<tt class="descname">isReady</tt><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.isReady"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.isReady" title="Permalink to this definition">¶</a></dt>
+<dd><p>A convenient property to return True if the underlying SMB connection has connected to remote server, has successfully authenticated itself and is ready for file operations.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="smb_SharedDevice.html" title="SharedDevice Class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="smb_SMBConnection.html" title="SMBConnection Class"
+             >previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Michael Teo.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
