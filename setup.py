@@ -3,14 +3,14 @@ from distutils.core import setup
 
 setup(
     name = "pysmb",
-    version = "1.0.0",
+    version = "1.0.0a",
     author = "Michael Teo",
     author_email = "miketeo@miketeo.net",
     license = "zlib/libpng",
     description = "pysmb is an experimental SMB/CIFS library written in Python to support file sharing between Windows and Linux machines",
     keywords = "windows samba cifs sharing ftp smb linux",
     url = "http://miketeo.net/projects/pysmb",
-    packages = [ 'smb', 'nmb' ],
+    packages = [ 'smb', 'smb.utils', 'nmb' ],
     requires = [ 'pyasn1' ],
     long_description="""pysmb is an experimental SMB/CIFS library written in Python. It implements the client-side SMB/CIFS protocol which allows your Python application to access and transfer files to/from SMB/CIFS shared folders like your Windows file sharing and Samba folders.""",
     classifiers = [
