@@ -118,7 +118,7 @@ class SMBConnection(SMB):
 
     def listPath(self, service_name, path,
                  search = SMB_FILE_ATTRIBUTE_READONLY | SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM | SMB_FILE_ATTRIBUTE_DIRECTORY | SMB_FILE_ATTRIBUTE_ARCHIVE,
-                 pattern = '\\*', timeout = 30):
+                 pattern = '*', timeout = 30):
         """
         Retrieve a directory listing of files/folders at *path*
 

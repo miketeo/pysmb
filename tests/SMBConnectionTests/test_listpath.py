@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 from smb.SMBConnection import SMBConnection
 from util import getConnectionInfo
@@ -25,3 +26,14 @@ def test_listPath():
     assert ( u'TestDir1', True ) in filenames                        # Test short English folder names
     assert ( u'Implementing CIFS - SMB.html', False ) in filenames   # Test long English file names
     assert ( u'rfc1001.txt', False ) in filenames                    # Test short English file names
+
+@with_setup(setup_func, teardown_func)
+def test_listSubPath():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name/')
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    print filenames
+    assert ( u'Test File.txt', False ) in filenames
+    assert ( u'Test Folder', True ) in filenames
+    assert ( u'子文件夹', True ) in filenames
+

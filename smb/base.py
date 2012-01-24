@@ -397,6 +397,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         expiry_time = time.time() + timeout
         path = path.replace('/', '\\')
+        if not path.endswith('\\'):
+            path += '\\'
         messages_history = [ ]
         results = [ ]
 
@@ -409,7 +411,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                             0x0006, # Flags: SMB_FIND_CLOSE_AT_EOS | SMB_FIND_RETURN_RESUME_KEYS
                             0x0104, # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
                             0x0000) # SearchStorageType
-            params_bytes += pattern.encode('UTF-16LE')
+            params_bytes += (path + pattern).encode('UTF-16LE')
 
             m = SMBMessage(ComTransaction2Request(max_params_count = 10,
                                                   max_data_count = 16644,
@@ -429,12 +431,17 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             data_length = len(data_bytes)
             offset = 0
             while offset < data_length:
+                if offset + info_size > data_length:
+                    return data_bytes[offset:]
+
                 next_offset, _, \
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_size, alloc_size, file_attributes, filename_length, ea_size, \
                 short_name_length, _, short_name = struct.unpack(info_format, data_bytes[offset:offset+info_size])
 
                 offset2 = offset + info_size
+                if offset2 + filename_length > data_length:
+                    return data_bytes[offset:]
 
                 filename = data_bytes[offset2:offset2+filename_length].decode('UTF-16LE')
                 short_name = short_name.decode('UTF-16LE')
@@ -445,16 +452,38 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     offset += next_offset
                 else:
                     break
+            return ''
 
         def findFirstCB(find_message, **kwargs):
             messages_history.append(find_message)
             if not find_message.status.hasError:
-                # TRANS2_FIND_FIRST2 response. [MS-CIFS]: 2.2.6.2.2
-                sid, search_count, end_of_search, _, last_name_offset = struct.unpack('<HHHHH', find_message.payload.params_bytes[:10])
-                if find_message.payload.data_bytes:
-                    decodeFindStruct(find_message.payload.data_bytes)
+                if not kwargs.has_key('total_count'):
+                    # TRANS2_FIND_FIRST2 response. [MS-CIFS]: 2.2.6.2.2
+                    sid, search_count, end_of_search, _, last_name_offset = struct.unpack('<HHHHH', find_message.payload.params_bytes[:10])
+                    kwargs.update({ 'sid': sid, 'end_of_search': end_of_search, 'last_name_offset': last_name_offset, 'data_buf': '' })
+                else:
+                    sid, end_of_search, last_name_offset = kwargs['sid'], kwargs['end_of_search'], kwargs['last_name_offset']
 
-                if end_of_search:
+                send_next = True
+                if find_message.payload.data_bytes:
+                    d = decodeFindStruct(kwargs['data_buf'] + find_message.payload.data_bytes)
+                    if not kwargs.has_key('data_count'):
+                        if len(find_message.payload.data_bytes) != find_message.payload.total_data_count:
+                            kwargs.update({ 'data_count': len(find_message.payload.data_bytes),
+                                            'total_count': find_message.payload.total_data_count,
+                                            'data_buf': d,
+                                            })
+                            send_next = False
+                    else:
+                        kwargs['data_count'] += len(find_message.payload.data_bytes)
+                        kwargs['total_count'] = min(find_message.payload.total_data_count, kwargs['total_count'])
+                        kwargs['data_buf'] = d
+                        if kwargs['data_count'] != kwargs['total_count']:
+                            send_next = False
+
+                if not send_next:
+                    self.pending_requests[find_message.mid] = _PendingRequest(find_message.mid, expiry_time, findFirstCB, errback, **kwargs)
+                elif end_of_search:
                     callback(results)
                 else:
                     sendFindNext(find_message.tid, sid, last_name_offset)
@@ -485,12 +514,33 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def findNextCB(find_message, **kwargs):
             messages_history.append(find_message)
             if not find_message.status.hasError:
-                # TRANS2_FIND_NEXT2 response. [MS-CIFS]: 2.2.6.3.2
-                search_count, end_of_search, _, last_name_offset = struct.unpack('<HHHH', find_message.payload.params_bytes[:8])
-                if find_message.payload.data_bytes:
-                    decodeFindStruct(find_message.payload.data_bytes)
+                if not kwargs.has_key('total_count'):
+                    # TRANS2_FIND_NEXT2 response. [MS-CIFS]: 2.2.6.3.2
+                    search_count, end_of_search, _, last_name_offset = struct.unpack('<HHHH', find_message.payload.params_bytes[:8])
+                    kwargs.update({ 'end_of_search': end_of_search, 'last_name_offset': last_name_offset, 'data_buf': '' })
+                else:
+                    end_of_search, last_name_offset = kwargs['end_of_search'], kwargs['last_name_offset']
 
-                if end_of_search:
+                send_next = True
+                if find_message.payload.data_bytes:
+                    d = decodeFindStruct(kwargs['data_buf'] + find_message.payload.data_bytes)
+                    if not kwargs.has_key('data_count'):
+                        if len(find_message.payload.data_bytes) != find_message.payload.total_data_count:
+                            kwargs.update({ 'data_count': len(find_message.payload.data_bytes),
+                                            'total_count': find_message.payload.total_data_count,
+                                            'data_buf': d,
+                                            })
+                            send_next = False
+                    else:
+                        kwargs['data_count'] += len(find_message.payload.data_bytes)
+                        kwargs['total_count'] = min(find_message.payload.total_data_count, kwargs['total_count'])
+                        kwargs['data_buf'] = d
+                        if kwargs['data_count'] != kwargs['total_count']:
+                            send_next = False
+
+                if not send_next:
+                    self.pending_requests[find_message.mid] = _PendingRequest(find_message.mid, expiry_time, findNextCB, errback, **kwargs)
+                elif end_of_search:
                     callback(results)
                 else:
                     sendFindNext(find_message.tid, kwargs['sid'], last_name_offset)
