@@ -53,7 +53,7 @@ class SMBConnection(SMB):
     # Public Methods
     #
 
-    def connect(self, ip, port, sock_family = socket.AF_INET, timeout = 60):
+    def connect(self, ip, port = 139, sock_family = socket.AF_INET, timeout = 60):
         """
         Establish the SMB connection to the remote SMB/CIFS server.
 

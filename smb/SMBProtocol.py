@@ -72,7 +72,8 @@ class SMBProtocolFactory(ClientFactory):
 
     def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True):
         """
-        Create a new SMBProtocolFactory instance.
+        Create a new SMBProtocolFactory instance. You will pass this instance to *reactor.connectTCP()* which will then instantiate the TCP connection to the remote SMB/CIFS server.
+        Note that the default TCP port for most SMB/CIFS servers is 139.
 
         *username* and *password* are the user credentials required to authenticate the underlying SMB connection with the remote server.
         File operations can only be proceeded after the connection has been authenticated successfully.
