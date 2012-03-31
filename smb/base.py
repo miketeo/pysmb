@@ -213,7 +213,8 @@ class SMB(NMBSession):
                                                      nt_challenge_response,
                                                      lm_challenge_response,
                                                      session_key,
-                                                     self.username)
+                                                     self.username,
+                                                     self.domain)
 
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))

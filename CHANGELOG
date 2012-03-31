@@ -1,4 +1,21 @@
 
+pysmb-1.0.2, 31 March 2012
+==========================
+
+- Fix a bug in SMB._handleSessionChallenge() method in base.py where the domain attribute
+  was not used to generate the corresponding NTLM authentication packets, resulting in
+  the default WORKGROUP domain for used for all subsequent authentications.
+
+pysmb-1.0.1, 25 Jan 2012
+========================
+
+- Fixes a bug in listPath() method which causes directory listing for
+  sub-directories to return an empty list.
+- Fixes an incorrect implementation of the TRANS2_FIND_FIRST2 and
+  TRANS2_FIND_NEXT2 request/response handling which causes directory listing
+  to crash when the remote directory contains a certain number of entries.
+
+
 pysmb-1.0.0, 25 Dec 2011
 ========================
 
