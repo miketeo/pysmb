@@ -659,13 +659,14 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def sendWrite(tid, fid, offset):
-            write_count = min(self.max_raw_size, 0xFFFF)
+            write_count = min(self.max_raw_size, 0xFFFF-1)  # Need to minus 1 byte from 0xFFFF because of the first NULL byte in the ComWriteAndxRequest message data 
             data_bytes = file_obj.read(write_count)
-            if data_bytes:
+            data_len = len(data_bytes)
+            if data_len > 0:
                 m = SMBMessage(ComWriteAndxRequest(fid = fid, offset = offset, data_bytes = data_bytes))
                 m.tid = tid
                 self._sendSMBMessage(m)
-                self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, writeCB, errback, fid = fid, offset = offset+len(data_bytes))
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, writeCB, errback, fid = fid, offset = offset+data_len)
             else:
                 closeFid(tid, fid)
                 callback(( file_obj, offset ))  # Note that this is a tuple of 2-elements
