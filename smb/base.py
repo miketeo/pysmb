@@ -446,7 +446,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
                 filename = data_bytes[offset2:offset2+filename_length].decode('UTF-16LE')
                 short_name = short_name.decode('UTF-16LE')
-                results.append(SharedFile(create_time, last_access_time, last_write_time, last_attr_change_time,
+                results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
+                                          convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
                                           file_size, alloc_size, file_attributes, short_name, filename))
 
                 if next_offset:
@@ -659,7 +660,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def sendWrite(tid, fid, offset):
-            write_count = min(self.max_raw_size, 0xFFFF-1)  # Need to minus 1 byte from 0xFFFF because of the first NULL byte in the ComWriteAndxRequest message data 
+            write_count = min(self.max_raw_size, 0xFFFF-1)  # Need to minus 1 byte from 0xFFFF because of the first NULL byte in the ComWriteAndxRequest message data
             data_bytes = file_obj.read(write_count)
             data_len = len(data_bytes)
             if data_len > 0:

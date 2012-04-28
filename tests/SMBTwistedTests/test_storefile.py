@@ -48,6 +48,15 @@ class StoreFilesFactory(SMBProtocolFactory):
         filenames = map(lambda e: e.filename, entries)
         assert os.path.basename(self.filename.replace('/', os.sep)) in filenames
 
+        for entry in entries:
+            if os.path.basename(self.filename.replace('/', os.sep)) == entry.filename:
+                # The following asserts will fail if the remote machine's time is not in sync with the test machine's time 
+                assert abs(entry.create_time - time.time()) < 3
+                assert abs(entry.last_access_time - time.time()) < 3
+                assert abs(entry.last_write_time - time.time()) < 3
+                assert abs(entry.last_attr_change_time - time.time()) < 3
+                break
+
         d = self.retrieveFile(self.service_name, self.filename, StringIO())
         d.addCallback(self.retrieveComplete)
         d.addErrback(self.d.errback)
