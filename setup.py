@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name = "pysmb",
-    version = "1.0.2",
+    version = "1.0.3",
     author = "Michael Teo",
     author_email = "miketeo@miketeo.net",
     license = "zlib/libpng",

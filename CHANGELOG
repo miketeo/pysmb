@@ -1,6 +1,7 @@
 
-pysmb-1.0.3
-===============
+pysmb-1.0.3, 28 April 2012
+===========================
+
 - Fix a crash in SMB._storFile() method which occurs when the remote CIFS server
   utilizes a max raw size larger than 65535 bytes. The bug was discovered with
   Windows 7 Pro SP1.
