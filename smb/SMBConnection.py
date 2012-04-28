@@ -161,7 +161,7 @@ class SMBConnection(SMB):
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure<smb_exceptions>` will be called in the returned *Deferred* errback.
         :param file_obj: A file-like object that has a *write* method. Data will be written continuously to *file_obj* until EOF is received from the remote service.
-        :return: A 2-element tuple of ( file attributes of the file on server, number of bytes retrieved ).
+        :return: A 2-element tuple of ( file attributes of the file on server, number of bytes written to *file_obj* ).
                  The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)
         """
         return self.retrieveFileFromOffset(service_name, path, file_obj, 0L, -1L, timeout)
