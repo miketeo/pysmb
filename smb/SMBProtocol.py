@@ -173,6 +173,8 @@ class SMBProtocolFactory(ClientFactory):
         """
         Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.
 
+        Use *retrieveFileFromOffset()* method if you need to specify the offset to read from the remote *path* and/or the maximum number of bytes to write to the *file_obj*.
+
         The meaning of the *timeout* parameter will be different from other file operation methods. As the downloaded file usually exceeeds the maximum size
         of each SMB/CIFS data message, it will be packetized into a series of request messages (each message will request about about 60kBytes).
         The *timeout* parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and downloaded from the remote SMB/CIFS server.
@@ -183,11 +185,30 @@ class SMBProtocolFactory(ClientFactory):
         :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a 3-element tuple of ( *file_obj*, file attributes of the file on server, number of bytes retrieved ).
                  The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)
         """
+        return self.retrieveFileFromOffset(service_name, path, file_obj, 0L, -1L, timeout)
+
+    def retrieveFileFromOffset(self, service_name, path, file_obj, offset, max_length = -1L, timeout = 30):
+        """
+        Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.
+
+        The meaning of the *timeout* parameter will be different from other file operation methods. As the downloaded file usually exceeeds the maximum size
+        of each SMB/CIFS data message, it will be packetized into a series of request messages (each message will request about about 60kBytes).
+        The *timeout* parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and downloaded from the remote SMB/CIFS server.
+
+        :param string/unicode service_name: the name of the shared folder for the *path*
+        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure<smb_exceptions>` will be called in the returned *Deferred* errback.
+        :param file_obj: A file-like object that has a *write* method. Data will be written continuously to *file_obj* until EOF is received from the remote service.
+        :param integer/long offset: the offset in the remote *path* where the first byte will be read and written to *file_obj*. Must be either zero or a positive integer/long value.
+        :param integer/long max_length: maximum number of bytes to read from the remote *path* and write to the *file_obj*. Specify a negative value to read from *offset* to the EOF.
+                                        If zero, the *Deferred* callback is invoked immediately after the file is opened successfully for reading.
+        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a 3-element tuple of ( *file_obj*, file attributes of the file on server, number of bytes retrieved ).
+                 The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)
+        """
         if not self.instance:
             raise NotConnectedError('Not connected to server')
 
         d = defer.Deferred()
-        self.instance._retrieveFile(service_name, path, file_obj, d.callback, d.errback, timeout = timeout)
+        self.instance._retrieveFileFromOffset(service_name, path, file_obj, d.callback, d.errback, offset, max_length, timeout = timeout)
         return d
 
     def storeFile(self, service_name, path, file_obj, timeout = 30):

@@ -58,6 +58,25 @@ class NetBIOS(NBNS):
 
         return self._pollForNetBIOSPacket(trn_id, timeout)
 
+    def queryIPForName(self, ip, port = 137, timeout = 30):
+        """
+        Send a query to the machine with *ip* and hopes that the machine will reply back with its name.
+
+        The implementation of this function is contributed by Jason Anderson.
+
+        :param string ip: If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.
+                          If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.
+        :param integer port: The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.
+        :param integer/float timeout: Number of seconds to wait for a reply, after which the method will return None
+        :return: A list of string containing the names of the machine at *ip*. On timeout, returns None.
+        """
+        assert self.sock, 'Socket is already closed'
+
+        trn_id = random.randint(1, 0xFFFF)
+        data = self.prepareNetNameQuery(trn_id)
+        self.write(data, ip, port)
+        return self._pollForQueryPacket(trn_id, timeout)
+
     #
     # Protected Methods
     #
@@ -76,6 +95,33 @@ class NetBIOS(NBNS):
 
                 data, _ = self.sock.recvfrom(0xFFFF)
                 trn_id, ret = self.decodePacket(data)
+
+                if trn_id == wait_trn_id:
+                    return ret
+            except select.error, ex:
+                if type(ex) is types.TupleType:
+                    if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
+                        raise ex
+                else:
+                    raise ex
+
+    #
+    # Contributed by Jason Anderson
+    #
+    def _pollForQueryPacket(self, wait_trn_id, timeout):
+        end_time = time.time() - timeout
+        while True:
+            try:
+                _timeout = time.time()-end_time
+                if _timeout <= 0:
+                    return None
+
+                ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], _timeout)
+                if not ready:
+                    return None
+
+                data, _ = self.sock.recvfrom(0xFFFF)
+                trn_id, ret = self.decodeIPQueryPacket(data)
 
                 if trn_id == wait_trn_id:
                     return ret

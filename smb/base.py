@@ -565,6 +565,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             sendFindFirst(self.connected_trees[service_name])
 
     def _retrieveFile(self, service_name, path, file_obj, callback, errback, timeout = 30):
+        return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0L, -1L, timeout)
+
+    def _retrieveFileFromOffset(self, service_name, path, file_obj, callback, errback, starting_offset, max_length, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -585,11 +588,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def openCB(open_message, **kwargs):
             messages_history.append(open_message)
             if not open_message.status.hasError:
-                sendRead(open_message.tid, open_message.payload.fid, 0L, open_message.payload.file_attributes)
+                if max_length == 0:
+                    closeFid(open_message.tid, open_message.payload.fid)
+                    callback(( file_obj, open_message.payload.file_attributes, 0L ))
+                else:
+                    sendRead(open_message.tid, open_message.payload.fid, starting_offset, open_message.payload.file_attributes, 0L, max_length)
             else:
                 errback(OperationFailure('Failed to retrieve %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
-        def sendRead(tid, fid, offset, file_attributes):
+        def sendRead(tid, fid, offset, file_attributes, read_len, remaining_len):
             read_count = self.max_raw_size - 2
             m = SMBMessage(ComReadAndxRequest(fid = fid,
                                               offset = offset,
@@ -597,17 +604,33 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                               min_return_bytes_count = min(0xFFFF, read_count)))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback, fid = fid, offset = offset, file_attributes = file_attributes)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback, fid = fid, offset = offset, file_attributes = file_attributes,
+                                                           read_len = read_len, remaining_len = remaining_len)
 
         def readCB(read_message, **kwargs):
             # To avoid crazy memory usage when retrieving large files, we do not save every read_message in messages_history.
             if not read_message.status.hasError:
-                file_obj.write(read_message.payload.data)
-                if read_message.payload.data_length < (self.max_raw_size - 2):
-                    closeFid(read_message.tid, kwargs['fid'])
-                    callback(( file_obj, kwargs['file_attributes'], kwargs['offset']+read_message.payload.data_length ))  # Note that this is a tuple of 3-elements
+                read_len = kwargs['read_len']
+                remaining_len = kwargs['remaining_len']
+                data_len = read_message.payload.data_length
+                if max_length > 0:
+                    if data_len > remaining_len:
+                        file_obj.write(read_message.payload.data[:remaining_len])
+                        read_len += remaining_len
+                        remaining_len = 0
+                    else:
+                        file_obj.write(read_message.payload.data)
+                        remaining_len -= data_len
+                        read_len += data_len
                 else:
-                    sendRead(read_message.tid, kwargs['fid'], kwargs['offset']+read_message.payload.data_length, kwargs['file_attributes'])
+                    file_obj.write(read_message.payload.data)
+                    read_len += data_len
+
+                if (max_length > 0 and remaining_len <= 0) or data_len < (self.max_raw_size - 2):
+                    closeFid(read_message.tid, kwargs['fid'])
+                    callback(( file_obj, kwargs['file_attributes'], read_len ))  # Note that this is a tuple of 3-elements
+                else:
+                    sendRead(read_message.tid, kwargs['fid'], kwargs['offset']+data_len, kwargs['file_attributes'], read_len, remaining_len)
             else:
                 messages_history.append(read_message)
                 closeFid(read_message.tid, kwargs['fid'])

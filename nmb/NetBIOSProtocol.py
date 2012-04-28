@@ -69,6 +69,32 @@ class NBNSProtocol(DatagramProtocol, NBNS):
         self.pending_trns[trn_id] = ( time.time()+timeout, name, d )
         return d
 
+    def queryIPForName(self, ip, port = 137, timeout = 30):
+        """
+        Send a query to the machine with *ip* and hopes that the machine will reply back with its name.
+
+        The implementation of this function is contributed by Jason Anderson.
+
+        :param string ip: If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.
+                          If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.
+        :param integer port: The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.
+        :param integer/float timeout: Number of seconds to wait for a reply, after which the method will return None
+        :return: A list of string containing the names of the machine at *ip*. On timeout, returns None.
+        """
+        trn_id = random.randint(1, 0xFFFF)
+        while True:
+            if not self.pending_trns.has_key(trn_id):
+                break
+            else:
+                trn_id = (trn_id + 1) & 0xFFFF
+
+        data = self.prepareNetNameQuery(trn_id, name)
+        self.write(data, ip, port)
+
+        d = defer.Deferred()
+        self.pending_trns[trn_id] = ( time.time()+timeout, name, d )
+        return d
+
     def stopProtocol(self):
         DatagramProtocol.stopProtocol(self)
 

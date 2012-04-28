@@ -126,3 +126,42 @@ class NBNS:
         payload = encode_name(name, 0x20) + '\x00\x20\x00\x01'
 
         return header + payload
+
+    #
+    # Contributed by Jason Anderson
+    #
+    def decodeIPQueryPacket(self, data):
+        if len(data) < self.HEADER_STRUCT_SIZE:
+            raise Exception
+
+        trn_id, code, question_count, answer_count, authority_count, additional_count = struct.unpack(self.HEADER_STRUCT_FORMAT, data[:self.HEADER_STRUCT_SIZE])
+
+        is_response = bool((code >> 15) & 0x01)
+        opcode = (code >> 11) & 0x0F
+        flags = (code >> 4) & 0x7F
+        rcode = code & 0x0F
+        numnames = struct.unpack('B', data[self.HEADER_STRUCT_SIZE + 44])[0]
+
+        if numnames > 0:
+            ret = [ ]
+            offset = self.HEADER_STRUCT_SIZE + 45
+
+            for i in range(0, numnames):
+                mynme = data[offset:offset + 15]
+                mynme = mynme.strip()
+                ret.append(mynme)
+                offset += 18
+
+            return trn_id, ret
+        else:
+            return trn_id, None
+
+    #
+    # Contributed by Jason Anderson
+    #
+    def prepareNetNameQuery(self, trn_id):
+        header = struct.pack(self.HEADER_STRUCT_FORMAT,
+                             trn_id, 0x0010, 1, 0, 0, 0)
+        payload = encode_name('*', 0) + '\x00\x21\x00\x01'
+
+        return header + payload

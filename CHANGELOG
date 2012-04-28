@@ -1,4 +1,18 @@
 
+pysmb-1.0.3
+===============
+- Fix a crash in SMB._storFile() method which occurs when the remote CIFS server
+  utilizes a max raw size larger than 65535 bytes. The bug was discovered with
+  Windows 7 Pro SP1.
+- Fix a bug in SMB._listPath() method where the files/folders time information are
+  not properly converted to Epoch time.
+- Add NBNSProtocol.queryIPForName() and NetBIOS.queryIPForName() methods to
+  query for a machine's NetBIOS name at the given IP address.
+- Add SMBProtocol.retrieveFileFromOffset() and SMBConnection.retrieveFileFromOffset()
+  methods for a finer control of file retrieval operation with read offset and write
+  limits.
+
+
 pysmb-1.0.2, 31 March 2012
 ==========================
 

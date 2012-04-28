@@ -67,3 +67,63 @@ def test_retr_unicodefilename():
     assert filesize == 256000
 
     temp_fh.close()
+
+
+@with_setup(setup_func, teardown_func)
+def test_retr_offset():
+    # Test file retrieval from offset to EOF
+    global conn
+    temp_fh = StringIO()
+    file_attributes, filesize = conn.retrieveFileFromOffset('smbtest', u'/测试文件夹/垃圾文件.dat', temp_fh, offset = 100000)
+
+    md = MD5()
+    md.update(temp_fh.getvalue())
+    assert md.hexdigest() == 'a141bd8024571ce7cb5c67f2b0d8ea0b'
+    assert filesize == 156000
+
+    temp_fh.close()
+
+
+@with_setup(setup_func, teardown_func)
+def test_retr_offset_and_biglimit():
+    # Test file retrieval from offset with a big max_length
+    global conn
+    temp_fh = StringIO()
+    file_attributes, filesize = conn.retrieveFileFromOffset('smbtest', u'/测试文件夹/垃圾文件.dat', temp_fh, offset = 100000, max_length = 100000)
+
+    md = MD5()
+    md.update(temp_fh.getvalue())
+    assert md.hexdigest() == '83b7afd7c92cdece3975338b5ca0b1c5'
+    assert filesize == 100000
+
+    temp_fh.close()
+
+
+@with_setup(setup_func, teardown_func)
+def test_retr_offset_and_smalllimit():
+    # Test file retrieval from offset with a small max_length
+    global conn
+    temp_fh = StringIO()
+    file_attributes, filesize = conn.retrieveFileFromOffset('smbtest', u'/测试文件夹/垃圾文件.dat', temp_fh, offset = 100000, max_length = 10)
+
+    md = MD5()
+    md.update(temp_fh.getvalue())
+    assert md.hexdigest() == '746f60a96b39b712a7b6e17ddde19986'
+    assert filesize == 10
+
+    temp_fh.close()
+
+
+@with_setup(setup_func, teardown_func)
+def test_retr_offset_and_zerolimit():
+    # Test file retrieval from offset to EOF with max_length=0
+    global conn
+    temp_fh = StringIO()
+    file_attributes, filesize = conn.retrieveFileFromOffset('smbtest', u'/测试文件夹/垃圾文件.dat', temp_fh, offset = 100000, max_length = 0)
+
+    md = MD5()
+    md.update(temp_fh.getvalue())
+    assert md.hexdigest() == 'd41d8cd98f00b204e9800998ecf8427e'
+    assert filesize == 0
+
+    temp_fh.close()

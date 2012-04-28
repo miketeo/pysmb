@@ -24,6 +24,8 @@ class RetrieveFileFactory(SMBProtocolFactory):
         self.service = ''
         self.path = ''
         self.digest = ''
+        self.offset = 0
+        self.max_length = -1
         self.filesize = 0
 
     def testDone(self, r):
@@ -56,7 +58,7 @@ class RetrieveFileFactory(SMBProtocolFactory):
         assert self.service
         assert self.path
 
-        d = self.retrieveFile(self.service, self.path, self.temp_fh, timeout = 15)
+        d = self.retrieveFileFromOffset(self.service, self.path, self.temp_fh, self.offset, self.max_length, timeout = 15)
         d.addCallback(self.fileRetrieved)
         d.addErrback(self.d.errback)
 
@@ -97,5 +99,60 @@ def test_retr_unicodefilename():
     factory.path = u'/测试文件夹/垃圾文件.dat'
     factory.digest = '8a44c1e80d55e91c92350955cdf83442'
     factory.filesize = 256000
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset():
+    # Test file retrieval from offset to EOF
+    info = getConnectionInfo()
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = 'a141bd8024571ce7cb5c67f2b0d8ea0b'
+    factory.filesize = 156000
+    factory.offset = 100000
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset_and_biglimit():
+    # Test file retrieval from offset with a big max_length
+    info = getConnectionInfo()
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = '83b7afd7c92cdece3975338b5ca0b1c5'
+    factory.filesize = 100000
+    factory.offset = 100000
+    factory.max_length = 100000
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset_and_smalllimit():
+    # Test file retrieval from offset with a small max_length
+    info = getConnectionInfo()
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = '746f60a96b39b712a7b6e17ddde19986'
+    factory.filesize = 10
+    factory.offset = 100000
+    factory.max_length = 10
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset_and_zerolimit():
+    # Test file retrieval from offset to EOF with max_length=0
+    info = getConnectionInfo()
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = 'd41d8cd98f00b204e9800998ecf8427e'
+    factory.filesize = 0
+    factory.offset = 100000
+    factory.max_length = 0
     reactor.connectTCP(info['server_ip'], info['server_port'], factory)
     return factory.d
