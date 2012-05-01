@@ -62,6 +62,8 @@ Hence, please take some time to familiarize yourself with the smb package conten
   Contains a SMB protocol implementation. All operations are blocking I/O.
 * **smb/SMBProtocol.py** :
   Contains the SMB protocol implementation for use in the Twisted framework.
+* **smb/SMBHandler.py** :
+  Provides support for "smb://" URL in the urllib2 python package.
 
 Using pysmb
 ===========
@@ -75,6 +77,7 @@ As an application developer who is looking to use pysmb to implement file transf
  * To use pysmb in applications where you want the file operations to return after they have completed (synchronous style), please read
    :doc:`smb.SMBConnection.SMBConnection<api/smb_SMBConnection>` documentation.
  * To use pysmb in Twisted, please read :doc:`smb.SMBProtocol.SMBProtocolFactory<api/smb_SMBProtocolFactory>` documentation.
+ * To support "smb://" URL in urllib2 python package, read :doc:`smb.SMBHandler.SMBHandler<api/smb_SMBHandler>` documentation.
 
 As a software developer who is looking to modify pysmb so that you can integrate it to other network frameworks:
  * Read :doc:`extending`

@@ -1,4 +1,10 @@
 
+pysmb-1.0.4, 1 May 2012
+=======================
+- Adds support for "smb://" URL in urllib2 python packages to retrieve or upload
+  files from/to remote CIFS servers.
+- Improve documentation
+
 pysmb-1.0.3, 28 April 2012
 ===========================
 
