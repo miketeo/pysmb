@@ -42,7 +42,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pysmb'
-copyright = u'2001-2012, Michael Teo'
+copyright = u'2001-2012, Michael Teo http://miketeo.net/'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

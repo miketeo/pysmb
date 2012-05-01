@@ -8,6 +8,7 @@ docs/doctrees/index.doctree
 docs/doctrees/api/nmb_NBNSProtocol.doctree
 docs/doctrees/api/nmb_NetBIOS.doctree
 docs/doctrees/api/smb_SMBConnection.doctree
+docs/doctrees/api/smb_SMBHandler.doctree
 docs/doctrees/api/smb_SMBProtocolFactory.doctree
 docs/doctrees/api/smb_SharedDevice.doctree
 docs/doctrees/api/smb_SharedFile.doctree
@@ -31,6 +32,7 @@ docs/html/_sources/index.txt
 docs/html/_sources/api/nmb_NBNSProtocol.txt
 docs/html/_sources/api/nmb_NetBIOS.txt
 docs/html/_sources/api/smb_SMBConnection.txt
+docs/html/_sources/api/smb_SMBHandler.txt
 docs/html/_sources/api/smb_SMBProtocolFactory.txt
 docs/html/_sources/api/smb_SharedDevice.txt
 docs/html/_sources/api/smb_SharedFile.txt
@@ -59,6 +61,7 @@ docs/html/_static/websupport.js
 docs/html/api/nmb_NBNSProtocol.html
 docs/html/api/nmb_NetBIOS.html
 docs/html/api/smb_SMBConnection.html
+docs/html/api/smb_SMBHandler.html
 docs/html/api/smb_SMBProtocolFactory.html
 docs/html/api/smb_SharedDevice.html
 docs/html/api/smb_SharedFile.html
@@ -71,6 +74,7 @@ nmb/nmb_constants.py
 nmb/nmb_structs.py
 nmb/utils.py
 smb/SMBConnection.py
+smb/SMBHandler.py
 smb/SMBProtocol.py
 smb/__init__.py
 smb/base.py
@@ -91,6 +95,7 @@ sphinx/source/index.rst
 sphinx/source/api/nmb_NBNSProtocol.rst
 sphinx/source/api/nmb_NetBIOS.rst
 sphinx/source/api/smb_SMBConnection.rst
+sphinx/source/api/smb_SMBHandler.rst
 sphinx/source/api/smb_SMBProtocolFactory.rst
 sphinx/source/api/smb_SharedDevice.rst
 sphinx/source/api/smb_SharedFile.rst
@@ -107,6 +112,7 @@ tests/NetBIOSTests/test_queryname.py
 tests/NetBIOSTwistedTests/__init__.py
 tests/NetBIOSTwistedTests/test_queryname.py
 tests/SMBConnectionTests/__init__.py
+tests/SMBConnectionTests/test_SMBHandler.py
 tests/SMBConnectionTests/test_auth.py
 tests/SMBConnectionTests/test_createdeletedirectory.py
 tests/SMBConnectionTests/test_echo.py
