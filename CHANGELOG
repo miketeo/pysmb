@@ -1,4 +1,7 @@
 
+pysmb-1.0.5
+- Add supports for SMB message signing.
+
 pysmb-1.0.4, 1 May 2012
 =======================
 - Adds support for "smb://" URL in urllib2 python packages to retrieve or upload

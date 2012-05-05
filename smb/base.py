@@ -49,8 +49,12 @@ class SMB(NMBSession):
 
         self.has_negotiated = False
         self.has_authenticated = False
+        self.needs_signing = False   #: True if the remote server accepts message signing. All outgoing messages will be signed
+        self.signing_session_key = None          # Session key for signing packets, if signing is active. Similar to SigningSessionKey as described in [MS-CIFS] 3.2.1.2
+        self.signing_challenge_response = None   # Contains the challenge response for signing, if signing is active. Similar to SigningChallengeResponse as described in [MS-CIFS] 3.2.1.2
         self.mid = 0
         self.uid = 0
+        self.next_signing_id = 2     #: Similar to ClientNextSendSequenceNumber as described in [MS-CIFS] 3.2.1.2
 
         # Most of the following attributes will be initialized upon receipt of SMB_COM_NEGOTIATE message from server (via self._updateServerInfo method)
         self.use_plaintext_authentication = False  #: Similar to PlaintextAuthenticationPolicy in in [MS-CIFS] 3.2.1.1
@@ -102,7 +106,22 @@ class SMB(NMBSession):
         if smb_message.mid == 0:
             smb_message.mid = self._getNextMID()
         smb_message.uid = self.uid
-        smb_message.raw_data = smb_message.encode()
+        if self.needs_signing:
+            # Increment the next_signing_id as described in [MS-CIFS] 3.2.4.1.3
+            smb_message.security = self.next_signing_id
+            self.next_signing_id += 2  # All our defined messages currently have responses, so always increment by 2
+            raw_data = smb_message.encode()
+
+            md = ntlm.MD5(self.signing_session_key)
+            if self.signing_challenge_response:
+                md.update(self.signing_challenge_response)
+            md.update(raw_data)
+            signature = md.digest()[:8]
+
+            self.log.debug('MID is %d. Signing ID is %d. Signature is %s. Total raw message is %d bytes', smb_message.mid, smb_message.security, binascii.hexlify(signature), len(raw_data))
+            smb_message.raw_data = raw_data[:14] + signature + raw_data[22:]
+        else:
+            smb_message.raw_data = smb_message.encode()
         self.sendNMBMessage(smb_message.raw_data)
 
     def _getNextMID(self):
@@ -185,8 +204,8 @@ class SMB(NMBSession):
         if self.use_plaintext_authentication:
             self.log.warning('Remote server only supports plaintext authentication. Your password can be stolen easily over the network.')
 
-        if payload.security_mode & NEGOTIATE_SECURITY_SIGNATURES_REQUIRE:
-            raise UnsupportedFeature('Remote server requires secure SMB message signing but current version pysmb does not support this yet.')
+        #if payload.security_mode & NEGOTIATE_SECURITY_SIGNATURES_REQUIRE:
+        #    raise UnsupportedFeature('Remote server requires secure SMB message signing but current version pysmb does not support this yet.')
 
 
     def _handleSessionChallenge(self, message, ntlm_token):
@@ -222,6 +241,16 @@ class SMB(NMBSession):
 
         blob = securityblob.generateAuthSecurityBlob(ntlm_data)
         self._sendSMBMessage(SMBMessage(ComSessionSetupAndxRequest__WithSecurityExtension(0, blob)))
+
+        self.needs_signing = message.supportsSigning
+        if self.needs_signing:
+            self.signing_session_key = session_key
+            if self.capabilities & CAP_EXTENDED_SECURITY:
+                self.signing_challenge_response = None
+            else:
+                self.signing_challenge_response = blob
+
+
 
 
     def _handleNegotiateResponse(self, message):
@@ -683,7 +712,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def sendWrite(tid, fid, offset):
-            write_count = min(self.max_raw_size, 0xFFFF-1)  # Need to minus 1 byte from 0xFFFF because of the first NULL byte in the ComWriteAndxRequest message data
+            # For message signing, the total SMB message size must be not exceed the max_buffer_size. Non-message signing does not have this limitation
+            write_count = min((self.needs_signing and (self.max_buffer_size-64)) or self.max_raw_size, 0xFFFF-1)  # Need to minus 1 byte from 0xFFFF because of the first NULL byte in the ComWriteAndxRequest message data
             data_bytes = file_obj.read(write_count)
             data_len = len(data_bytes)
             if data_len > 0:

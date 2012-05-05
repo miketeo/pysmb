@@ -6,5 +6,6 @@ recursive-include smb *
 recursive-exclude smb *.pyc
 recursive-include tests *
 recursive-exclude tests *.pyc
+recursive-exclude tests *~
 recursive-include sphinx *
 recursive-include docs *
