@@ -36,11 +36,16 @@ class SMB(NMBSession):
 
     log = logging.getLogger('SMB.SMB')
 
-    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True):
+    SIGN_NEVER = 0
+    SIGN_WHEN_SUPPORTED = 1
+    SIGN_WHEN_REQUIRED = 2
+
+    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED):
         NMBSession.__init__(self, my_name, remote_name)
         self.username = username
         self.password = password
         self.domain = domain
+        self.sign_options = sign_options
         self.use_ntlm_v2 = use_ntlm_v2 #: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1
         self.smb_message = SMBMessage()
         self.pending_requests = { }  #: MID mapped to _PendingRequest instance
@@ -49,9 +54,9 @@ class SMB(NMBSession):
 
         self.has_negotiated = False
         self.has_authenticated = False
-        self.needs_signing = False   #: True if the remote server accepts message signing. All outgoing messages will be signed
-        self.signing_session_key = None          # Session key for signing packets, if signing is active. Similar to SigningSessionKey as described in [MS-CIFS] 3.2.1.2
-        self.signing_challenge_response = None   # Contains the challenge response for signing, if signing is active. Similar to SigningChallengeResponse as described in [MS-CIFS] 3.2.1.2
+        self.is_signing_active = False           #: True if the remote server accepts message signing. All outgoing messages will be signed. Simiar to IsSigningActive as described in [MS-CIFS] 3.2.1.2
+        self.signing_session_key = None          #: Session key for signing packets, if signing is active. Similar to SigningSessionKey as described in [MS-CIFS] 3.2.1.2
+        self.signing_challenge_response = None   #: Contains the challenge response for signing, if signing is active. Similar to SigningChallengeResponse as described in [MS-CIFS] 3.2.1.2
         self.mid = 0
         self.uid = 0
         self.next_signing_id = 2     #: Similar to ClientNextSendSequenceNumber as described in [MS-CIFS] 3.2.1.2
@@ -62,6 +67,7 @@ class SMB(NMBSession):
         self.max_buffer_size = 0   #: Similar to MaxBufferSize as described in [MS-CIFS] 3.2.1.1
         self.max_mpx_count = 0     #: Similar to MaxMpxCount as described in [MS-CIFS] 3.2.1.1
         self.capabilities = 0
+        self.security_mode = 0     #: Initialized from the SecurityMode field of the SMB_COM_NEGOTIATE message
 
         self.log.info('Authetication with remote machine "%s" for user "%s" will be using NTLM %s authentication (%s extended security)',
                       self.remote_name, self.username,
@@ -106,7 +112,9 @@ class SMB(NMBSession):
         if smb_message.mid == 0:
             smb_message.mid = self._getNextMID()
         smb_message.uid = self.uid
-        if self.needs_signing:
+        if self.is_signing_active:
+            smb_message.flags2 |= SMB_FLAGS2_SMB_SECURITY_SIGNATURE
+
             # Increment the next_signing_id as described in [MS-CIFS] 3.2.4.1.3
             smb_message.security = self.next_signing_id
             self.next_signing_id += 2  # All our defined messages currently have responses, so always increment by 2
@@ -200,12 +208,10 @@ class SMB(NMBSession):
         self.max_buffer_size = payload.max_buffer_size
         self.max_mpx_count = payload.max_mpx_count
         self.use_plaintext_authentication = not bool(payload.security_mode & NEGOTIATE_ENCRYPT_PASSWORDS)
+        self.security_mode = payload.security_mode
 
         if self.use_plaintext_authentication:
             self.log.warning('Remote server only supports plaintext authentication. Your password can be stolen easily over the network.')
-
-        #if payload.security_mode & NEGOTIATE_SECURITY_SIGNATURES_REQUIRE:
-        #    raise UnsupportedFeature('Remote server requires secure SMB message signing but current version pysmb does not support this yet.')
 
 
     def _handleSessionChallenge(self, message, ntlm_token):
@@ -242,15 +248,24 @@ class SMB(NMBSession):
         blob = securityblob.generateAuthSecurityBlob(ntlm_data)
         self._sendSMBMessage(SMBMessage(ComSessionSetupAndxRequest__WithSecurityExtension(0, blob)))
 
-        self.needs_signing = message.supportsSigning
-        if self.needs_signing:
+        if self.security_mode & NEGOTIATE_SECURITY_SIGNATURES_REQUIRE:
+            self.log.info('Server requires all SMB messages to be signed')
+            self.is_signing_active = (self.sign_options != SMB.SIGN_NEVER)
+        elif self.security_mode & NEGOTIATE_SECURITY_SIGNATURES_ENABLE:
+            self.log.info('Server supports SMB signing')
+            self.is_signing_active = (self.sign_options == SMB.SIGN_WHEN_SUPPORTED)
+        else:
+            self.is_signing_active = False
+
+        if self.is_signing_active:
+            self.log.info("SMB signing activated. All SMB messages will be signed.")
             self.signing_session_key = session_key
             if self.capabilities & CAP_EXTENDED_SECURITY:
                 self.signing_challenge_response = None
             else:
                 self.signing_challenge_response = blob
-
-
+        else:
+            self.log.info("SMB signing deactivated. SMB messages will NOT be signed.")
 
 
     def _handleNegotiateResponse(self, message):
@@ -713,7 +728,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         def sendWrite(tid, fid, offset):
             # For message signing, the total SMB message size must be not exceed the max_buffer_size. Non-message signing does not have this limitation
-            write_count = min((self.needs_signing and (self.max_buffer_size-64)) or self.max_raw_size, 0xFFFF-1)  # Need to minus 1 byte from 0xFFFF because of the first NULL byte in the ComWriteAndxRequest message data
+            write_count = min((self.is_signing_active and (self.max_buffer_size-64)) or self.max_raw_size, 0xFFFF-1)  # Need to minus 1 byte from 0xFFFF because of the first NULL byte in the ComWriteAndxRequest message data
             data_bytes = file_obj.read(write_count)
             data_len = len(data_bytes)
             if data_len > 0:

@@ -70,7 +70,14 @@ class SMBProtocolFactory(ClientFactory):
     protocol = SMBProtocol
     log = logging.getLogger('SMB.SMBFactory')
 
-    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True):
+    #: SMB messages will never be signed regardless of remote server's configurations; access errors will occur if the remote server requires signing.
+    SIGN_NEVER = 0
+    #: SMB messages will be signed when remote server supports signing but not requires signing.
+    SIGN_WHEN_SUPPORTED = 1
+    #: SMB messages will only be signed when remote server requires signing.
+    SIGN_WHEN_REQUIRED = 2
+
+    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED):
         """
         Create a new SMBProtocolFactory instance. You will pass this instance to *reactor.connectTCP()* which will then instantiate the TCP connection to the remote SMB/CIFS server.
         Note that the default TCP port for most SMB/CIFS servers is 139.
@@ -88,6 +95,10 @@ class SMBProtocolFactory(ClientFactory):
                                     The choice of NTLMv1 and NTLMv2 is configured on the remote server, and there is no mechanism to auto-detect which algorithm has been configured.
                                     Hence, we can only "guess" or try both algorithms.
                                     On Sambda, Windows Vista and Windows 7, NTLMv2 is enabled by default. On Windows XP, we can use NTLMv1 before NTLMv2.
+        :param int sign_options: Determines whether SMB messages will be signed. Default is *SIGN_WHEN_REQUIRED*.
+                                 If *SIGN_WHEN_REQUIRED* (value=2), SMB messages will only be signed when remote server requires signing.
+                                 If *SIGN_WHEN_SUPPORTED* (value=1), SMB messages will be signed when remote server supports signing but not requires signing.
+                                 If *SIGN_NEVER* (value=0), SMB messages will never be signed regardless of remote server's configurations; access errors will occur if the remote server requires signing.
         """
         self.username = username
         self.password = password
@@ -95,6 +106,7 @@ class SMBProtocolFactory(ClientFactory):
         self.remote_name = remote_name
         self.domain = domain
         self.use_ntlm_v2 = use_ntlm_v2
+        self.sign_options = sign_options
         self.instance = None    #: The single SMBProtocol instance for each SMBProtocolFactory instance. Usually, you should not need to touch this attribute directly.
 
     #
@@ -335,6 +347,6 @@ class SMBProtocolFactory(ClientFactory):
     #
 
     def buildProtocol(self, addr):
-        p = self.protocol(self.username, self.password, self.my_name, self.remote_name, self.domain, self.use_ntlm_v2)
+        p = self.protocol(self.username, self.password, self.my_name, self.remote_name, self.domain, self.use_ntlm_v2, self.sign_options)
         p.factory = self
         return p

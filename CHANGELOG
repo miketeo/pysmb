@@ -1,6 +1,9 @@
 
-pysmb-1.0.5
-- Add supports for SMB message signing.
+pysmb-1.0.5, 7 May 2012
+=======================
+- Add supports for SMB message signing. pysmb will sign all SMB messages from
+  the CIFS client to the server, but it does not verify the signatures of the
+  SMB messages from the server.
 
 pysmb-1.0.4, 1 May 2012
 =======================

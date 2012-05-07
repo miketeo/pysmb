@@ -138,10 +138,6 @@ class SMBMessage:
     def hasExtendedSecurity(self):
         return bool(self.flags2 & SMB_FLAGS2_EXTENDED_SECURITY)
 
-    @property
-    def supportsSigning(self):
-        return bool(self.flags2 & SMB_FLAGS2_SMB_SECURITY_SIGNATURE)
-
     def encode(self):
         """
         Encode this SMB message into a series of bytes suitable to be embedded with a NetBIOS session message.
@@ -254,7 +250,7 @@ class Payload:
         message.flags2 = SMB_FLAGS2_UNICODE | SMB_FLAGS2_NT_STATUS | SMB_FLAGS2_IS_LONG_NAME | SMB_FLAGS2_LONG_NAMES
 
         if SUPPORT_EXTENDED_SECURITY:
-            message.flags2 |= (SMB_FLAGS2_EXTENDED_SECURITY | SMB_FLAGS2_SMB_SECURITY_SIGNATURE)
+            message.flags2 |= SMB_FLAGS2_EXTENDED_SECURITY
 
     def prepare(self, message):
         raise NotImplementedError

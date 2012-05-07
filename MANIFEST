@@ -103,7 +103,6 @@ sphinx/source/api/smb_exceptions.rst
 tests/README_1st.txt
 tests/__init__.py
 tests/connection.ini
-tests/connection.ini~
 tests/smbtest.zip
 tests/test_ntlm.py
 tests/test_securityblob.py
