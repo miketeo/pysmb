@@ -79,7 +79,8 @@ class NBNSProtocol(DatagramProtocol, NBNS):
                           If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.
         :param integer port: The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.
         :param integer/float timeout: Number of seconds to wait for a reply, after which the method will return None
-        :return: A list of string containing the names of the machine at *ip*. On timeout, returns None.
+        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a list of names of the machine at *ip*.
+                 On timeout, the errback function will be called with a Failure instance wrapping around a NetBIOSTimeout exception
         """
         trn_id = random.randint(1, 0xFFFF)
         while True:
