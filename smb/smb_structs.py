@@ -7,11 +7,19 @@ from smb_constants import *
 # Set to True if you want to enable support for extended security. Required for Windows Vista and later
 SUPPORT_EXTENDED_SECURITY = True
 
+# Set to True if you want to enable SMB2 protocol.
+SUPPORT_SMB2 = True
+
 # Supported dialects
 DIALECTS = [ ]
 for i, ( name, dialect ) in enumerate([ ( 'NT_LAN_MANAGER_DIALECT', 'NT LM 0.12' ), ]):
     DIALECTS.append(dialect)
     globals()[name] = i
+
+DIALECTS2 = [ ]
+for i, ( name, dialect ) in enumerate([ ( 'SMB2_DIALECT', 'SMB 2.002' ) ]):
+    DIALECTS2.append(dialect)
+    globals()[name] = i + len(DIALECTS)
 
 
 class UnsupportedFeature(Exception):
@@ -43,6 +51,10 @@ class ProtocolError(Exception):
 
         return b.getvalue()
 
+class SMB2ProtocolHeaderError(ProtocolError):
+
+    def __init__(self):
+        ProtocolError.__init__(self, "Packet header belongs to SMB2")
 
 class OperationFailure(Exception):
 
@@ -93,6 +105,7 @@ class SMBMessage:
     HEADER_STRUCT_SIZE = struct.calcsize(HEADER_STRUCT_FORMAT)
 
     log = logging.getLogger('SMB.SMBMessage')
+    protocol = 1
 
     def __init__(self, payload = None):
         self.reset()
@@ -182,6 +195,8 @@ class SMBMessage:
         self.flags2, pid_high, self.security, self.tid, \
         pid_low, self.uid, self.mid, params_count = struct.unpack(self.HEADER_STRUCT_FORMAT, buf[:self.HEADER_STRUCT_SIZE])
 
+        if protocol == '\xFESMB':
+            raise SMB2ProtocolHeaderError()
         if protocol != '\xFFSMB':
             raise ProtocolError('Invalid 4-byte protocol field', buf)
 
@@ -274,7 +289,10 @@ class ComNegotiateRequest(Payload):
     def prepare(self, message):
         assert message.payload == self
         message.parameters_data = ''
-        message.data = ''.join(map(lambda s: '\x02'+s+'\x00', DIALECTS))
+        if SUPPORT_SMB2:
+            message.data = ''.join(map(lambda s: '\x02'+s+'\x00', DIALECTS + DIALECTS2))
+        else:
+            message.data = ''.join(map(lambda s: '\x02'+s+'\x00', DIALECTS))
 
 
 class ComNegotiateResponse(Payload):

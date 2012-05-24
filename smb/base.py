@@ -1,7 +1,9 @@
 
 import logging, binascii, time
 from smb_constants import *
+from smb2_constants import *
 from smb_structs import *
+from smb2_structs import *
 from nmb.base import NMBSession
 from utils import convertFILETIMEtoEpoch
 import ntlm, securityblob
@@ -48,6 +50,7 @@ class SMB(NMBSession):
         self.sign_options = sign_options
         self.use_ntlm_v2 = use_ntlm_v2 #: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1
         self.smb_message = SMBMessage()
+        self.is_using_smb2 = False   #: Are we communicating using SMB2 protocol? self.smb_message will be a SMB2Message instance if this flag is True
         self.pending_requests = { }  #: MID mapped to _PendingRequest instance
         self.connected_trees = { }   #: Share name mapped to TID
         self.next_rpc_call_id = 0    #: Next RPC callID value. Not used directly in SMB message. Usually encapsulated in sub-commands under SMB_COM_TRANSACTION or SMB_COM_TRANSACTION2 messages
@@ -61,13 +64,25 @@ class SMB(NMBSession):
         self.uid = 0
         self.next_signing_id = 2     #: Similar to ClientNextSendSequenceNumber as described in [MS-CIFS] 3.2.1.2
 
-        # Most of the following attributes will be initialized upon receipt of SMB_COM_NEGOTIATE message from server (via self._updateServerInfo method)
+        # SMB1 and SMB2 attributes
+        # Note that the interpretations of the values may differ between SMB1 and SMB2 protocols
+        self.capabilities = 0
+        self.security_mode = 0     #: Initialized from the SecurityMode field of the SMB_COM_NEGOTIATE message
+
+        # SMB1 attributes
+        # Most of the following attributes will be initialized upon receipt of SMB_COM_NEGOTIATE message from server (via self._updateServerInfo_SMB1 method)
         self.use_plaintext_authentication = False  #: Similar to PlaintextAuthenticationPolicy in in [MS-CIFS] 3.2.1.1
         self.max_raw_size = 0
         self.max_buffer_size = 0   #: Similar to MaxBufferSize as described in [MS-CIFS] 3.2.1.1
         self.max_mpx_count = 0     #: Similar to MaxMpxCount as described in [MS-CIFS] 3.2.1.1
-        self.capabilities = 0
-        self.security_mode = 0     #: Initialized from the SecurityMode field of the SMB_COM_NEGOTIATE message
+
+        # SMB2 attributes
+        self.max_read_size = 0      #: Similar to MaxReadSize as described in [MS-SMB2] 2.2.4
+        self.max_write_size = 0     #: Similar to MaxWriteSize as described in [MS-SMB2] 2.2.4
+        self.max_transact_size = 0  #: Similar to MaxTransactSize as described in [MS-SMB2] 2.2.4
+        self.session_id = 0         #: Similar to SessionID as described in [MS-SMB2] 2.2.4. This will be set in _updateState_SMB2 method
+
+        self._setupSMB1Methods()
 
         self.log.info('Authetication with remote machine "%s" for user "%s" will be using NTLM %s authentication (%s extended security)',
                       self.remote_name, self.username,
@@ -86,13 +101,38 @@ class SMB(NMBSession):
         pass
 
     def onNMBSessionMessage(self, flags, data):
-        i = self.smb_message.decode(data)
-        if i > 0:
-            self.log.debug('Received SMB message "%s" (command:0x%2X flags:0x%02X flags2:0x%04X TID:%d UID:%d)',
-                           SMB_COMMAND_NAMES.get(self.smb_message.command, '<unknown>'),
-                           self.smb_message.command, self.smb_message.flags, self.smb_message.flags2, self.smb_message.tid, self.smb_message.uid)
-            if self._updateState(self.smb_message):
-                self.smb_message = SMBMessage()
+        while True:
+            try:
+                i = self.smb_message.decode(data)
+            except SMB2ProtocolHeaderError:
+                self.log.info('Now switching over to SMB2 protocol communication')
+                self.is_using_smb2 = True
+                self.mid = 0  # Must reset messageID counter, or else remote SMB2 server will disconnect
+                self._setupSMB2Methods()
+                self.smb_message = self._klassSMBMessage()
+                i = self.smb_message.decode(data)
+
+            next_message_offset = 0
+            if self.is_using_smb2:
+                next_message_offset = self.smb_message.next_command_offset
+
+            if i > 0:
+                if not self.is_using_smb2:
+                    self.log.debug('Received SMB message "%s" (command:0x%2X flags:0x%02X flags2:0x%04X TID:%d UID:%d)',
+                                   SMB_COMMAND_NAMES.get(self.smb_message.command, '<unknown>'),
+                                   self.smb_message.command, self.smb_message.flags, self.smb_message.flags2, self.smb_message.tid, self.smb_message.uid)
+                else:
+                    self.log.debug('Received SMB2 message "%s" (command:0x%04X flags:0x%04x)',
+                                   SMB2_COMMAND_NAMES.get(self.smb_message.command, '<unknown>'),
+                                   self.smb_message.command, self.smb_message.flags)
+                if self._updateState(self.smb_message):
+                    # We need to create a new instance instead of calling reset() because the instance could be captured in the message history.
+                    self.smb_message = self._klassSMBMessage()
+
+            if next_message_offset > 0:
+                data = data[next_message_offset:]
+            else:
+                break
 
     #
     # Public Methods for Overriding in Subclasses
@@ -108,9 +148,169 @@ class SMB(NMBSession):
     # Protected Methods
     #
 
-    def _sendSMBMessage(self, smb_message):
+    def _setupSMB1Methods(self):
+        self._klassSMBMessage = SMBMessage
+        self._updateState = self._updateState_SMB1
+        self._updateServerInfo = self._updateServerInfo_SMB1
+        self._handleNegotiateResponse = self._handleNegotiateResponse_SMB1
+        self._sendSMBMessage = self._sendSMBMessage_SMB1
+        self._handleSessionChallenge = self._handleSessionChallenge_SMB1
+
+    def _setupSMB2Methods(self):
+        self._klassSMBMessage = SMB2Message
+        self._updateState = self._updateState_SMB2
+        self._updateServerInfo = self._updateServerInfo_SMB2
+        self._handleNegotiateResponse = self._handleNegotiateResponse_SMB2
+        self._sendSMBMessage = self._sendSMBMessage_SMB2
+        self._handleSessionChallenge = self._handleSessionChallenge_SMB2
+
+    def _getNextRPCCallID(self):
+        self.next_rpc_call_id += 1
+        return self.next_rpc_call_id
+
+    #
+    # SMB2 Methods Family
+    #
+
+    def _sendSMBMessage_SMB2(self, smb_message):
         if smb_message.mid == 0:
-            smb_message.mid = self._getNextMID()
+            smb_message.mid = self._getNextMID_SMB2()
+
+        if smb_message.command != SMB2_COM_NEGOTIATE and smb_message.command != SMB2_COM_ECHO:
+            smb_message.session_id = self.session_id
+
+        if self.is_signing_active:
+
+            # Increment the next_signing_id as described in [MS-CIFS] 3.2.4.1.3
+            smb_message.security = self.next_signing_id
+            self.next_signing_id += 2  # All our defined messages currently have responses, so always increment by 2
+            raw_data = smb_message.encode()
+
+            md = ntlm.MD5(self.signing_session_key)
+            if self.signing_challenge_response:
+                md.update(self.signing_challenge_response)
+            md.update(raw_data)
+            signature = md.digest()[:8]
+
+            self.log.debug('MID is %d. Signing ID is %d. Signature is %s. Total raw message is %d bytes', smb_message.mid, smb_message.security, binascii.hexlify(signature), len(raw_data))
+            smb_message.raw_data = raw_data[:14] + signature + raw_data[22:]
+        else:
+            smb_message.raw_data = smb_message.encode()
+        self.sendNMBMessage(smb_message.raw_data)
+
+    def _getNextMID_SMB2(self):
+        self.mid += 1
+        return self.mid
+
+    def _updateState_SMB2(self, message):
+        if message.isReply:
+            if message.command == SMB2_COM_NEGOTIATE:
+                self.has_negotiated = True
+                self.log.info('SMB2 dialect negotiation successful')
+                self._updateServerInfo(message.payload)
+                self._handleNegotiateResponse(message)
+            elif message.command == SMB2_COM_SESSION_SETUP:
+                if message.status == 0:
+                    self.session_id = message.session_id
+                    try:
+                        result = securityblob.decodeAuthResponseSecurityBlob(message.payload.security_blob)
+                        if result == securityblob.RESULT_ACCEPT_COMPLETED:
+                            self.has_authenticated = True
+                            self.log.info('Authentication (on SMB2) successful!')
+                            self.onAuthOK()
+                        else:
+                            raise ProtocolError('SMB2_COM_SESSION_SETUP status is 0 but security blob negResult value is %d' % result, message.raw_data, message)
+                    except securityblob.BadSecurityBlobError, ex:
+                        raise ProtocolError(str(ex), message.raw_data, message)
+                elif message.status == 0xc0000016:  # STATUS_MORE_PROCESSING_REQUIRED
+                    self.session_id = message.session_id
+                    try:
+                        result, ntlm_token = securityblob.decodeChallengeSecurityBlob(message.payload.security_blob)
+                        if result == securityblob.RESULT_ACCEPT_INCOMPLETE:
+                            self._handleSessionChallenge(message, ntlm_token)
+                    except ( securityblob.BadSecurityBlobError, securityblob.UnsupportedSecurityProvider ), ex:
+                        raise ProtocolError(str(ex), message.raw_data, message)
+                elif message.status == 0xc000006d:  # STATUS_LOGON_FAILURE
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Please check username and password.')
+                    self.onAuthFailed()
+                else:
+                    raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status,
+                                        message.raw_data, message)
+
+
+    def _updateServerInfo_SMB2(self, payload):
+        self.capabilities = payload.capabilities
+        self.security_mode = payload.security_mode
+        self.max_transact_size = payload.max_transact_size
+        self.max_read_size = payload.max_read_size
+        self.max_write_size = payload.max_write_size
+        self.use_plaintext_authentication = False   # SMB2 never allows plaintext authentication
+
+
+    def _handleNegotiateResponse_SMB2(self, message):
+        ntlm_data = ntlm.generateNegotiateMessage()
+        blob = securityblob.generateNegotiateSecurityBlob(ntlm_data)
+        self._sendSMBMessage(SMB2Message(SMB2SessionSetupRequest(blob)))
+
+
+    def _handleSessionChallenge_SMB2(self, message, ntlm_token):
+        server_challenge, server_flags, server_info = ntlm.decodeChallengeMessage(ntlm_token)
+
+        self.log.info('Performing NTLMv2 authentication (on SMB2) with server challenge "%s"', binascii.hexlify(server_challenge))
+
+        if self.use_ntlm_v2:
+            self.log.info('Performing NTLMv2 authentication (on SMB2) with server challenge "%s"', binascii.hexlify(server_challenge))
+            nt_challenge_response, lm_challenge_response, session_key = ntlm.generateChallengeResponseV2(self.password,
+                                                                                                         self.username,
+                                                                                                         server_challenge,
+                                                                                                         server_info,
+                                                                                                         self.domain)
+
+        else:
+            self.log.info('Performing NTLMv1 authentication (on SMB2) with server challenge "%s"', binascii.hexlify(server_challenge))
+            nt_challenge_response, lm_challenge_response, session_key = ntlm.generateChallengeResponseV1(self.password, server_challenge, True)
+
+        ntlm_data = ntlm.generateAuthenticateMessage(server_flags,
+                                                     nt_challenge_response,
+                                                     lm_challenge_response,
+                                                     session_key,
+                                                     self.username,
+                                                     self.domain)
+
+        if self.log.isEnabledFor(logging.DEBUG):
+            self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))
+            self.log.debug('LM challenge response is "%s" (%d bytes)', binascii.hexlify(lm_challenge_response), len(lm_challenge_response))
+
+        blob = securityblob.generateAuthSecurityBlob(ntlm_data)
+        self._sendSMBMessage(SMB2Message(SMB2SessionSetupRequest(blob)))
+
+        if self.security_mode & SMB2_NEGOTIATE_SIGNING_REQUIRED:
+            self.log.info('Server requires all SMB messages to be signed')
+            self.is_signing_active = (self.sign_options != SMB.SIGN_NEVER)
+        elif self.security_mode & SMB2_NEGOTIATE_SIGNING_ENABLED:
+            self.log.info('Server supports SMB signing')
+            self.is_signing_active = (self.sign_options == SMB.SIGN_WHEN_SUPPORTED)
+        else:
+            self.is_signing_active = False
+
+        if self.is_signing_active:
+            self.log.info("SMB signing activated. All SMB messages will be signed.")
+            self.signing_session_key = session_key
+            if self.capabilities & CAP_EXTENDED_SECURITY:
+                self.signing_challenge_response = None
+            else:
+                self.signing_challenge_response = blob
+        else:
+            self.log.info("SMB signing deactivated. SMB messages will NOT be signed.")
+
+    #
+    # SMB1 Methods Family
+    #
+
+    def _sendSMBMessage_SMB1(self, smb_message):
+        if smb_message.mid == 0:
+            smb_message.mid = self._getNextMID_SMB1()
         smb_message.uid = self.uid
         if self.is_signing_active:
             smb_message.flags2 |= SMB_FLAGS2_SMB_SECURITY_SIGNATURE
@@ -132,7 +332,7 @@ class SMB(NMBSession):
             smb_message.raw_data = smb_message.encode()
         self.sendNMBMessage(smb_message.raw_data)
 
-    def _getNextMID(self):
+    def _getNextMID_SMB1(self):
         self.mid += 1
         if self.mid >= 0xFFFF: # MID cannot be 0xFFFF. [MS-CIFS]: 2.2.1.6.2
             # We don't use MID of 0 as MID can be reused for SMB_COM_TRANSACTION2_SECONDARY messages
@@ -140,11 +340,7 @@ class SMB(NMBSession):
             self.mid = 1
         return self.mid
 
-    def _getNextRPCCallID(self):
-        self.next_rpc_call_id += 1
-        return self.next_rpc_call_id
-
-    def _updateState(self, message):
+    def _updateState_SMB1(self, message):
         if message.isReply:
             if message.command == SMB_COM_NEGOTIATE:
                 self.has_negotiated = True
@@ -202,19 +398,19 @@ class SMB(NMBSession):
                 return True
 
 
-    def _updateServerInfo(self, payload):
+    def _updateServerInfo_SMB1(self, payload):
         self.capabilities = payload.capabilities
+        self.security_mode = payload.security_mode
         self.max_raw_size = payload.max_raw_size
         self.max_buffer_size = payload.max_buffer_size
         self.max_mpx_count = payload.max_mpx_count
         self.use_plaintext_authentication = not bool(payload.security_mode & NEGOTIATE_ENCRYPT_PASSWORDS)
-        self.security_mode = payload.security_mode
 
         if self.use_plaintext_authentication:
             self.log.warning('Remote server only supports plaintext authentication. Your password can be stolen easily over the network.')
 
 
-    def _handleSessionChallenge(self, message, ntlm_token):
+    def _handleSessionChallenge_SMB1(self, message, ntlm_token):
         assert message.hasExtendedSecurity
 
         if message.uid and not self.uid:
@@ -268,7 +464,7 @@ class SMB(NMBSession):
             self.log.info("SMB signing deactivated. SMB messages will NOT be signed.")
 
 
-    def _handleNegotiateResponse(self, message):
+    def _handleNegotiateResponse_SMB1(self, message):
         if message.uid and not self.uid:
             self.log.debug('SMB uid is now %d', message.uid)
             self.uid = message.uid
