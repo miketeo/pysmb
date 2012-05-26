@@ -1,5 +1,5 @@
 
-import logging, binascii, time
+import logging, binascii, time, hmac
 from smb_constants import *
 from smb2_constants import *
 from smb_structs import *
@@ -7,6 +7,13 @@ from smb2_structs import *
 from nmb.base import NMBSession
 from utils import convertFILETIMEtoEpoch
 import ntlm, securityblob
+
+try:
+    import hashlib
+    sha256 = hashlib.sha256
+except ImportError:
+    from utils import sha256
+
 
 class NotReadyError(Exception):
     """Raised when SMB connection is not ready (i.e. not authenticated or authentication failed)"""
@@ -155,6 +162,7 @@ class SMB(NMBSession):
         self._handleNegotiateResponse = self._handleNegotiateResponse_SMB1
         self._sendSMBMessage = self._sendSMBMessage_SMB1
         self._handleSessionChallenge = self._handleSessionChallenge_SMB1
+        self._listShares = self._listShares_SMB1
 
     def _setupSMB2Methods(self):
         self._klassSMBMessage = SMB2Message
@@ -163,6 +171,7 @@ class SMB(NMBSession):
         self._handleNegotiateResponse = self._handleNegotiateResponse_SMB2
         self._sendSMBMessage = self._sendSMBMessage_SMB2
         self._handleSessionChallenge = self._handleSessionChallenge_SMB2
+        self._listShares = self._listShares_SMB2
 
     def _getNextRPCCallID(self):
         self.next_rpc_call_id += 1
@@ -180,20 +189,11 @@ class SMB(NMBSession):
             smb_message.session_id = self.session_id
 
         if self.is_signing_active:
-
-            # Increment the next_signing_id as described in [MS-CIFS] 3.2.4.1.3
-            smb_message.security = self.next_signing_id
-            self.next_signing_id += 2  # All our defined messages currently have responses, so always increment by 2
             raw_data = smb_message.encode()
+            smb_message.signature = hmac.new(self.signing_session_key, raw_data, sha256).digest()[:16]
 
-            md = ntlm.MD5(self.signing_session_key)
-            if self.signing_challenge_response:
-                md.update(self.signing_challenge_response)
-            md.update(raw_data)
-            signature = md.digest()[:8]
-
-            self.log.debug('MID is %d. Signing ID is %d. Signature is %s. Total raw message is %d bytes', smb_message.mid, smb_message.security, binascii.hexlify(signature), len(raw_data))
-            smb_message.raw_data = raw_data[:14] + signature + raw_data[22:]
+            smb_message.raw_data = smb_message.encode()
+            self.log.debug('MID is %d. Signature is %s. Total raw message is %d bytes', smb_message.mid, binascii.hexlify(smb_message.signature), len(smb_message.raw_data))
         else:
             smb_message.raw_data = smb_message.encode()
         self.sendNMBMessage(smb_message.raw_data)
@@ -237,6 +237,11 @@ class SMB(NMBSession):
                 else:
                     raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status,
                                         message.raw_data, message)
+
+            req = self.pending_requests.pop(message.mid, None)
+            if req:
+                req.callback(message, **req.kwargs)
+                return True
 
 
     def _updateServerInfo_SMB2(self, payload):
@@ -296,13 +301,166 @@ class SMB(NMBSession):
 
         if self.is_signing_active:
             self.log.info("SMB signing activated. All SMB messages will be signed.")
-            self.signing_session_key = session_key
+            self.signing_session_key = (session_key + '\0'*16)[:16]
             if self.capabilities & CAP_EXTENDED_SECURITY:
                 self.signing_challenge_response = None
             else:
                 self.signing_challenge_response = blob
         else:
             self.log.info("SMB signing deactivated. SMB messages will NOT be signed.")
+
+
+    def _listShares_SMB2(self, callback, errback, timeout = 30):
+        if not self.has_authenticated:
+            raise NotReadyError('SMB connection not authenticated')
+
+        expiry_time = time.time() + timeout
+        path = 'IPC$'
+        messages_history = [ ]
+
+        def connectSrvSvc(tid):
+            m = SMB2Message(SMB2CreateRequest('srvsvc',
+                                              file_attributes = 0,
+                                              access_mask = FILE_READ_DATA | FILE_WRITE_DATA | FILE_APPEND_DATA | FILE_READ_EA | FILE_WRITE_EA | READ_CONTROL | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | SYNCHRONIZE,
+                                              share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                              oplock = SMB2_OPLOCK_LEVEL_NONE,
+                                              impersonation = SEC_IMPERSONATE,
+                                              create_disp = FILE_OPEN))
+
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectSrvSvcCB, errback)
+            messages_history.append(m)
+
+        def connectSrvSvcCB(create_message, **kwargs):
+            messages_history.append(create_message)
+            if create_message.status == 0:
+                call_id = self._getNextRPCCallID()
+                # The data_bytes are binding call to Server Service RPC using DCE v1.1 RPC over SMB. See [MS-SRVS] and [C706]
+                # If you wish to understand the meanings of the byte stream, I would suggest you use a recent version of WireShark to packet capture the stream
+                data_bytes = \
+                    binascii.unhexlify("""05 00 0b 03 10 00 00 00 74 00 00 00""".replace(' ', '')) + \
+                    struct.pack('<I', call_id) + \
+                    binascii.unhexlify("""
+b8 10 b8 10 00 00 00 00 02 00 00 00 00 00 01 00
+c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
+03 00 00 00 04 5d 88 8a eb 1c c9 11 9f e8 08 00
+2b 10 48 60 02 00 00 00 01 00 01 00 c8 4f 32 4b
+70 16 d3 01 12 78 5a 47 bf 6e e1 88 03 00 00 00
+2c 1c b7 6c 12 98 40 45 03 00 00 00 00 00 00 00
+01 00 00 00 """.replace(' ', '').replace('\n', ''))
+                m = SMB2Message(SMB2WriteRequest(create_message.payload.fid, data_bytes, 0))
+                m.tid = create_message.tid
+                self._sendSMBMessage(m)
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcBindCB, errback, fid = create_message.payload.fid)
+                messages_history.append(m)
+            else:
+                errback(OperationFailure('Failed to list shares: Unable to locate Server Service RPC endpoint', messages_history))
+
+        def rpcBindCB(trans_message, **kwargs):
+            messages_history.append(trans_message)
+            if trans_message.status == 0:
+                m = SMB2Message(SMB2ReadRequest(kwargs['fid'], 1024, 0))
+                m.tid = trans_message.tid
+                self._sendSMBMessage(m)
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcReadCB, errback, fid = kwargs['fid'])
+                messages_history.append(m)
+            else:
+                closeFid(trans_message.tid, kwargs['fid'])
+                errback(OperationFailure('Failed to list shares: Unable to read from Server Service RPC endpoint', messages_history))
+
+        def rpcReadCB(read_message, **kwargs):
+            messages_history.append(read_message)
+            if read_message.status == 0:
+                call_id = self._getNextRPCCallID()
+
+                padding = ''
+                server_len = len(self.remote_name) + 1
+                server_bytes_len = server_len * 2
+                if server_len % 2 != 0:
+                    padding = '\0\0'
+                    server_bytes_len += 2
+
+                # The data bytes are the RPC call to NetrShareEnum (Opnum 15) at Server Service RPC.
+                # If you wish to understand the meanings of the byte stream, I would suggest you use a recent version of WireShark to packet capture the stream
+                data_bytes = \
+                    binascii.unhexlify("""05 00 00 03 10 00 00 00""".replace(' ', '')) + \
+                    struct.pack('<HHI', 72+server_bytes_len, 0, call_id) + \
+                    binascii.unhexlify("""4c 00 00 00 00 00 0f 00 00 00 02 00""".replace(' ', '')) + \
+                    struct.pack('<III', server_len, 0, server_len) + \
+                    (self.remote_name + '\0').encode('UTF-16LE') + padding + \
+                    binascii.unhexlify("""
+01 00 00 00 01 00 00 00 04 00 02 00 00 00 00 00
+00 00 00 00 ff ff ff ff 08 00 02 00 00 00 00 00
+""".replace(' ', '').replace('\n', ''))
+                m = SMB2Message(SMB2IoctlRequest(kwargs['fid'], 0x0011C017, flags = 0x01, in_data = data_bytes))
+                m.tid = read_message.tid
+                self._sendSMBMessage(m)
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, listShareResultsCB, errback, fid = kwargs['fid'])
+                messages_history.append(m)
+            else:
+                closeFid(read_message.tid, kwargs['fid'])
+                errback(OperationFailure('Failed to list shares: Unable to bind to Server Service RPC endpoint', messages_history))
+
+        def listShareResultsCB(result_message, **kwargs):
+            messages_history.append(result_message)
+            if result_message.status == 0:
+                # The payload.data_bytes will contain the results of the RPC call to NetrShareEnum (Opnum 15) at Server Service RPC.
+                data_bytes = result_message.payload.out_data
+                shares_count = struct.unpack('<I', data_bytes[36:40])[0]
+
+                results = [ ]     # A list of SharedDevice instances
+                offset = 36 + 12  # You need to study the byte stream to understand the meaning of these constants
+                for i in range(0, shares_count):
+                    results.append(SharedDevice(struct.unpack('<I', data_bytes[offset+4:offset+8])[0], None, None))
+                    offset += 12
+
+                for i in range(0, shares_count):
+                    max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
+                    offset += 12
+                    results[i].name = unicode(data_bytes[offset:offset+length*2-2], 'UTF-16LE')
+
+                    if length % 2 != 0:
+                        offset += (length * 2 + 2)
+                    else:
+                        offset += (length * 2)
+
+                    max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
+                    offset += 12
+                    results[i].comments = unicode(data_bytes[offset:offset+length*2-2], 'UTF-16LE')
+
+                    if length % 2 != 0:
+                        offset += (length * 2 + 2)
+                    else:
+                        offset += (length * 2)
+
+                closeFid(result_message.tid, kwargs['fid'])
+                callback(results)
+            else:
+                closeFid(result_message.tid, kwargs['fid'])
+                errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
+
+        def closeFid(tid, fid):
+            m = SMB2Message(SMB2CloseRequest(fid))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            messages_history.append(m)
+
+        if not self.connected_trees.has_key(path):
+            def connectCB(connect_message, **kwargs):
+                messages_history.append(connect_message)
+                if connect_message.status == 0:
+                    connectSrvSvc(connect_message.tid)
+                else:
+                    errback(OperationFailure('Failed to list shares: Unable to connect to IPC$', messages_history))
+
+            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), path )))
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = path)
+            messages_history.append(m)
+        else:
+            connectSrvSvc(self.connected_trees[path])
+
 
     #
     # SMB1 Methods Family
@@ -484,7 +642,7 @@ class SMB(NMBSession):
                                                                                            True,
                                                                                            message.payload.domain)))
 
-    def _listShares(self, callback, errback, timeout = 30):
+    def _listShares_SMB1(self, callback, errback, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 

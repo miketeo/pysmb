@@ -61,6 +61,16 @@ class SMBConnection(SMB):
         assert self.sock.send(data) == data_len
 
     #
+    # Misc Properties
+    #
+
+    @property
+    def isUsingSMB2(self):
+        """A convenient property to return True if the underlying SMB connection is using SMB2 protocol."""
+        return self.is_using_smb2
+
+
+    #
     # Public Methods
     #
 

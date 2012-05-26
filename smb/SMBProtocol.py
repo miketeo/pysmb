@@ -118,6 +118,11 @@ class SMBProtocolFactory(ClientFactory):
         """A convenient property to return True if the underlying SMB connection has connected to remote server, has successfully authenticated itself and is ready for file operations."""
         return bool(self.instance and self.instance.has_authenticated)
 
+    @property
+    def isUsingSMB2(self):
+        """A convenient property to return True if the underlying SMB connection is using SMB2 protocol."""
+        return self.instance and self.instance.is_using_smb2
+
     #
     # Public Methods for Callbacks
     #

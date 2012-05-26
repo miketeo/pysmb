@@ -6,3 +6,7 @@ Licensed under LGPL
 pyDes.py 2.0.0
 Downloaded from http://twhiteman.netfirms.com/des.html
 Licensed under public domain
+
+sha256.py
+Downloaded from http://xbmc-addons.googlecode.com/svn-history/r1686/trunk/scripts/OpenSubtitles_OSD/resources/lib/sha256.py
+Licensed under MIT

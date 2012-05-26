@@ -103,7 +103,10 @@ NT_CREATE_OPEN_TARGET_DIR = 0x08
 NT_CREATE_REQUEST_EXTENDED_RESPONSE = 0x10  # Defined in [MS-SMB]: 2.2.4.9.1
 
 # Bitmask for DesiredAccess field in SMB_COM_NT_CREATE_ANDX request
+# and SMB2CreateRequest class
+# Also used for MaximalAccess field in SMB2TreeConnectResponse class
 # [MS-CIFS]: 2.2.4.64.1
+# [MS-SMB2]: 2.2.13.1.1
 FILE_READ_DATA = 0x01
 FILE_WRITE_DATA = 0X02
 FILE_APPEND_DATA = 0x04
@@ -126,6 +129,7 @@ GENERIC_READ = 0x80000000L
 
 # SMB_EXT_FILE_ATTR bitmask ([MS-CIFS]: 2.2.1.2.3)
 # Bitmask for FileAttributes field in SMB_COM_NT_CREATE_ANDX request ([MS-CIFS]: 2.2.4.64.1)
+# Also used for FileAttributes field in SMB2CreateRequest class ([MS-SMB2]: 2.2.13)
 ATTR_READONLY = 0x01
 ATTR_HIDDEN = 0x02
 ATTR_SYSTEM = 0x04
@@ -143,14 +147,18 @@ NO_BUFFERING = 0x20000000
 WRITE_THROUGH = 0x80000000
 
 # Bitmask for ShareAccess field in SMB_COM_NT_CREATE_ANDX request
+# and SMB2CreateRequest class
 # [MS-CIFS]: 2.2.4.64.1
+# [MS-SMB2]: 2.2.13
 FILE_SHARE_NONE = 0x00
 FILE_SHARE_READ = 0x01
 FILE_SHARE_WRITE = 0x02
 FILE_SHARE_DELETE = 0x04
 
 # Values for CreateDisposition field in SMB_COM_NT_CREATE_ANDX request
+# and SMB2CreateRequest class
 # [MS-CIFS]: 2.2.4.64.1
+# [MS-SMB2]: 2.2.13
 FILE_SUPERSEDE = 0x00
 FILE_OPEN = 0x01
 FILE_CREATE = 0x02
@@ -159,7 +167,9 @@ FILE_OVERWRITE = 0x04
 FILE_OVERWRITE_IF = 0x05
 
 # Bitmask for CreateOptions field in SMB_COM_NT_CREATE_ANDX request
+# and SMB2CreateRequest class
 # [MS-CIFS]: 2.2.4.64.1
+# [MS-SMB2]: 2.2.13
 FILE_DIRECTORY_FILE = 0x01
 FILE_WRITE_THROUGH = 0x02
 FILE_SEQUENTIAL_ONLY = 0x04
@@ -181,8 +191,11 @@ FILE_OPEN_NO_RECALL = 0x400000
 FILE_OPEN_FOR_FREE_SPACE_QUERY = 0x800000
 
 # Values for ImpersonationLevel field in SMB_COM_NT_CREATE_ANDX request
+# and SMB2CreateRequest class
+# For interpretations about these values, refer to [MS-WSO] and [MSDN-IMPERS]
 # [MS-CIFS]: 2.2.4.64.1
 # [MS-SMB]: 2.2.4.9.1
+# [MS-SMB2]: 2.2.13
 SEC_ANONYMOUS = 0x00
 SEC_IDENTIFY = 0x01
 SEC_IMPERSONATE = 0x02
