@@ -164,6 +164,8 @@ class SMB(NMBSession):
         self._handleSessionChallenge = self._handleSessionChallenge_SMB1
         self._listShares = self._listShares_SMB1
         self._listPath = self._listPath_SMB1
+        self._retrieveFile = self._retrieveFile_SMB1
+        self._retrieveFileFromOffset = self._retrieveFileFromOffset_SMB1
 
     def _setupSMB2Methods(self):
         self._klassSMBMessage = SMB2Message
@@ -174,6 +176,8 @@ class SMB(NMBSession):
         self._handleSessionChallenge = self._handleSessionChallenge_SMB2
         self._listShares = self._listShares_SMB2
         self._listPath = self._listPath_SMB2
+        self._retrieveFile = self._retrieveFile_SMB2
+        self._retrieveFileFromOffset = self._retrieveFileFromOffset_SMB2
 
     def _getNextRPCCallID(self):
         self.next_rpc_call_id += 1
@@ -497,10 +501,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                               create_context_data = create_context_data))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, sendCreateCB, errback)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback)
             messages_history.append(m)
 
-        def sendCreateCB(create_message, **kwargs):
+        def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
                 sendQuery(create_message.tid, create_message.payload.fid, '')
@@ -574,6 +578,128 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         else:
             sendCreate(self.connected_trees[service_name])
 
+    def _retrieveFile_SMB2(self, service_name, path, file_obj, callback, errback, timeout = 30):
+        return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0L, -1L, timeout)
+
+    def _retrieveFileFromOffset_SMB2(self, service_name, path, file_obj, callback, errback, starting_offset, max_length, timeout = 30):
+        if not self.has_authenticated:
+            raise NotReadyError('SMB connection not authenticated')
+
+        expiry_time = time.time() + timeout
+        path = path.replace('/', '\\')
+        if path.startswith('\\'):
+            path = path[1:]
+        if path.endswith('\\'):
+            path = path[:-1]
+        messages_history = [ ]
+        results = [ ]
+
+        def sendCreate(tid):
+            create_context_data = binascii.unhexlify("""
+28 00 00 00 10 00 04 00 00 00 18 00 10 00 00 00
+44 48 6e 51 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 18 00 00 00 10 00 04 00
+00 00 18 00 00 00 00 00 4d 78 41 63 00 00 00 00
+00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
+51 46 69 64 00 00 00 00
+""".replace(' ', '').replace('\n', ''))
+            m = SMB2Message(SMB2CreateRequest(path,
+                                              file_attributes = 0,
+                                              access_mask = FILE_READ_DATA | FILE_READ_EA | FILE_READ_ATTRIBUTES | READ_CONTROL | SYNCHRONIZE,
+                                              share_access = FILE_SHARE_READ,
+                                              oplock = SMB2_OPLOCK_LEVEL_NONE,
+                                              impersonation = SEC_IMPERSONATE,
+                                              create_options = FILE_SEQUENTIAL_ONLY | FILE_NON_DIRECTORY_FILE,
+                                              create_disp = FILE_OPEN,
+                                              create_context_data = create_context_data))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback, tid = tid)
+            messages_history.append(m)
+
+        def createCB(create_message, **kwargs):
+            messages_history.append(create_message)
+            if create_message.status == 0:
+                m = SMB2Message(SMB2QueryInfoRequest(create_message.payload.fid,
+                                                     flags = 0,
+                                                     additional_info = 0,
+                                                     info_type = SMB2_INFO_FILE,
+                                                     file_info_class = 0x16,  # FileStreamInformation [MS-FSCC] 2.4
+                                                     input_buf = '',
+                                                     output_buf_len = 4096))
+                m.tid = create_message.tid
+                self._sendSMBMessage(m)
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, infoCB, errback,
+                                                               fid = create_message.payload.fid, file_attributes = create_message.payload.file_attributes)
+                messages_history.append(m)
+            else:
+                errback(OperationFailure('Failed to list %s on %s: Unable to open file' % ( path, service_name ), messages_history))
+
+        def infoCB(info_message, **kwargs):
+            messages_history.append(info_message)
+            if info_message.status == 0:
+                file_len = struct.unpack('<Q', info_message.payload.data[8:16])[0]
+                if max_length == 0 or starting_offset > file_len:
+                    closeFid(info_message.tid, kwargs['fid'])
+                    callback(( file_obj, kwargs['file_attributes'], 0 ))  # Note that this is a tuple of 3-elements
+                else:
+                    remaining_len = max_length
+                    if remaining_len < 0:
+                        remaining_len = file_len
+                    if starting_offset + remaining_len > file_len:
+                        remaining_len = file_len - starting_offset
+                    sendRead(info_message.tid, kwargs['fid'], starting_offset, remaining_len, 0, kwargs['file_attributes'])
+            else:
+                errback(OperationFailure('Failed to list %s on %s: Unable to retrieve information on file' % ( path, service_name ), messages_history))
+
+        def sendRead(tid, fid, offset, remaining_len, read_len, file_attributes):
+            i = min(self.max_read_size, remaining_len)
+            m = SMB2Message(SMB2ReadRequest(fid, offset, i))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback,
+                                                           fid = fid, offset = offset,
+                                                           remaining_len = remaining_len,
+                                                           read_len = read_len,
+                                                           file_attributes = file_attributes)
+
+        def readCB(read_message, **kwargs):
+            # To avoid crazy memory usage when retrieving large files, we do not save every read_message in messages_history.
+            if read_message.status == 0:
+                data_len = read_message.payload.data_length
+                file_obj.write(read_message.payload.data)
+
+                remaining_len = kwargs['remaining_len'] - data_len
+
+                if remaining_len > 0:
+                    sendRead(read_message.tid, kwargs['fid'], kwargs['offset'] + data_len, remaining_len, kwargs['read_len'] + data_len, kwargs['file_attributes'])
+                else:
+                    callback(( file_obj, kwargs['file_attributes'], kwargs['read_len'] + data_len ))  # Note that this is a tuple of 3-elements
+            else:
+                messages_history.append(read_message)
+                closeFid(read_message.tid, kwargs['fid'])
+                errback(OperationFailure('Failed to retrieve %s on %s: Read failed' % ( path, service_name ), messages_history))
+
+        def closeFid(tid, fid):
+            m = SMB2Message(SMB2CloseRequest(fid))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            messages_history.append(m)
+
+        if not self.connected_trees.has_key(service_name):
+            def connectCB(connect_message, **kwargs):
+                messages_history.append(connect_message)
+                if connect_message.status == 0:
+                    sendCreate(connect_message.tid)
+                else:
+                    errback(OperationFailure('Failed to retrieve %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
+
+            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
+            messages_history.append(m)
+        else:
+            sendCreate(self.connected_trees[service_name])
 
     #
     # SMB1 Methods Family
@@ -1075,10 +1201,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         else:
             sendFindFirst(self.connected_trees[service_name])
 
-    def _retrieveFile(self, service_name, path, file_obj, callback, errback, timeout = 30):
+    def _retrieveFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
         return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0L, -1L, timeout)
 
-    def _retrieveFileFromOffset(self, service_name, path, file_obj, callback, errback, starting_offset, max_length, timeout = 30):
+    def _retrieveFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, max_length, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 

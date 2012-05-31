@@ -153,6 +153,8 @@ class SMB2Message:
             self.payload = SMB2CreateResponse()
         elif self.command == SMB2_COM_CLOSE:
             self.payload = SMB2CloseResponse()
+        elif self.command == SMB2_COM_QUERY_INFO:
+            self.payload = SMB2QueryInfoResponse()
         elif self.command == SMB2_COM_IOCTL:
             self.payload = SMB2IoctlResponse()
         elif self.command == SMB2_COM_TREE_CONNECT:
@@ -532,8 +534,8 @@ class SMB2ReadResponse(Structure):
         assert message.command == SMB2_COM_READ
 
         if message.status == 0:
-            struct_size, data_offset, _, data_len, _, _ = struct.unpack(self.STRUCTURE_FORMAT, message.raw_data[SMB2Message.HEADER_SIZE:SMB2Message.HEADER_SIZE+self.STRUCTURE_SIZE])
-            self.data = message.raw_data[data_offset:data_offset+data_len]
+            struct_size, data_offset, _, self.data_length, _, _ = struct.unpack(self.STRUCTURE_FORMAT, message.raw_data[SMB2Message.HEADER_SIZE:SMB2Message.HEADER_SIZE+self.STRUCTURE_SIZE])
+            self.data = message.raw_data[data_offset:data_offset+self.data_length]
 
 
 class SMB2IoctlRequest(Structure):
@@ -696,5 +698,61 @@ class SMB2QueryDirectoryResponse(Structure):
         assert message.command == SMB2_COM_QUERY_DIRECTORY
 
         if message.status == 0:
-            struct_size, offset, length = struct.unpack(self.STRUCTURE_FORMAT, message.raw_data[SMB2Message.HEADER_SIZE:SMB2Message.HEADER_SIZE+self.STRUCTURE_SIZE])
-            self.data = message.raw_data[offset:offset+length]
+            struct_size, offset, self.data_length = struct.unpack(self.STRUCTURE_FORMAT, message.raw_data[SMB2Message.HEADER_SIZE:SMB2Message.HEADER_SIZE+self.STRUCTURE_SIZE])
+            self.data = message.raw_data[offset:offset+self.data_length]
+
+
+class SMB2QueryInfoRequest(Structure):
+    """
+    References:
+    ===========
+    - [MS-SMB2]: 2.2.37
+    """
+
+    STRUCTURE_FORMAT = "<HBBIHHIII16s"
+    STRUCTURE_SIZE = struct.calcsize(STRUCTURE_FORMAT)
+
+    def __init__(self, fid, flags, additional_info, info_type, file_info_class, input_buf, output_buf_len):
+        self.fid = fid
+        self.flags = flags
+        self.additional_info = additional_info
+        self.info_type = info_type
+        self.file_info_class = file_info_class
+        self.output_buf_len = output_buf_len
+        self.input_buf = input_buf or ''
+
+    def initMessage(self, message):
+        Structure.initMessage(self, message)
+        message.command = SMB2_COM_QUERY_INFO
+
+    def prepare(self, message):
+        message.data = struct.pack(self.STRUCTURE_FORMAT,
+                                   41,  # Structure size. Must be 41 as mandated by [MS-SMB2] 2.2.37
+                                   self.info_type,         # InfoType
+                                   self.file_info_class,   # FileInfoClass
+                                   self.output_buf_len,    # OutputBufferLength
+                                   SMB2Message.HEADER_SIZE + self.STRUCTURE_SIZE,  # InputBufferOffset
+                                   0,   # Reserved
+                                   len(self.input_buf),    # InputBufferLength
+                                   self.additional_info,   # AdditionalInformation
+                                   self.flags,             # Flags
+                                   self.fid                # FileId
+                                  ) + self.input_buf
+
+
+class SMB2QueryInfoResponse(Structure):
+    """
+    References:
+    ===========
+    - [MS-SMB2]: 2.2.38
+    """
+
+    STRUCTURE_FORMAT = "<HHI"
+    STRUCTURE_SIZE = struct.calcsize(STRUCTURE_FORMAT)
+
+    def decode(self, message):
+        assert message.command == SMB2_COM_QUERY_INFO
+
+        if message.status == 0:
+            struct_size, buf_offset, self.data_length = struct.unpack(self.STRUCTURE_FORMAT, message.raw_data[SMB2Message.HEADER_SIZE:SMB2Message.HEADER_SIZE+self.STRUCTURE_SIZE])
+            self.data = message.raw_data[buf_offset:buf_offset+self.data_length]
