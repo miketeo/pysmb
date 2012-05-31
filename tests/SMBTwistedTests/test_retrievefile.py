@@ -4,6 +4,7 @@ import os, tempfile
 from nose.twistedtools import reactor, deferred
 from twisted.internet import defer
 from smb.SMBProtocol import SMBProtocolFactory
+from smb import smb_structs
 from util import getConnectionInfo
 
 try:
@@ -67,9 +68,11 @@ class RetrieveFileFactory(SMBProtocolFactory):
 
 
 @deferred(timeout=30.0)
-def test_retr_multiplereads():
+def test_retr_multiplereads_SMB1():
     # Test file retrieval using multiple ReadAndx calls (assuming each call will not reach more than 65534 bytes)
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
     factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service = 'smbtest'
     factory.path = '/rfc1001.txt'
@@ -79,9 +82,25 @@ def test_retr_multiplereads():
     return factory.d
 
 @deferred(timeout=30.0)
-def test_retr_longfilename():
+def test_retr_multiplereads_SMB2():
+    # Test file retrieval using multiple ReadAndx calls (assuming each call will not reach more than 65534 bytes)
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = '/rfc1001.txt'
+    factory.digest = '5367c2bbf97f521059c78eab65309ad3'
+    factory.filesize = 158437
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_longfilename_SMB1():
     # Test file retrieval that has a long English filename
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
     factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service = 'smbtest'
     factory.path = '/Implementing CIFS - SMB.html'
@@ -91,9 +110,25 @@ def test_retr_longfilename():
     return factory.d
 
 @deferred(timeout=30.0)
-def test_retr_unicodefilename():
+def test_retr_longfilename_SMB2():
+    # Test file retrieval that has a long English filename
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = '/Implementing CIFS - SMB.html'
+    factory.digest = '671c5700d279fcbbf958c1bba3c2639e'
+    factory.filesize = 421269
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_unicodefilename_SMB1():
     # Test file retrieval that has a long non-English filename inside a folder with a non-English name
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
     factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service = 'smbtest'
     factory.path = u'/测试文件夹/垃圾文件.dat'
@@ -103,9 +138,25 @@ def test_retr_unicodefilename():
     return factory.d
 
 @deferred(timeout=30.0)
-def test_retr_offset():
+def test_retr_unicodefilename_SMB2():
+    # Test file retrieval that has a long non-English filename inside a folder with a non-English name
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = '8a44c1e80d55e91c92350955cdf83442'
+    factory.filesize = 256000
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset_SMB1():
     # Test file retrieval from offset to EOF
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
     factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service = 'smbtest'
     factory.path = u'/测试文件夹/垃圾文件.dat'
@@ -116,9 +167,26 @@ def test_retr_offset():
     return factory.d
 
 @deferred(timeout=30.0)
-def test_retr_offset_and_biglimit():
+def test_retr_offset_SMB2():
+    # Test file retrieval from offset to EOF
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = 'a141bd8024571ce7cb5c67f2b0d8ea0b'
+    factory.filesize = 156000
+    factory.offset = 100000
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset_and_biglimit_SMB1():
     # Test file retrieval from offset with a big max_length
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
     factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service = 'smbtest'
     factory.path = u'/测试文件夹/垃圾文件.dat'
@@ -130,9 +198,27 @@ def test_retr_offset_and_biglimit():
     return factory.d
 
 @deferred(timeout=30.0)
-def test_retr_offset_and_smalllimit():
+def test_retr_offset_and_biglimit_SMB2():
+    # Test file retrieval from offset with a big max_length
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = '83b7afd7c92cdece3975338b5ca0b1c5'
+    factory.filesize = 100000
+    factory.offset = 100000
+    factory.max_length = 100000
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset_and_smalllimit_SMB1():
     # Test file retrieval from offset with a small max_length
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
     factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service = 'smbtest'
     factory.path = u'/测试文件夹/垃圾文件.dat'
@@ -144,9 +230,43 @@ def test_retr_offset_and_smalllimit():
     return factory.d
 
 @deferred(timeout=30.0)
-def test_retr_offset_and_zerolimit():
+def test_retr_offset_and_smalllimit_SMB2():
+    # Test file retrieval from offset with a small max_length
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = '746f60a96b39b712a7b6e17ddde19986'
+    factory.filesize = 10
+    factory.offset = 100000
+    factory.max_length = 10
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset_and_zerolimit_SMB1():
     # Test file retrieval from offset to EOF with max_length=0
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
+    factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service = 'smbtest'
+    factory.path = u'/测试文件夹/垃圾文件.dat'
+    factory.digest = 'd41d8cd98f00b204e9800998ecf8427e'
+    factory.filesize = 0
+    factory.offset = 100000
+    factory.max_length = 0
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=30.0)
+def test_retr_offset_and_zerolimit_SMB2():
+    # Test file retrieval from offset to EOF with max_length=0
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+    
     factory = RetrieveFileFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service = 'smbtest'
     factory.path = u'/测试文件夹/垃圾文件.dat'
