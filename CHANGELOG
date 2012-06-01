@@ -1,15 +1,29 @@
 
+pysmb-1.1.0, 1 June 2012
+========================
+
+- Adds SMB2 protocol implementation with signing for outgoing SMB2 messages.
+  pysmb will utilize SMB2 protocol with servers that support SMB2
+  (eg. Windows Vista, Windows 7 and Samba 3).
+  If the remote server does not support SMB2, pysmb will fall back automatically
+  to using SMB1 protocol.
+
+
 pysmb-1.0.5, 7 May 2012
 =======================
+
 - Add supports for SMB message signing. pysmb will sign all SMB messages from
   the CIFS client to the server, but it does not verify the signatures of the
   SMB messages from the server.
 
+
 pysmb-1.0.4, 1 May 2012
 =======================
+
 - Adds support for "smb://" URL in urllib2 python packages to retrieve or upload
   files from/to remote CIFS servers.
 - Improve documentation
+
 
 pysmb-1.0.3, 28 April 2012
 ===========================

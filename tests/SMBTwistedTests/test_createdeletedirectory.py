@@ -4,6 +4,7 @@ import os, random, time
 from nose.twistedtools import reactor, deferred
 from twisted.internet import defer
 from smb.SMBProtocol import SMBProtocolFactory
+from smb import smb_structs
 from util import getConnectionInfo
 
 
@@ -54,8 +55,10 @@ class DirectoryFactory(SMBProtocolFactory):
 
 
 @deferred(timeout=15.0)
-def test_english_directory():
+def test_english_directory_SMB1():
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
     factory = DirectoryFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service_name = 'smbtest'
     factory.path = os.sep + 'TestDir %d-%d' % ( time.time(), random.randint(0, 1000) )
@@ -63,8 +66,32 @@ def test_english_directory():
     return factory.d
 
 @deferred(timeout=15.0)
-def test_unicode_directory():
+def test_english_directory_SMB2():
     info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+
+    factory = DirectoryFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service_name = 'smbtest'
+    factory.path = os.sep + 'TestDir %d-%d' % ( time.time(), random.randint(0, 1000) )
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=15.0)
+def test_unicode_directory_SMB1():
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
+    factory = DirectoryFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service_name = 'smbtest'
+    factory.path = os.sep + u'文件夹创建 %d-%d' % ( time.time(), random.randint(0, 1000) )
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
+
+@deferred(timeout=15.0)
+def test_unicode_directory_SMB2():
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = True
+
     factory = DirectoryFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
     factory.service_name = 'smbtest'
     factory.path = os.sep + u'文件夹创建 %d-%d' % ( time.time(), random.randint(0, 1000) )

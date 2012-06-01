@@ -6,8 +6,8 @@
 Welcome to pysmb's documentation!
 =================================
 
-pysmb is a pure Python implementation of the client-side SMB/CIFS protocol which is the underlying protocol that facilitates file sharing and printing between Windows machines,
-as well as with Linux machines via the Samba server application.
+pysmb is a pure Python implementation of the client-side SMB/CIFS protocol (SMB1 and SMB2) which is the underlying protocol
+that facilitates file sharing and printing between Windows machines, as well as with Linux machines via the Samba server application.
 pysmb is developed in Python 2.4.6 (and Python 2.7.1) and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.
 
 License
@@ -26,7 +26,9 @@ pysmb is not alone. It is made possible with support from other modules.
 
 * **pyasn1** : Pure Python implementation of ASN.1 parsing and encoding (not included together with pysmb; needs to be installed separately)
 * **md4** and **U32** : Pure Python implementation of MD4 hashing algorithm and 32-bit unsigned integer by Dmitry Rozmanov. Licensed under LGPL and included together with pysmb.
-* **pyDes** : Pure python implementation of the DES encryption algorithm by Todd Whiteman. Free domain and included together with pysmb.
+* **pyDes** : Pure Python implementation of the DES encryption algorithm by Todd Whiteman. Free domain and included together with pysmb.
+* **sha256** : Pure Python implementation of SHA-256 message digest by Thomas Dixon. Licensed under MIT and included together with pysmb. This module is imported only when
+  the Python standard library (usually Python 2.4) does not provide the SHA-256 hash algorithm.
 
 In various places, there are references to different specifications. Most of these referenced specifications
 can be downloaded from Microsoft web site under Microsoft's "Open Specification Promise". If you need to download

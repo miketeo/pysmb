@@ -68,6 +68,18 @@ The following illustrates a simple file retrieving implementation.::
 
 
 
+
+SMB2 Support
+-------------
+
+Starting from pysmb 1.1.0, pysmb will utilize SMB2 protocol for communication if the remote SMB/CIFS service supports SMB2.
+Otherwise, it will fallback automatically back to using SMB1 protocol.
+
+To disable SMB2 protocol in pysmb, set the *SUPPORT_SMB2* flag in the *smb_structs* module to *False* before creating the *SMBProtocolFactory* instance.::
+
+    from smb import smb_structs
+    smb_structs.SUPPORT_SMB2 = False
+
 Caveats
 -------
 

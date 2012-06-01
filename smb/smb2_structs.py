@@ -165,6 +165,8 @@ class SMB2Message:
             self.payload = SMB2SessionSetupResponse()
         elif self.command == SMB2_COM_NEGOTIATE:
             self.payload = SMB2NegotiateResponse()
+        elif self.command == SMB2_COM_ECHO:
+            self.payload = SMB2EchoResponse()
 
     @property
     def isAsync(self):
@@ -810,6 +812,36 @@ class SMB2SetInfoResponse(Structure):
     References:
     ===========
     - [MS-SMB2]: 2.2.40
+    """
+
+    def decode(self, message):
+        pass
+
+
+class SMB2EchoRequest(Structure):
+    """
+    References:
+    ===========
+    - [MS-SMB2]: 2.2.28
+    """
+
+    STRUCTURE_FORMAT = '<HH'
+    STRUCTURE_SIZE = struct.calcsize(STRUCTURE_FORMAT)
+
+    def initMessage(self, message):
+        Structure.initMessage(self, message)
+        message.command = SMB2_COM_ECHO
+
+    def prepare(self, message):
+        message.data = struct.pack(self.STRUCTURE_FORMAT,
+                                   4,   # StructureSize. Must be 4 as mandated by [MS-SMB2] 2.2.29
+                                   0)   # Reserved
+
+class SMB2EchoResponse(Structure):
+    """
+    References:
+    ===========
+    - [MS-SMB2]: 2.2.29
     """
 
     def decode(self, message):
