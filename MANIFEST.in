@@ -9,3 +9,4 @@ recursive-exclude tests *.pyc
 recursive-exclude tests *~
 recursive-include sphinx *
 recursive-include docs *
+recursive-exclude docs *.zip
