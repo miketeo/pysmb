@@ -186,6 +186,21 @@ class SMBProtocolFactory(ClientFactory):
         self.instance._listPath(service_name, path, d.callback, d.errback, search = search, pattern = pattern, timeout = timeout)
         return d
 
+    def listSnapshots(self, service_name, path, timeout = 30):
+        """
+        Retrieve a list of available snapshots (a.k.a. shadow copies) for *path*.
+
+        :param string/unicode service_name: the name of the shared folder for the *path*
+        :param string/unicode path: path relative to the *service_name* where we are interested in the list of available snapshots
+        :return: A list of python *datetime.DateTime* instances in GMT/UTC time zone
+        """
+        if not self.instance:
+            raise NotConnectedError('Not connected to server')
+
+        d = defer.Deferred()
+        self.instance._listSnapshots(service_name, path, d.callback, d.errback, timeout = timeout)
+        return d
+
     def retrieveFile(self, service_name, path, file_obj, timeout = 30):
         """
         Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.

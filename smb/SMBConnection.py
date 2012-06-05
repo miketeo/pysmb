@@ -173,6 +173,38 @@ class SMBConnection(SMB):
 
         return results
 
+    def listSnapshots(self, service_name, path, timeout = 30):
+        """
+        Retrieve a list of available snapshots (shadow copies) for *path*.
+
+        :param string/unicode service_name: the name of the shared folder for the *path*
+        :param string/unicode path: path relative to the *service_name* where we are interested in the list of available snapshots
+        :return: A list of python *datetime.DateTime* instances in GMT/UTC time zone
+        """
+        if not self.sock:
+            raise NotConnectedError('Not connected to server')
+
+        results = [ ]
+
+        def cb(entries):
+            self.is_busy = False
+            results.extend(entries)
+
+        def eb(failure):
+            self.is_busy = False
+            raise failure
+
+        self.is_busy = True
+        try:
+            self._listSnapshots(service_name, path, cb, eb, timeout = timeout)
+            while self.is_busy:
+                self._pollForNetBIOSPacket(timeout)
+        finally:
+            self.is_busy = False
+
+        return results
+
+
     def retrieveFile(self, service_name, path, file_obj, timeout = 30):
         """
         Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.

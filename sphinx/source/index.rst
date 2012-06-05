@@ -57,9 +57,13 @@ Hence, please take some time to familiarize yourself with the smb package conten
 * **smb/securityblob.py** :
   Provides routines to encode/decode the NTLMSSP security blob in the SMB messages.
 * **smb/smb_constants.py** :
-  All the constants used in the smb package
+  All the constants used in the smb package for SMB1 protocol
 * **smb/smb_structs.py** :
-  Contains the internal classes used in the SMB package. These classes are usually used to encode/decode the parameter and data blocks of specific SMB message.
+  Contains the internal classes used in the SMB package for SMB1 protocol. These classes are usually used to encode/decode the parameter and data blocks of specific SMB1 message.
+* **smb/smb2_constants.py** :
+  All the constants used in the smb package for SMB2 protocol
+* **smb/smb2_structs.py** :
+  Contains the internal classes used in the SMB package for SMB2 protocol. These classes are usually used to encode/decode the parameter and data blocks of specific SMB2 message.
 * **smb/SMBConnection.py** :
   Contains a SMB protocol implementation. All operations are blocking I/O.
 * **smb/SMBProtocol.py** :

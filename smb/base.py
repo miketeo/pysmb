@@ -1,5 +1,6 @@
 
 import logging, binascii, time, hmac
+from datetime import datetime
 from smb_constants import *
 from smb2_constants import *
 from smb_structs import *
@@ -164,6 +165,7 @@ class SMB(NMBSession):
         self._handleSessionChallenge = self._handleSessionChallenge_SMB1
         self._listShares = self._listShares_SMB1
         self._listPath = self._listPath_SMB1
+        self._listSnapshots = self._listSnapshots_SMB1
         self._retrieveFile = self._retrieveFile_SMB1
         self._retrieveFileFromOffset = self._retrieveFileFromOffset_SMB1
         self._storeFile = self._storeFile_SMB1
@@ -182,6 +184,7 @@ class SMB(NMBSession):
         self._handleSessionChallenge = self._handleSessionChallenge_SMB2
         self._listShares = self._listShares_SMB2
         self._listPath = self._listPath_SMB2
+        self._listSnapshots = self._listSnapshots_SMB2
         self._retrieveFile = self._retrieveFile_SMB2
         self._retrieveFileFromOffset = self._retrieveFileFromOffset_SMB2
         self._storeFile = self._storeFile_SMB2
@@ -1178,6 +1181,97 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         else:
             sendCreate(self.connected_trees[service_name])
 
+    def _listSnapshots_SMB2(self, service_name, path, callback, errback, timeout = 30):
+        if not self.has_authenticated:
+            raise NotReadyError('SMB connection not authenticated')
+
+        expiry_time = time.time() + timeout
+        path = path.replace('/', '\\')
+        if path.startswith('\\'):
+            path = path[1:]
+        if path.endswith('\\'):
+            path = path[:-1]
+        messages_history = [ ]
+
+        def sendCreate(tid):
+            create_context_data = binascii.unhexlify("""
+28 00 00 00 10 00 04 00 00 00 18 00 10 00 00 00
+44 48 6e 51 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 10 00 04 00
+00 00 18 00 00 00 00 00 4d 78 41 63 00 00 00 00
+""".replace(' ', '').replace('\n', ''))
+            m = SMB2Message(SMB2CreateRequest(path,
+                                              file_attributes = 0,
+                                              access_mask = FILE_READ_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
+                                              share_access = FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                              oplock = SMB2_OPLOCK_LEVEL_NONE,
+                                              impersonation = SEC_IMPERSONATE,
+                                              create_options = FILE_SYNCHRONOUS_IO_NONALERT,
+                                              create_disp = FILE_OPEN,
+                                              create_context_data = create_context_data))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
+            messages_history.append(m)
+
+        def createCB(create_message, **kwargs):
+            messages_history.append(create_message)
+            if create_message.status == 0:
+                sendEnumSnapshots(create_message.tid, create_message.payload.fid)
+            else:
+                errback(OperationFailure('Failed to list snapshots %s on %s: Unable to open file/directory' % ( old_path, service_name ), messages_history))
+
+        def sendEnumSnapshots(tid, fid):
+            m = SMB2Message(SMB2IoctlRequest(fid,
+                                             ctlcode = 0x00144064,  # FSCTL_SRV_ENUMERATE_SNAPSHOTS
+                                             flags = 0x0001,
+                                             in_data = ''))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, enumSnapshotsCB, errback, tid = tid, fid = fid)
+            messages_history.append(m)
+
+        def enumSnapshotsCB(enum_message, **kwargs):
+            messages_history.append(enum_message)
+            if enum_message.status == 0:
+                results = [ ]
+                snapshots_count = struct.unpack('<I', enum_message.payload.out_data[4:8])[0]
+                for i in range(0, snapshots_count):
+                    s = enum_message.payload.out_data[12+i*50:12+48+i*50].decode('UTF-16LE')
+                    results.append(datetime(*map(int, ( s[5:9], s[10:12], s[13:15], s[16:18], s[19:21], s[22:24] ))))
+                closeFid(kwargs['tid'], kwargs['fid'], results = results)
+            else:
+                closeFid(kwargs['tid'], kwargs['fid'], status = enum_message.status)
+
+        def closeFid(tid, fid, status = None, results = None):
+            m = SMB2Message(SMB2CloseRequest(fid))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, status = status, results = results)
+            messages_history.append(m)
+
+        def closeCB(close_message, **kwargs):
+            if kwargs['results'] is not None:
+                callback(kwargs['results'])
+            else:
+                errback(OperationFailure('Failed to list snapshots %s on %s: List failed' % ( path, service_name ), messages_history))
+
+        if not self.connected_trees.has_key(service_name):
+            def connectCB(connect_message, **kwargs):
+                messages_history.append(connect_message)
+                if connect_message.status == 0:
+                    self.connected_trees[service_name] = connect_message.tid
+                    sendCreate(connect_message.tid)
+                else:
+                    errback(OperationFailure('Failed to list snapshots %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
+
+            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
+            messages_history.append(m)
+        else:
+            sendCreate(self.connected_trees[service_name])
+
     def _echo_SMB2(self, data, callback, errback, timeout = 30):
         messages_history = [ ]
 
@@ -1192,6 +1286,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         self._sendSMBMessage(m)
         self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, echoCB, errback)
         messages_history.append(m)
+
 
     #
     # SMB1 Methods Family
@@ -2010,6 +2105,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
         else:
             sendRename(self.connected_trees[service_name])
+
+    def _listSnapshots_SMB1(self, service_name, path, callback, errback, timeout = 30):
+        pass
 
     def _echo_SMB1(self, data, callback, errback, timeout = 30):
         messages_history = [ ]
