@@ -2107,7 +2107,87 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             sendRename(self.connected_trees[service_name])
 
     def _listSnapshots_SMB1(self, service_name, path, callback, errback, timeout = 30):
-        pass
+        if not self.has_authenticated:
+            raise NotReadyError('SMB connection not authenticated')
+
+        expiry_time = time.time() + timeout
+        path = path.replace('/', '\\')
+        if not path.endswith('\\'):
+            path += '\\'
+        messages_history = [ ]
+        results = [ ]
+
+        def sendOpen(tid):
+            m = SMBMessage(ComOpenAndxRequest(filename = path,
+                                              access_mode = 0x0040,  # Sharing mode: Deny nothing to others
+                                              open_mode = 0x0001,    # Failed if file does not exist
+                                              search_attributes = 0,
+                                              timeout = timeout * 1000))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, openCB, errback)
+            messages_history.append(m)
+
+        def openCB(open_message, **kwargs):
+            messages_history.append(open_message)
+            if not open_message.status.hasError:
+                sendEnumSnapshots(open_message.tid, open_message.payload.fid)
+            else:
+                errback(OperationFailure('Failed to list snapshots %s on %s: Unable to open path' % ( path, service_name ), messages_history))
+
+        def sendEnumSnapshots(tid, fid):
+            # [MS-CIFS]: 2.2.7.2
+            # [MS-SMB]: 2.2.7.2.1
+            setup_bytes = struct.pack('<IHBB',
+                                      0x00144064,  # [MS-SMB]: 2.2.7.2.1
+                                      fid,         # FID
+                                      0x01,        # IsFctl
+                                      0)           # IsFlags
+            m = SMBMessage(ComNTTransactRequest(function = 0x0002,  # NT_TRANSACT_IOCTL. [MS-CIFS]: 2.2.7.2.1
+                                                max_params_count = 0,
+                                                max_data_count = 0xFFFF,
+                                                max_setup_count = 0,
+                                                setup_bytes = setup_bytes))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, enumSnapshotsCB, errback, tid = tid, fid = fid)
+            messages_history.append(m)
+
+        def enumSnapshotsCB(enum_message, **kwargs):
+            messages_history.append(enum_message)
+            if not enum_message.status.hasError:
+                results = [ ]
+                snapshots_count = struct.unpack('<I', enum_message.payload.data_bytes[4:8])[0]
+                for i in range(0, snapshots_count):
+                    s = enum_message.payload.data_bytes[12+i*50:12+48+i*50].decode('UTF-16LE')
+                    results.append(datetime(*map(int, ( s[5:9], s[10:12], s[13:15], s[16:18], s[19:21], s[22:24] ))))
+                closeFid(kwargs['tid'], kwargs['fid'])
+                callback(results)
+            else:
+                closeFid(kwargs['tid'], kwargs['fid'])
+                errback(OperationFailure('Failed to list snapshots %s on %s: Unable to list snapshots on path' % ( path, service_name ), messages_history))
+
+        def closeFid(tid, fid):
+            m = SMBMessage(ComCloseRequest(fid))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            messages_history.append(m)
+
+        if not self.connected_trees.has_key(service_name):
+            def connectCB(connect_message, **kwargs):
+                messages_history.append(connect_message)
+                if not connect_message.status.hasError:
+                    self.connected_trees[service_name] = connect_message.tid
+                    sendOpen(connect_message.tid)
+                else:
+                    errback(OperationFailure('Failed to list snapshots %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
+
+            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
+            messages_history.append(m)
+        else:
+            sendOpen(self.connected_trees[service_name])
 
     def _echo_SMB1(self, data, callback, errback, timeout = 30):
         messages_history = [ ]

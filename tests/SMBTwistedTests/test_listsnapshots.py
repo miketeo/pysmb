@@ -34,16 +34,16 @@ class ListSnapshotsFactory(SMBProtocolFactory):
         self.d.errback('Auth failed')
 
 
-#@deferred(timeout=15.0)
-#def test_listshares_SMB1():
-#    info = getConnectionInfo()
-#    smb_structs.SUPPORT_SMB2 = False
-#
-#    factory = ListSnapshotsFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
-#    factory.service_name = 'smbtest'
-#    factory.path = '/rfc1001.txt'
-#    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
-#    return factory.d
+@deferred(timeout=15.0)
+def test_listshares_SMB1():
+    info = getConnectionInfo()
+    smb_structs.SUPPORT_SMB2 = False
+
+    factory = ListSnapshotsFactory(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    factory.service_name = 'smbtest'
+    factory.path = '/rfc1001.txt'
+    reactor.connectTCP(info['server_ip'], info['server_port'], factory)
+    return factory.d
 
 @deferred(timeout=15.0)
 def test_listshares_SMB2():

@@ -190,6 +190,8 @@ class SMBProtocolFactory(ClientFactory):
         """
         Retrieve a list of available snapshots (a.k.a. shadow copies) for *path*.
 
+        Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions).
+
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: path relative to the *service_name* where we are interested in the list of available snapshots
         :return: A list of python *datetime.DateTime* instances in GMT/UTC time zone

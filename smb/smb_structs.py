@@ -1296,3 +1296,117 @@ class ComEchoResponse(Payload):
     def decode(self, message):
         self.sequence_number = struct.unpack('<H', message.parameters_data[:2])[0]
         self.data = message.data
+
+
+class ComNTTransactRequest(Payload):
+    """
+    References:
+    ===========
+    - [MS-CIFS]: 2.2.4.62.1
+    """
+    PAYLOAD_STRUCT_FORMAT = '<BHIIIIIIIIBH'
+    PAYLOAD_STRUCT_SIZE = struct.calcsize(PAYLOAD_STRUCT_FORMAT)
+
+    def __init__(self, function, max_params_count, max_data_count, max_setup_count,
+                 total_params_count = 0, total_data_count = 0,
+                 params_bytes = '', setup_bytes = '', data_bytes = ''):
+        self.function = function
+        self.total_params_count = total_params_count or len(params_bytes)
+        self.total_data_count = total_data_count or len(data_bytes)
+        self.max_params_count = max_params_count
+        self.max_data_count = max_data_count
+        self.max_setup_count = max_setup_count
+        self.params_bytes = params_bytes
+        self.setup_bytes = setup_bytes
+        self.data_bytes = data_bytes
+
+    def initMessage(self, message):
+        Payload.initMessage(self, message)
+        message.command = SMB_COM_NT_TRANSACT
+
+    def prepare(self, message):
+        setup_bytes_len = len(self.setup_bytes)
+        params_bytes_len = len(self.params_bytes)
+        data_bytes_len = len(self.data_bytes)
+
+        padding0 = ''
+        offset = message.HEADER_STRUCT_SIZE + self.PAYLOAD_STRUCT_SIZE + setup_bytes_len + 2 # constant 2 is for the ByteCount field in the SMB header (i.e. field which indicates number of data bytes after the SMB parameters)
+        if offset % 4 != 0:
+            padding0 = '\0'*(4-offset%4)
+            offset += (4-offset%4)
+
+        if params_bytes_len > 0:
+            params_bytes_offset = offset
+        else:
+            params_bytes_offset = 0
+
+        offset += params_bytes_len
+        padding1 = ''
+        if offset % 4 != 0:
+            padding1 = '\0'*(4-offset%4)
+            offset += (4-offset%4)
+
+        if data_bytes_len > 0:
+            data_bytes_offset = offset
+        else:
+            data_bytes_offset = 0
+
+        message.parameters_data = \
+            struct.pack(self.PAYLOAD_STRUCT_FORMAT,
+                        self.max_setup_count,
+                        0x00,           # Reserved1. Must be 0x00
+                        self.total_params_count,
+                        self.total_data_count,
+                        self.max_params_count,
+                        self.max_data_count,
+                        params_bytes_len,
+                        params_bytes_offset,
+                        data_bytes_len,
+                        data_bytes_offset,
+                        int(setup_bytes_len / 2),
+                        self.function) + \
+            self.setup_bytes
+
+        message.data = padding0 + self.params_bytes + padding1 + self.data_bytes
+
+
+class ComNTTransactResponse(Payload):
+    """
+    Contains information about a SMB_COM_NT_TRANSACT response from the server
+
+    After decoding, each instance contains the following attributes:
+    - total_params_count (integer)
+    - total_data_count (integer)
+    - setup_bytes (string)
+    - data_bytes (string)
+    - params_bytes (string)
+
+    References:
+    ===========
+    - [MS-CIFS]: 2.2.4.62.2
+    """
+    PAYLOAD_STRUCT_FORMAT = '<3sIIIIIIIIBH'
+    PAYLOAD_STRUCT_SIZE = struct.calcsize(PAYLOAD_STRUCT_FORMAT)
+
+    def decode(self, message):
+        assert message.command == SMB_COM_NT_TRANSACT
+
+        if not message.status.hasError:
+            _, self.total_params_count, self.total_data_count, \
+            params_count, params_offset, params_displ, \
+            data_count, data_offset, data_displ, setup_count = struct.unpack(self.PAYLOAD_STRUCT_FORMAT,
+                                                                             message.parameters_data[:self.PAYLOAD_STRUCT_SIZE])
+
+            self.setup_bytes = message.parameters_data[self.PAYLOAD_STRUCT_SIZE:self.PAYLOAD_STRUCT_SIZE+setup_count*2]
+
+            if params_count > 0:
+                params_offset -= message.HEADER_STRUCT_SIZE + self.PAYLOAD_STRUCT_SIZE + setup_count*2 + 2
+                self.params_bytes = message.data[params_offset:params_offset+params_count]
+            else:
+                self.params_bytes = ''
+
+            if data_count > 0:
+                data_offset -= message.HEADER_STRUCT_SIZE + self.PAYLOAD_STRUCT_SIZE + setup_count*2 + 2
+                self.data_bytes = message.data[data_offset:data_offset+data_count]
+            else:
+                self.data_bytes = ''

@@ -24,15 +24,14 @@ def teardown_func():
     global conn
     conn.close()
 
-#@with_setup(setup_func_SMB1, teardown_func)
-#def test_listsnapshots_SMB1():
-#    global conn
-#    results = conn.listShares()
-#    assert 'smbtest' in map(lambda r: r.name.lower(), results)
+@with_setup(setup_func_SMB1, teardown_func)
+def test_listsnapshots_SMB1():
+    global conn
+    results = conn.listSnapshots('smbtest', '/rfc1001.txt')
+    assert len(results) > 0
 
 @with_setup(setup_func_SMB2, teardown_func)
 def test_listsnapshots_SMB2():
     global conn
     results = conn.listSnapshots('smbtest', '/rfc1001.txt')
     assert len(results) > 0
-    
