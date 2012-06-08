@@ -55,7 +55,7 @@ class SMBProtocol(Protocol, SMB):
     def _cleanupPendingRequests(self):
         if self.factory.instance == self:
             now = time.time()
-            for mid, r in self.pending_requests.items():
+            for mid, r in self.pending_requests.iteritems():
                 if r.expiry_time < now:
                     try:
                         r.errback(SMBTimeout())
@@ -190,7 +190,7 @@ class SMBProtocolFactory(ClientFactory):
         """
         Retrieve a list of available snapshots (a.k.a. shadow copies) for *path*.
 
-        Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions).
+        Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions.
 
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: path relative to the *service_name* where we are interested in the list of available snapshots

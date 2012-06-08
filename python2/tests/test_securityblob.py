@@ -89,4 +89,3 @@ def test_auth_response_decoding():
 
     result = securityblob.decodeAuthResponseSecurityBlob(blob)
     assert result == securityblob.RESULT_ACCEPT_COMPLETED
-    

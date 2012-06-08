@@ -16,4 +16,3 @@ def getConnectionInfo():
         'password': cp.get('user', 'password'),
     }
     return info
-

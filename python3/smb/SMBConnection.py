@@ -1,8 +1,8 @@
 
 import os, logging, select, socket, types, struct
-from smb_constants import *
-from smb_structs import *
-from base import SMB, NotConnectedError, NotReadyError, SMBTimeout
+from .smb_constants import *
+from .smb_structs import *
+from .base import SMB, NotConnectedError, NotReadyError, SMBTimeout
 
 
 class SMBConnection(SMB):
@@ -177,7 +177,7 @@ class SMBConnection(SMB):
         """
         Retrieve a list of available snapshots (shadow copies) for *path*.
 
-        Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions).
+        Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions.
 
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: path relative to the *service_name* where we are interested in the list of available snapshots
@@ -218,9 +218,9 @@ class SMBConnection(SMB):
         :return: A 2-element tuple of ( file attributes of the file on server, number of bytes written to *file_obj* ).
                  The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)
         """
-        return self.retrieveFileFromOffset(service_name, path, file_obj, 0L, -1L, timeout)
+        return self.retrieveFileFromOffset(service_name, path, file_obj, 0, -1, timeout)
 
-    def retrieveFileFromOffset(self, service_name, path, file_obj, offset = 0L, max_length = -1L, timeout = 30):
+    def retrieveFileFromOffset(self, service_name, path, file_obj, offset = 0, max_length = -1, timeout = 30):
         """
         Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.
 
@@ -435,7 +435,7 @@ class SMBConnection(SMB):
 
     def _pollForNetBIOSPacket(self, timeout):
         read_len = 4
-        data = ''
+        data = b''
 
         while read_len > 0:
             try:
@@ -446,8 +446,8 @@ class SMBConnection(SMB):
                 d = self.sock.recv(read_len)
                 data = data + d
                 read_len -= len(d)
-            except select.error, ex:
-                if type(ex) is types.TupleType:
+            except select.error as ex:
+                if type(ex) is tuple:
                     if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                         raise ex
                 else:
@@ -467,8 +467,8 @@ class SMBConnection(SMB):
                 d = self.sock.recv(read_len)
                 data = data + d
                 read_len -= len(d)
-            except select.error, ex:
-                if type(ex) is types.TupleType:
+            except select.error as ex:
+                if type(ex) is tuple:
                     if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                         raise ex
                 else:

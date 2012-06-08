@@ -2,7 +2,7 @@
 import os, logging, random, socket, time
 from twisted.internet import reactor, defer
 from twisted.internet.protocol import DatagramProtocol
-from base import NBNS
+from .base import NBNS
 
 class NetBIOSTimeout(Exception):
     """Raised in NBNSProtocol via Deferred.errback method when queryName method has timeout waiting for reply"""
@@ -28,7 +28,8 @@ class NBNSProtocol(DatagramProtocol, NBNS):
             self.transport.getHandle().setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         reactor.callLater(1, self.cleanupPendingTrns)
 
-    def datagramReceived(self, data, (host, port)):
+    def datagramReceived(self, data, from_info):
+        host, port = from_info
         trn_id, ret = self.decodePacket(data)
 
         _, _, d = self.pending_trns.pop(trn_id, None)
@@ -52,7 +53,7 @@ class NBNSProtocol(DatagramProtocol, NBNS):
         """
         trn_id = random.randint(1, 0xFFFF)
         while True:
-            if not self.pending_trns.has_key(trn_id):
+            if trn_id not in self.pending_trns:
                 break
             else:
                 trn_id = (trn_id + 1) & 0xFFFF
@@ -84,7 +85,7 @@ class NBNSProtocol(DatagramProtocol, NBNS):
         """
         trn_id = random.randint(1, 0xFFFF)
         while True:
-            if not self.pending_trns.has_key(trn_id):
+            if trn_id not in self.pending_trns:
                 break
             else:
                 trn_id = (trn_id + 1) & 0xFFFF
