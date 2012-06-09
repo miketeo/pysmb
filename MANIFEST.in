@@ -1,14 +1,11 @@
 include LICENSE
 include CHANGELOG
-recursive-include nmb *
-recursive-exclude nmb *.pyc
-recursive-include smb *
-recursive-exclude smb *.pyc
-recursive-include tests *
-recursive-exclude tests *.pyc
-recursive-exclude tests *~
+recursive-include python2 *
+recursive-exclude python2 *.pyc
+recursive-exclude python2 *~
+recursive-include python3 *
+recursive-exclude python3 *.pyc
+recursive-exclude python3 *~
 recursive-include sphinx *
 recursive-include docs *
 recursive-exclude docs *.zip
-recursive-include utils *
-recursive-exclude utils *~

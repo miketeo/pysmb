@@ -1,4 +1,13 @@
 
+pysmb-1.1.1, 9 June 2012
+========================
+
+- Adds support for Python3. Noted that the SMB/NMB protocol implementations
+  are not well-tested as Twisted (as of v12.1) is not Python3 ready yet.
+- Adds support for retrieving list of shadow copies (also known as
+  "previous versions" in Windows)
+
+
 pysmb-1.1.0, 1 June 2012
 ========================
 
