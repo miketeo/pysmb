@@ -8,7 +8,7 @@ Welcome to pysmb's documentation!
 
 pysmb is a pure Python implementation of the client-side SMB/CIFS protocol (SMB1 and SMB2) which is the underlying protocol
 that facilitates file sharing and printing between Windows machines, as well as with Linux machines via the Samba server application.
-pysmb is developed in Python 2.4.6 (and Python 2.7.1) and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.
+pysmb is developed in Python 2.4.6, Python 2.7.1 and Python 3.2.3 and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.
 
 License
 -------
