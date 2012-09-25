@@ -90,11 +90,18 @@ class NBNSProtocol(DatagramProtocol, NBNS):
             else:
                 trn_id = (trn_id + 1) & 0xFFFF
 
-        data = self.prepareNetNameQuery(trn_id, name)
+        data = self.prepareNetNameQuery(trn_id)
         self.write(data, ip, port)
 
         d = defer.Deferred()
-        self.pending_trns[trn_id] = ( time.time()+timeout, name, d )
+        d2 = defer.Deferred()
+        d2.addErrback(d.errback)
+
+        def stripCode(ret):
+            d.callback(map(lambda s: s[0], filter(lambda s: s[1] == TYPE_SERVER, ret)))
+
+        d2.addCallback(stripCode)
+        self.pending_trns[trn_id] = ( time.time()+timeout, name, d2 )
         return d
 
     def stopProtocol(self):

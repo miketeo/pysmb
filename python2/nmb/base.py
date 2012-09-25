@@ -149,7 +149,7 @@ class NBNS:
             for i in range(0, numnames):
                 mynme = data[offset:offset + 15]
                 mynme = mynme.strip()
-                ret.append(mynme)
+                ret.append(( mynme, ord(data[offset+15]) ))
                 offset += 18
 
             return trn_id, ret

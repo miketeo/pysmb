@@ -1,6 +1,7 @@
 
 import os, logging, random, socket, time, select
 from base import NBNS
+from nmb_constants import TYPE_CLIENT, TYPE_SERVER, TYPE_WORKSTATION
 
 class NetBIOS(NBNS):
 
@@ -75,17 +76,21 @@ class NetBIOS(NBNS):
         trn_id = random.randint(1, 0xFFFF)
         data = self.prepareNetNameQuery(trn_id)
         self.write(data, ip, port)
-        return self._pollForQueryPacket(trn_id, timeout)
+        ret = self._pollForQueryPacket(trn_id, timeout)
+        if ret:
+            return map(lambda s: s[0], filter(lambda s: s[1] == TYPE_SERVER, ret))
+        else:
+            return None
 
     #
     # Protected Methods
     #
 
     def _pollForNetBIOSPacket(self, wait_trn_id, timeout):
-        end_time = time.time() - timeout
+        end_time = time.time() + timeout
         while True:
             try:
-                _timeout = time.time()-end_time
+                _timeout = end_time - time.time()
                 if _timeout <= 0:
                     return None
 
@@ -109,10 +114,10 @@ class NetBIOS(NBNS):
     # Contributed by Jason Anderson
     #
     def _pollForQueryPacket(self, wait_trn_id, timeout):
-        end_time = time.time() - timeout
+        end_time = time.time() + timeout
         while True:
             try:
-                _timeout = time.time()-end_time
+                _timeout = end_time - time.time()
                 if _timeout <= 0:
                     return None
 
