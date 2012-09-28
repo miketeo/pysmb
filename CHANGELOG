@@ -1,4 +1,10 @@
 
+pysmb-1.1.2, 28 Sep 2012
+========================
+
+- Improve queryIPForName() in nmb.NetBIOS and nmb.NBNSProtocol class to
+  return only server machine name and ignore workgroup names.
+
 pysmb-1.1.1, 9 June 2012
 ========================
 
