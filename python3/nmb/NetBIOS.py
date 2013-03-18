@@ -1,6 +1,6 @@
 
 import os, logging, random, socket, time, select
-from .base import NBNS
+from .base import NBNS, NotConnectedError
 from .nmb_constants import TYPE_CLIENT, TYPE_SERVER, TYPE_WORKSTATION
 
 class NetBIOS(NBNS):
@@ -99,6 +99,9 @@ class NetBIOS(NBNS):
                     return None
 
                 data, _ = self.sock.recvfrom(0xFFFF)
+                if len(data) == 0:
+                    raise NotConnectedError
+
                 trn_id, ret = self.decodePacket(data)
 
                 if trn_id == wait_trn_id:
@@ -126,6 +129,9 @@ class NetBIOS(NBNS):
                     return None
 
                 data, _ = self.sock.recvfrom(0xFFFF)
+                if len(data) == 0:
+                    raise NotConnectedError
+
                 trn_id, ret = self.decodeIPQueryPacket(data)
 
                 if trn_id == wait_trn_id:

@@ -3,6 +3,11 @@ import struct
 
 class NMBError(Exception): pass
 
+class NotConnectedError(NMBError):
+    """
+    Raisd when the underlying NMB connection has been disconnected or not connected yet
+    """
+    pass
 
 class NMBSessionMessage:
 

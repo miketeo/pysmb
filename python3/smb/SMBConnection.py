@@ -434,16 +434,23 @@ class SMBConnection(SMB):
     #
 
     def _pollForNetBIOSPacket(self, timeout):
+        expiry_time = time.time() + timeout
         read_len = 4
         data = b''
 
         while read_len > 0:
             try:
+                if expiry_time < time.time():
+                    raise SMBTimeout
+
                 ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], timeout)
                 if not ready:
                     raise SMBTimeout
 
                 d = self.sock.recv(read_len)
+                if len(d) == 0:
+                    raise NotConnectedError
+
                 data = data + d
                 read_len -= len(d)
             except select.error as ex:
@@ -460,11 +467,17 @@ class SMBConnection(SMB):
         read_len = length
         while read_len > 0:
             try:
+                if expiry_time < time.time():
+                    raise SMBTimeout
+
                 ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], timeout)
                 if not ready:
                     raise SMBTimeout
 
                 d = self.sock.recv(read_len)
+                if len(d) == 0:
+                    raise NotConnectedError
+
                 data = data + d
                 read_len -= len(d)
             except select.error as ex:
