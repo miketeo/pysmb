@@ -2,7 +2,10 @@
 import os, logging, random, socket, time
 from twisted.internet import reactor, defer
 from twisted.internet.protocol import DatagramProtocol
+from nmb_constants import TYPE_SERVER
 from base import NBNS
+
+IP_QUERY, NAME_QUERY = range(2)
 
 class NetBIOSTimeout(Exception):
     """Raised in NBNSProtocol via Deferred.errback method when queryName method has timeout waiting for reply"""
@@ -32,8 +35,12 @@ class NBNSProtocol(DatagramProtocol, NBNS):
         host, port = from_info
         trn_id, ret = self.decodePacket(data)
 
-        _, _, d = self.pending_trns.pop(trn_id, None)
-        if d:
+        # pending transaction exists for trn_id - handle it and remove from queue
+        if trn_id in self.pending_trns:
+            _, ip, d = self.pending_trns.pop(trn_id)
+            if ip is NAME_QUERY:
+                # decode as query packet
+                trn_id, ret = self.decodeIPQueryPacket(data)
             d.callback(ret)
 
     def write(self, data, ip, port):
@@ -98,10 +105,11 @@ class NBNSProtocol(DatagramProtocol, NBNS):
         d2.addErrback(d.errback)
 
         def stripCode(ret):
-            d.callback(map(lambda s: s[0], filter(lambda s: s[1] == TYPE_SERVER, ret)))
+            if ret is not None: # got valid response. Somehow the callback is also called when there is an error.
+                d.callback(map(lambda s: s[0], filter(lambda s: s[1] == TYPE_SERVER, ret)))
 
         d2.addCallback(stripCode)
-        self.pending_trns[trn_id] = ( time.time()+timeout, name, d2 )
+        self.pending_trns[trn_id] = ( time.time()+timeout, NAME_QUERY, d2 )
         return d
 
     def stopProtocol(self):
@@ -109,12 +117,20 @@ class NBNSProtocol(DatagramProtocol, NBNS):
 
     def cleanupPendingTrns(self):
         now = time.time()
-        for trn_id, ( expiry_time, name, d ) in self.pending_trns.iteritems():
-            if expiry_time < now:
-                del self.pending_trns[trn_id]
-                try:
-                    d.errback(NetBIOSTimeout(name))
-                except: pass
+
+        # reply should have been received in the past
+        expired = filter(lambda (trn_id, (expiry_time, name, d)): expiry_time < now, self.pending_trns.iteritems())
+
+        # remove expired items from dict + call errback
+        def expire_item(item):
+            trn_id, (expiry_time, name, d) = item
+
+            del self.pending_trns[trn_id]
+            try:
+                d.errback(NetBIOSTimeout(name))
+            except: pass
+
+        map(expire_item, expired)
 
         if self.transport:
             reactor.callLater(1, self.cleanupPendingTrns)

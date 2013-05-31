@@ -58,8 +58,13 @@ class SMBConnection(SMB):
     def write(self, data):
         assert self.sock
         data_len = len(data)
-        assert self.sock.send(data) == data_len
-
+        total_sent = 0
+        while total_sent < data_len:
+            sent = self.sock.send(data[total_sent:])
+            if sent == 0:
+                raise NotConnectedError('Server disconnected')
+            total_sent = total_sent + sent
+            
     #
     # Misc Properties
     #
