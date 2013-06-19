@@ -59,6 +59,7 @@ class SMB2ProtocolHeaderError(ProtocolError):
 class OperationFailure(Exception):
 
     def __init__(self, message, smb_messages):
+        self.args = [ message ]
         self.message = message
         self.smb_messages = smb_messages
 

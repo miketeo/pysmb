@@ -20,7 +20,10 @@ class SMBProtocol(Protocol, SMB):
 
     def connectionMade(self):
         self.factory.instance = self
-        self.requestNMBSession()
+        if not self.is_direct_tcp:
+            self.requestNMBSession()
+        else:
+            self.onNMBSessionOK()
 
     def connectionLost(self, reason):
         if self.factory.instance == self:
@@ -77,16 +80,17 @@ class SMBProtocolFactory(ClientFactory):
     #: SMB messages will only be signed when remote server requires signing.
     SIGN_WHEN_REQUIRED = 2
 
-    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED):
+    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False):
         """
         Create a new SMBProtocolFactory instance. You will pass this instance to *reactor.connectTCP()* which will then instantiate the TCP connection to the remote SMB/CIFS server.
-        Note that the default TCP port for most SMB/CIFS servers is 139.
+        Note that the default TCP port for most SMB/CIFS servers using NetBIOS over TCP/IP is 139.
+        Some newer server installations might also support Direct hosting of SMB over TCP/IP; for these servers, the default TCP port is 445.
 
         *username* and *password* are the user credentials required to authenticate the underlying SMB connection with the remote server.
         File operations can only be proceeded after the connection has been authenticated successfully.
 
         :param string my_name: The local NetBIOS machine name that will identify where this connection is originating from.
-                               You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of ``\/:*?";|+``
+                               You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of ``\/:*?";|+``.
         :param string remote_name: The NetBIOS machine name of the remote server.
                                    On windows, you can find out the machine name by right-clicking on the "My Computer" and selecting "Properties".
                                    This parameter must be the same as what has been configured on the remote server, or else the connection will be rejected.
@@ -99,6 +103,8 @@ class SMBProtocolFactory(ClientFactory):
                                  If *SIGN_WHEN_REQUIRED* (value=2), SMB messages will only be signed when remote server requires signing.
                                  If *SIGN_WHEN_SUPPORTED* (value=1), SMB messages will be signed when remote server supports signing but not requires signing.
                                  If *SIGN_NEVER* (value=0), SMB messages will never be signed regardless of remote server's configurations; access errors will occur if the remote server requires signing.
+        :param boolean is_direct_tcp: Controls whether the NetBIOS over TCP/IP (is_direct_tcp=False) or the newer Direct hosting of SMB over TCP/IP (is_direct_tcp=True) will be used for the communication.
+                                      The default parameter is False which will use NetBIOS over TCP/IP for wider compatibility (TCP port: 139).
         """
         self.username = username
         self.password = password
@@ -107,6 +113,7 @@ class SMBProtocolFactory(ClientFactory):
         self.domain = domain
         self.use_ntlm_v2 = use_ntlm_v2
         self.sign_options = sign_options
+        self.is_direct_tcp = is_direct_tcp
         self.instance = None    #: The single SMBProtocol instance for each SMBProtocolFactory instance. Usually, you should not need to touch this attribute directly.
 
     #
@@ -369,6 +376,6 @@ class SMBProtocolFactory(ClientFactory):
     #
 
     def buildProtocol(self, addr):
-        p = self.protocol(self.username, self.password, self.my_name, self.remote_name, self.domain, self.use_ntlm_v2, self.sign_options)
+        p = self.protocol(self.username, self.password, self.my_name, self.remote_name, self.domain, self.use_ntlm_v2, self.sign_options, self.is_direct_tcp)
         p.factory = self
         return p

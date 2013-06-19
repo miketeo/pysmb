@@ -16,7 +16,7 @@ class SMBConnection(SMB):
     #: SMB messages will only be signed when remote server requires signing.
     SIGN_WHEN_REQUIRED = 2
 
-    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED):
+    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False):
         """
         Create a new SMBConnection instance.
 
@@ -24,6 +24,9 @@ class SMBConnection(SMB):
         File operations can only be proceeded after the connection has been authenticated successfully.
 
         Note that you need to call *connect* method to actually establish the SMB connection to the remote server and perform authentication.
+
+        The default TCP port for most SMB/CIFS servers using NetBIOS over TCP/IP is 139.
+        Some newer server installations might also support Direct hosting of SMB over TCP/IP; for these servers, the default TCP port is 445.
 
         :param string my_name: The local NetBIOS machine name that will identify where this connection is originating from.
                                You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of ``\/:*?";|+``
@@ -39,11 +42,14 @@ class SMBConnection(SMB):
                                  If *SIGN_WHEN_REQUIRED* (value=2), SMB messages will only be signed when remote server requires signing.
                                  If *SIGN_WHEN_SUPPORTED* (value=1), SMB messages will be signed when remote server supports signing but not requires signing.
                                  If *SIGN_NEVER* (value=0), SMB messages will never be signed regardless of remote server's configurations; access errors will occur if the remote server requires signing.
+        :param boolean is_direct_tcp: Controls whether the NetBIOS over TCP/IP (is_direct_tcp=False) or the newer Direct hosting of SMB over TCP/IP (is_direct_tcp=True) will be used for the communication.
+                                      The default parameter is False which will use NetBIOS over TCP/IP for wider compatibility (TCP port: 139).
         """
-        SMB.__init__(self, username, password, my_name, remote_name, domain, use_ntlm_v2, sign_options)
+        SMB.__init__(self, username, password, my_name, remote_name, domain, use_ntlm_v2, sign_options, is_direct_tcp)
         self.sock = None
         self.auth_result = None
         self.is_busy = False
+        self.is_direct_tcp = is_direct_tcp
 
     #
     # SMB (and its superclass) Methods
@@ -64,7 +70,7 @@ class SMBConnection(SMB):
             if sent == 0:
                 raise NotConnectedError('Server disconnected')
             total_sent = total_sent + sent
-            
+
     #
     # Misc Properties
     #
@@ -97,7 +103,10 @@ class SMBConnection(SMB):
 
         self.is_busy = True
         try:
-            self.requestNMBSession()
+            if not self.is_direct_tcp:
+                self.requestNMBSession()
+            else:
+                self.onNMBSessionOK()
             while self.auth_result is None:
                 self._pollForNetBIOSPacket(timeout)
         finally:

@@ -1,3 +1,8 @@
+pysmb-1.1.5, 19 June 2013
+=========================
+
+- Adds support for Direct hosting of SMB over TCP/IP (TCP port: 445)
+
 pysmb-1.1.4, 31 May 2013
 ========================
 

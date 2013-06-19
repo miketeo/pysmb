@@ -50,12 +50,13 @@ class SMB(NMBSession):
     SIGN_WHEN_SUPPORTED = 1
     SIGN_WHEN_REQUIRED = 2
 
-    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED):
-        NMBSession.__init__(self, my_name, remote_name)
+    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False):
+        NMBSession.__init__(self, my_name, remote_name, is_direct_tcp = is_direct_tcp)
         self.username = username
         self.password = password
         self.domain = domain
         self.sign_options = sign_options
+        self.is_direct_tcp = is_direct_tcp
         self.use_ntlm_v2 = use_ntlm_v2 #: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1
         self.smb_message = SMBMessage()
         self.is_using_smb2 = False   #: Are we communicating using SMB2 protocol? self.smb_message will be a SMB2Message instance if this flag is True

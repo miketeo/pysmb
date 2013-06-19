@@ -78,7 +78,7 @@ class NetBIOS(NBNS):
         self.write(data, ip, port)
         ret = self._pollForQueryPacket(trn_id, timeout)
         if ret:
-            return map(lambda s: s[0], filter(lambda s: s[1] == TYPE_SERVER, ret))
+            return list(map(lambda s: s[0], filter(lambda s: s[1] == TYPE_SERVER, ret)))
         else:
             return None
 

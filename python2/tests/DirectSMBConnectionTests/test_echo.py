@@ -1,7 +1,7 @@
 
 import random
 from smb.SMBConnection import SMBConnection
-from .util import getConnectionInfo
+from util import getConnectionInfo
 from nose.tools import with_setup
 
 conn = None
@@ -20,5 +20,6 @@ def teardown_func():
 def test_echo():
     global conn
 
-    data = bytearray('%d' % random.randint(1000, 9999), 'ascii')
+    data = '%d' % random.randint(1000, 9999)
     assert conn.echo(data) == data
+    

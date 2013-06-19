@@ -64,3 +64,31 @@ def test_upload():
     assert md.hexdigest() == TEST_DIGEST
     assert len(s) == TEST_FILESIZE
 
+
+def test_overwrite():
+    info = util.getConnectionInfo()
+    info['filename'] = os.sep + 'StoreTest-%d-%d.dat' % ( time.time(), random.randint(0, 10000) )
+
+    test_s = 'test1234'
+    test_md = MD5()
+    test_md.update(test_s)
+
+    director = urllib2.build_opener(SMBHandler)
+    upload_fh = director.open('smb://%(user)s:%(password)s@%(server_ip)s/smbtest/%(filename)s' % info, data = StringIO(test_s))
+
+    retr_fh = director.open('smb://%(user)s:%(password)s@%(server_ip)s/smbtest/%(filename)s' % info)
+
+    s = retr_fh.read()
+    md = MD5()
+    md.update(s)
+
+    assert md.hexdigest() == test_md.hexdigest()
+    assert len(s) == len(test_s)
+
+    upload_fh = director.open('smb://%(user)s:%(password)s@%(server_ip)s/smbtest/%(filename)s' % info, data = open(TEST_FILENAME, 'rb'))
+
+    retr_fh = director.open('smb://%(user)s:%(password)s@%(server_ip)s/smbtest/%(filename)s' % info)
+
+    s = retr_fh.read()
+    md = MD5()
+    md.update(s)

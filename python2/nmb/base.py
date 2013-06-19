@@ -8,12 +8,18 @@ class NMBSession:
 
     log = logging.getLogger('NMB.NMBSession')
 
-    def __init__(self, my_name, remote_name, host_type = TYPE_SERVER):
+    def __init__(self, my_name, remote_name, host_type = TYPE_SERVER, is_direct_tcp = False):
         self.my_name = my_name.upper()
         self.remote_name = remote_name.upper()
         self.host_type = host_type
         self.data_buf = ''
-        self.data_nmb = NMBSessionMessage()
+
+        if is_direct_tcp:
+            self.data_nmb = DirectTCPSessionMessage()
+            self.sendNMBPacket = self._sendNMBPacket_DirectTCP
+        else:
+            self.data_nmb = NMBSessionMessage()
+            self.sendNMBPacket = self._sendNMBPacket_NetBIOS
 
     #
     # Overridden Methods
@@ -55,15 +61,6 @@ class NMBSession:
     def sendNMBMessage(self, data):
         self.sendNMBPacket(SESSION_MESSAGE, data)
 
-    def sendNMBPacket(self, packet_type, data):
-        length = len(data)
-        assert length <= 0x01FFFF
-        flags = 0
-        if length > 0xFFFF:
-            flags |= 0x01
-            length &= 0xFFFF
-        self.write(struct.pack('>BBH', packet_type, flags, length) + data)
-
     def requestNMBSession(self):
         my_name_encoded = encode_name(self.my_name, TYPE_WORKSTATION)
         remote_name_encoded = encode_name(self.remote_name, self.host_type)
@@ -82,6 +79,20 @@ class NMBSession:
             self.onNMBSessionFailed()
         else:
             self.log.warning('Unrecognized NMB session type: 0x%02x', packet.type)
+
+    def _sendNMBPacket_NetBIOS(self, packet_type, data):
+        length = len(data)
+        assert length <= 0x01FFFF
+        flags = 0
+        if length > 0xFFFF:
+            flags |= 0x01
+            length &= 0xFFFF
+        self.write(struct.pack('>BBH', packet_type, flags, length) + data)
+
+    def _sendNMBPacket_DirectTCP(self, packet_type, data):
+        length = len(data)
+        assert length <= 0x00FFFFFF
+        self.write(struct.pack('>I', length) + data)
 
 
 class NBNS:
