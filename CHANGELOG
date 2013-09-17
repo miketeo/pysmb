@@ -1,3 +1,9 @@
+pysmb-1.1.6, 16 Aug 2013
+========================
+
+- Fix bug where the status of the SMB_COM_NEGOTIATE reply is not checked for error
+  before allowing further processing.
+
 pysmb-1.1.5, 19 June 2013
 =========================
 

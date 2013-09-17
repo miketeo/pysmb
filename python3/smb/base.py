@@ -228,10 +228,14 @@ class SMB(NMBSession):
     def _updateState_SMB2(self, message):
         if message.isReply:
             if message.command == SMB2_COM_NEGOTIATE:
-                self.has_negotiated = True
-                self.log.info('SMB2 dialect negotiation successful')
-                self._updateServerInfo(message.payload)
-                self._handleNegotiateResponse(message)
+                if message.status == 0:
+                    self.has_negotiated = True
+                    self.log.info('SMB2 dialect negotiation successful')
+                    self._updateServerInfo(message.payload)
+                    self._handleNegotiateResponse(message)
+                else:
+                    raise ProtocolError('Unknown status value (0x%08X) in SMB2_COM_NEGOTIATE' % message.status,
+                                        message.raw_data, message)
             elif message.command == SMB2_COM_SESSION_SETUP:
                 if message.status == 0:
                     self.session_id = message.session_id
@@ -1328,10 +1332,14 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
     def _updateState_SMB1(self, message):
         if message.isReply:
             if message.command == SMB_COM_NEGOTIATE:
-                self.has_negotiated = True
-                self.log.info('SMB dialect negotiation successful (ExtendedSecurity:%s)', message.hasExtendedSecurity)
-                self._updateServerInfo(message.payload)
-                self._handleNegotiateResponse(message)
+                if not message.status.hasError:
+                    self.has_negotiated = True
+                    self.log.info('SMB dialect negotiation successful (ExtendedSecurity:%s)', message.hasExtendedSecurity)
+                    self._updateServerInfo(message.payload)
+                    self._handleNegotiateResponse(message)
+                else:
+                    raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_NEGOTIATE' % message.status.internal_value,
+                                        message.raw_data, message)
             elif message.command == SMB_COM_SESSION_SETUP_ANDX:
                 if message.hasExtendedSecurity:
                     if not message.status.hasError:
