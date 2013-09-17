@@ -328,7 +328,7 @@ class SMB(NMBSession):
 
         if self.is_signing_active:
             self.log.info("SMB signing activated. All SMB messages will be signed.")
-            self.signing_session_key = (session_key + '\0'*16)[:16]
+            self.signing_session_key = (session_key + b'\0'*16)[:16]
             if self.capabilities & CAP_EXTENDED_SECURITY:
                 self.signing_challenge_response = None
             else:
