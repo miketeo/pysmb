@@ -10,7 +10,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; pysmb 1.0.0 documentation</title>
+    <title>Index &mdash; pysmb 1.1.5 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.0.0',
+        VERSION:     '1.1.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -27,7 +27,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.0.0 documentation" href="index.html" /> 
+    <link rel="top" title="pysmb 1.1.5 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,7 +36,7 @@
         <li class="right" style="margin-right: 10px">
           <a href="#" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">pysmb 1.1.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -254,6 +254,16 @@
   <dt><a href="api/smb_SharedDevice.html#smb.base.SharedDevice.isTemporary">isTemporary (smb.base.SharedDevice attribute)</a>
   </dt>
 
+      
+  <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.isUsingSMB2">isUsingSMB2 (smb.SMBConnection.SMBConnection attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.isUsingSMB2">(smb.SMBProtocol.SMBProtocolFactory attribute)</a>
+  </dt>
+
+      </dl></dd>
   </dl></td>
 </tr></table>
 
@@ -291,6 +301,16 @@
       <dd><dl>
         
   <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.listShares">(smb.SMBProtocol.SMBProtocolFactory method)</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.listSnapshots">listSnapshots() (smb.SMBConnection.SMBConnection method)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.listSnapshots">(smb.SMBProtocol.SMBProtocolFactory method)</a>
   </dt>
 
       </dl></dd>
@@ -363,6 +383,18 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="api/nmb_NetBIOS.html#nmb.NetBIOS.NetBIOS.queryIPForName">queryIPForName() (nmb.NetBIOS.NetBIOS method)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/nmb_NBNSProtocol.html#nmb.NetBIOSProtocol.NBNSProtocol.queryIPForName">(nmb.NetBIOSProtocol.NBNSProtocol method)</a>
+  </dt>
+
+      </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
   <dt><a href="api/nmb_NetBIOS.html#nmb.NetBIOS.NetBIOS.queryName">queryName() (nmb.NetBIOS.NetBIOS method)</a>
   </dt>
 
@@ -388,8 +420,6 @@
   </dt>
 
       </dl></dd>
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.retrieveFile">retrieveFile() (smb.SMBConnection.SMBConnection method)</a>
   </dt>
@@ -397,6 +427,18 @@
       <dd><dl>
         
   <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.retrieveFile">(smb.SMBProtocol.SMBProtocolFactory method)</a>
+  </dt>
+
+      </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.retrieveFileFromOffset">retrieveFileFromOffset() (smb.SMBConnection.SMBConnection method)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.retrieveFileFromOffset">(smb.SMBProtocol.SMBProtocolFactory method)</a>
   </dt>
 
       </dl></dd>
@@ -419,11 +461,41 @@
   </dt>
 
       
+  <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.SIGN_NEVER">SIGN_NEVER (smb.SMBConnection.SMBConnection attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.SIGN_NEVER">(smb.SMBProtocol.SMBProtocolFactory attribute)</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.SIGN_WHEN_REQUIRED">SIGN_WHEN_REQUIRED (smb.SMBConnection.SMBConnection attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.SIGN_WHEN_REQUIRED">(smb.SMBProtocol.SMBProtocolFactory attribute)</a>
+  </dt>
+
+      </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED">SIGN_WHEN_SUPPORTED (smb.SMBConnection.SMBConnection attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.SIGN_WHEN_SUPPORTED">(smb.SMBProtocol.SMBProtocolFactory attribute)</a>
+  </dt>
+
+      </dl></dd>
+      
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection">SMBConnection (class in smb.SMBConnection)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory">SMBProtocolFactory (class in smb.SMBProtocol)</a>
   </dt>
@@ -478,11 +550,11 @@
         <li class="right" style="margin-right: 10px">
           <a href="#" title="General Index"
              >index</a></li>
-        <li><a href="index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">pysmb 1.1.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011, Michael Teo.
+        &copy; Copyright 2001-2013, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>

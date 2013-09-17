@@ -6,9 +6,11 @@
 Welcome to pysmb's documentation!
 =================================
 
-pysmb is a pure Python implementation of the client-side SMB/CIFS protocol which is the underlying protocol that facilitates file sharing and printing between Windows machines,
-as well as with Linux machines via the Samba server application.
-pysmb is developed in Python 2.4.6 (and Python 2.7.1) and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.
+pysmb is a pure Python implementation of the client-side SMB/CIFS protocol (SMB1 and SMB2) which is the underlying protocol
+that facilitates file sharing and printing between Windows machines, as well as with Linux machines via the Samba server application.
+pysmb is developed in Python 2.4.6, Python 2.7.1 and Python 3.2.3 and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.
+
+The latest version of pysmb is always available at the pysmb project page at `miketeo.net <http://miketeo.net/wp/index.php/projects/pysmb>`_.
 
 License
 -------
@@ -26,7 +28,9 @@ pysmb is not alone. It is made possible with support from other modules.
 
 * **pyasn1** : Pure Python implementation of ASN.1 parsing and encoding (not included together with pysmb; needs to be installed separately)
 * **md4** and **U32** : Pure Python implementation of MD4 hashing algorithm and 32-bit unsigned integer by Dmitry Rozmanov. Licensed under LGPL and included together with pysmb.
-* **pyDes** : Pure python implementation of the DES encryption algorithm by Todd Whiteman. Free domain and included together with pysmb.
+* **pyDes** : Pure Python implementation of the DES encryption algorithm by Todd Whiteman. Free domain and included together with pysmb.
+* **sha256** : Pure Python implementation of SHA-256 message digest by Thomas Dixon. Licensed under MIT and included together with pysmb. This module is imported only when
+  the Python standard library (usually Python 2.4) does not provide the SHA-256 hash algorithm.
 
 In various places, there are references to different specifications. Most of these referenced specifications
 can be downloaded from Microsoft web site under Microsoft's "Open Specification Promise". If you need to download
@@ -55,13 +59,19 @@ Hence, please take some time to familiarize yourself with the smb package conten
 * **smb/securityblob.py** :
   Provides routines to encode/decode the NTLMSSP security blob in the SMB messages.
 * **smb/smb_constants.py** :
-  All the constants used in the smb package
+  All the constants used in the smb package for SMB1 protocol
 * **smb/smb_structs.py** :
-  Contains the internal classes used in the SMB package. These classes are usually used to encode/decode the parameter and data blocks of specific SMB message.
+  Contains the internal classes used in the SMB package for SMB1 protocol. These classes are usually used to encode/decode the parameter and data blocks of specific SMB1 message.
+* **smb/smb2_constants.py** :
+  All the constants used in the smb package for SMB2 protocol
+* **smb/smb2_structs.py** :
+  Contains the internal classes used in the SMB package for SMB2 protocol. These classes are usually used to encode/decode the parameter and data blocks of specific SMB2 message.
 * **smb/SMBConnection.py** :
   Contains a SMB protocol implementation. All operations are blocking I/O.
 * **smb/SMBProtocol.py** :
   Contains the SMB protocol implementation for use in the Twisted framework.
+* **smb/SMBHandler.py** :
+  Provides support for "smb://" URL in the urllib2 python package.
 
 Using pysmb
 ===========
@@ -75,6 +85,7 @@ As an application developer who is looking to use pysmb to implement file transf
  * To use pysmb in applications where you want the file operations to return after they have completed (synchronous style), please read
    :doc:`smb.SMBConnection.SMBConnection<api/smb_SMBConnection>` documentation.
  * To use pysmb in Twisted, please read :doc:`smb.SMBProtocol.SMBProtocolFactory<api/smb_SMBProtocolFactory>` documentation.
+ * To support "smb://" URL in urllib2 python package, read :doc:`smb.SMBHandler.SMBHandler<api/smb_SMBHandler>` documentation.
 
 As a software developer who is looking to modify pysmb so that you can integrate it to other network frameworks:
  * Read :doc:`extending`

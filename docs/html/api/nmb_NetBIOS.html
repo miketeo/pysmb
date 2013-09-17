@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>NetBIOS class &mdash; pysmb 1.0.0 documentation</title>
+    <title>NetBIOS class &mdash; pysmb 1.1.5 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.0',
+        VERSION:     '1.1.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.0.0 documentation" href="../index.html" />
+    <link rel="top" title="pysmb 1.1.5 documentation" href="../index.html" />
     <link rel="next" title="SMBConnection Class" href="smb_SMBConnection.html" />
     <link rel="prev" title="NBNSProtocol Class" href="nmb_NBNSProtocol.html" /> 
   </head>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="nmb_NBNSProtocol.html" title="NBNSProtocol Class"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">pysmb 1.1.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -127,6 +127,30 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="nmb.NetBIOS.NetBIOS.queryIPForName">
+<tt class="descname">queryIPForName</tt><big>(</big><em>ip</em>, <em>port=137</em>, <em>timeout=30</em><big>)</big><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.queryIPForName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a query to the machine with <em>ip</em> and hopes that the machine will reply back with its name.</p>
+<p>The implementation of this function is contributed by Jason Anderson.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ip</strong> (<em>string</em>) &#8211; If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.
+If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</li>
+<li><strong>port</strong> (<em>integer</em>) &#8211; The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.</li>
+<li><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds to wait for a reply, after which the method will return None</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list of string containing the names of the machine at <em>ip</em>. On timeout, returns None.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="nmb.NetBIOS.NetBIOS.queryName">
 <tt class="descname">queryName</tt><big>(</big><em>name</em>, <em>ip=''</em>, <em>port=137</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.queryName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.queryName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send a query on the network and hopes that if machine matching the <em>name</em> will reply with its IP address.</p>
@@ -171,11 +195,11 @@ If the NBNSProtocol instance was instianted with broadcast=False, then you shoul
         <li class="right" >
           <a href="nmb_NBNSProtocol.html" title="NBNSProtocol Class"
              >previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">pysmb 1.1.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011, Michael Teo.
+        &copy; Copyright 2001-2013, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>

@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>SMBProtocolFactory Class &mdash; pysmb 1.0.0 documentation</title>
+    <title>SMBProtocolFactory Class &mdash; pysmb 1.1.5 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.0',
+        VERSION:     '1.1.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,9 +25,9 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.0.0 documentation" href="../index.html" />
+    <link rel="top" title="pysmb 1.1.5 documentation" href="../index.html" />
     <link rel="next" title="SharedDevice Class" href="smb_SharedDevice.html" />
-    <link rel="prev" title="SMBConnection Class" href="smb_SMBConnection.html" /> 
+    <link rel="prev" title="SMbHandler Class" href="smb_SMBHandler.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,9 +40,9 @@
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="smb_SMBConnection.html" title="SMBConnection Class"
+          <a href="smb_SMBHandler.html" title="SMbHandler Class"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">pysmb 1.1.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -50,14 +50,16 @@
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">SMBProtocolFactory Class</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#smb2-support">SMB2 Support</a></li>
 <li><a class="reference internal" href="#caveats">Caveats</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="smb_SMBConnection.html"
-                        title="previous chapter">SMBConnection Class</a></p>
+  <p class="topless"><a href="smb_SMBHandler.html"
+                        title="previous chapter">SMbHandler Class</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="smb_SharedDevice.html"
                         title="next chapter">SharedDevice Class</a></p>
@@ -111,6 +113,58 @@ entire file operation (except <em>storeFile</em> and <em>retrieveFile</em> metho
 <p>If you are interested in learning the results of the operation or to know when the operation has completed, you should
 add a handling method to the returned <em>Deferred</em> instance via <em>Deferred.addCallback</em>. If the file operation fails, the <em>Deferred.errback</em> function will be called
 with an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a>; on timeout, it will be called with a <a class="reference internal" href="smb_exceptions.html"><em>SMBTimeout</em></a>.</p>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>The following illustrates a simple file retrieving implementation.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">reactor</span>
+<span class="kn">from</span> <span class="nn">smb.SMBProtocol</span> <span class="kn">import</span> <span class="n">SMBProtocolFactory</span>
+
+<span class="k">class</span> <span class="nc">RetrieveFileFactory</span><span class="p">(</span><span class="n">SMBProtocolFactory</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">SMBProtocolFactory</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fileRetrieved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">write_result</span><span class="p">):</span>
+        <span class="n">file_obj</span><span class="p">,</span> <span class="n">file_attributes</span><span class="p">,</span> <span class="n">file_size</span> <span class="o">=</span> <span class="n">write_result</span>
+
+        <span class="c"># Retrieved file contents are inside file_obj</span>
+        <span class="c"># Do what you need with the file_obj and then close it</span>
+        <span class="c"># Note that the file obj is positioned at the end-of-file,</span>
+        <span class="c"># so you might need to perform a file_obj.seek() to if you</span>
+        <span class="c"># need to read from the beginning</span>
+        <span class="n">file_obj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">loseConnection</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">onAuthOK</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieveFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">service</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">())</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">addCallback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fileRetrieved</span><span class="p">)</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">addErrback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">onAuthFailed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&#39;Auth failed&#39;</span>
+
+<span class="c"># There will be some mechanism to capture userID, password, client_machine_name, server_name and server_ip</span>
+<span class="c"># client_machine_name can be an arbitary ASCII string</span>
+<span class="c"># server_name should match the remote machine name, or else the connection will be rejected</span>
+<span class="n">factory</span> <span class="o">=</span> <span class="n">RetrieveFileFactory</span><span class="p">(</span><span class="n">userID</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">client_machine_name</span><span class="p">,</span> <span class="n">server_name</span><span class="p">,</span> <span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="n">factory</span><span class="o">.</span><span class="n">service</span> <span class="o">=</span> <span class="s">&#39;smbtest&#39;</span>
+<span class="n">factory</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="s">&#39;/rfc1001.txt&#39;</span>
+<span class="n">reactor</span><span class="o">.</span><span class="n">connectTCP</span><span class="p">(</span><span class="n">server_ip</span><span class="p">,</span> <span class="mi">139</span><span class="p">,</span> <span class="n">factory</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="smb2-support">
+<h2>SMB2 Support<a class="headerlink" href="#smb2-support" title="Permalink to this headline">¶</a></h2>
+<p>Starting from pysmb 1.1.0, pysmb will utilize SMB2 protocol for communication if the remote SMB/CIFS service supports SMB2.
+Otherwise, it will fallback automatically back to using SMB1 protocol.</p>
+<p>To disable SMB2 protocol in pysmb, set the <em>SUPPORT_SMB2</em> flag in the <em>smb_structs</em> module to <em>False</em> before creating the <em>SMBProtocolFactory</em> instance.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">smb</span> <span class="kn">import</span> <span class="n">smb_structs</span>
+<span class="n">smb_structs</span><span class="o">.</span><span class="n">SUPPORT_SMB2</span> <span class="o">=</span> <span class="bp">False</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="caveats">
 <h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -121,11 +175,13 @@ with an <a class="reference internal" href="smb_exceptions.html"><em>OperationFa
 </ul>
 <dl class="class">
 <dt id="smb.SMBProtocol.SMBProtocolFactory">
-<em class="property">class </em><tt class="descclassname">smb.SMBProtocol.</tt><tt class="descname">SMBProtocolFactory</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">smb.SMBProtocol.</tt><tt class="descname">SMBProtocolFactory</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em>, <em>sign_options=2</em>, <em>is_direct_tcp=False</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="smb.SMBProtocol.SMBProtocolFactory.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new SMBProtocolFactory instance.</p>
+<tt class="descname">__init__</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em>, <em>sign_options=2</em>, <em>is_direct_tcp=False</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new SMBProtocolFactory instance. You will pass this instance to <em>reactor.connectTCP()</em> which will then instantiate the TCP connection to the remote SMB/CIFS server.
+Note that the default TCP port for most SMB/CIFS servers using NetBIOS over TCP/IP is 139.
+Some newer server installations might also support Direct hosting of SMB over TCP/IP; for these servers, the default TCP port is 445.</p>
 <p><em>username</em> and <em>password</em> are the user credentials required to authenticate the underlying SMB connection with the remote server.
 File operations can only be proceeded after the connection has been authenticated successfully.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -143,6 +199,12 @@ This parameter must be the same as what has been configured on the remote server
 The choice of NTLMv1 and NTLMv2 is configured on the remote server, and there is no mechanism to auto-detect which algorithm has been configured.
 Hence, we can only &#8220;guess&#8221; or try both algorithms.
 On Sambda, Windows Vista and Windows 7, NTLMv2 is enabled by default. On Windows XP, we can use NTLMv1 before NTLMv2.</li>
+<li><strong>sign_options</strong> (<em>int</em>) &#8211; Determines whether SMB messages will be signed. Default is <em>SIGN_WHEN_REQUIRED</em>.
+If <em>SIGN_WHEN_REQUIRED</em> (value=2), SMB messages will only be signed when remote server requires signing.
+If <em>SIGN_WHEN_SUPPORTED</em> (value=1), SMB messages will be signed when remote server supports signing but not requires signing.
+If <em>SIGN_NEVER</em> (value=0), SMB messages will never be signed regardless of remote server&#8217;s configurations; access errors will occur if the remote server requires signing.</li>
+<li><strong>is_direct_tcp</strong> (<em>boolean</em>) &#8211; Controls whether the NetBIOS over TCP/IP (is_direct_tcp=False) or the newer Direct hosting of SMB over TCP/IP (is_direct_tcp=True) will be used for the communication.
+The default parameter is False which will use NetBIOS over TCP/IP for wider compatibility (TCP port: 139).</li>
 </ul>
 </td>
 </tr>
@@ -257,7 +319,7 @@ If your path/filename contains non-English characters, you must pass in an unico
 
 <dl class="method">
 <dt id="smb.SMBProtocol.SMBProtocolFactory.listPath">
-<tt class="descname">listPath</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>search=55</em>, <em>pattern='\*'</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.listPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.listPath" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">listPath</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>search=55</em>, <em>pattern='*'</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.listPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.listPath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a directory listing of files/folders at <em>path</em></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -291,6 +353,28 @@ The default <em>search</em> value will query for all read-only, hidden, system, 
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>timeout</strong> (<em>integer/float</em>) &#8211; Number of seconds that pysmb will wait before raising <em>SMBTimeout</em> via the returned <em>Deferred</em> instance&#8217;s <em>errback</em> method.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a list of <a class="reference internal" href="smb_SharedDevice.html"><em>smb.base.SharedDevice</em></a> instances.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.listSnapshots">
+<tt class="descname">listSnapshots</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>timeout=30</em><big>)</big><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.listSnapshots" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a list of available snapshots (a.k.a. shadow copies) for <em>path</em>.</p>
+<p>Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; path relative to the <em>service_name</em> where we are interested in the list of available snapshots</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list of python <em>datetime.DateTime</em> instances in GMT/UTC time zone</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -347,6 +431,7 @@ If the path contains non-English characters, an unicode string must be used to p
 <dt id="smb.SMBProtocol.SMBProtocolFactory.retrieveFile">
 <tt class="descname">retrieveFile</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.retrieveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.retrieveFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the contents of the file at <em>path</em> on the <em>service_name</em> and write these contents to the provided <em>file_obj</em>.</p>
+<p>Use <em>retrieveFileFromOffset()</em> method if you need to specify the offset to read from the remote <em>path</em> and/or the maximum number of bytes to write to the <em>file_obj</em>.</p>
 <p>The meaning of the <em>timeout</em> parameter will be different from other file operation methods. As the downloaded file usually exceeeds the maximum size
 of each SMB/CIFS data message, it will be packetized into a series of request messages (each message will request about about 60kBytes).
 The <em>timeout</em> parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and downloaded from the remote SMB/CIFS server.</p>
@@ -357,11 +442,40 @@ The <em>timeout</em> parameter is an integer/float value that specifies the time
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
 <li><strong>path</strong> (<em>string/unicode</em>) &#8211; Path of the file on the remote server. If the file cannot be opened for reading, an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a> will be called in the returned <em>Deferred</em> errback.</li>
-<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>write</em> method. Data will be written continuously to <em>file_obj</em> until EOF is received from the remote service.</li>
+<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>write</em> method. Data will be written continuously to <em>file_obj</em> until EOF is received from the remote service. In Python3, this file-like object must have a <em>write</em> method which accepts a bytes parameter.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a 3-element tuple of ( <em>file_obj</em>, file attributes of the file on server, number of bytes retrieved ).
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a 3-element tuple of ( <em>file_obj</em>, file attributes of the file on server, number of bytes written to <em>file_obj</em> ).
+The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FILE_ATTRIBUTE_xxx</em> bits (see smb_constants.py)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.retrieveFileFromOffset">
+<tt class="descname">retrieveFileFromOffset</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>offset=0</em>, <em>max_length=-1</em>, <em>timeout=30</em><big>)</big><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.retrieveFileFromOffset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the contents of the file at <em>path</em> on the <em>service_name</em> and write these contents to the provided <em>file_obj</em>.</p>
+<p>The meaning of the <em>timeout</em> parameter will be different from other file operation methods. As the downloaded file usually exceeeds the maximum size
+of each SMB/CIFS data message, it will be packetized into a series of request messages (each message will request about about 60kBytes).
+The <em>timeout</em> parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and downloaded from the remote SMB/CIFS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; Path of the file on the remote server. If the file cannot be opened for reading, an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a> will be called in the returned <em>Deferred</em> errback.</li>
+<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>write</em> method. Data will be written continuously to <em>file_obj</em> until EOF is received from the remote service. In Python3, this file-like object must have a <em>write</em> method which accepts a bytes parameter.</li>
+<li><strong>offset</strong> (<em>integer/long</em>) &#8211; the offset in the remote <em>path</em> where the first byte will be read and written to <em>file_obj</em>. Must be either zero or a positive integer/long value.</li>
+<li><strong>max_length</strong> (<em>integer/long</em>) &#8211; maximum number of bytes to read from the remote <em>path</em> and write to the <em>file_obj</em>. Specify a negative value to read from <em>offset</em> to the EOF.
+If zero, the <em>Deferred</em> callback is invoked immediately after the file is opened successfully for reading.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a 3-element tuple of ( <em>file_obj</em>, file attributes of the file on server, number of bytes written to <em>file_obj</em> ).
 The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FILE_ATTRIBUTE_xxx</em> bits (see smb_constants.py)</p>
 </td>
 </tr>
@@ -385,7 +499,7 @@ by the remote SMB/CIFS server.</p>
 <li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
 <li><strong>path</strong> (<em>string/unicode</em>) &#8211; Path of the file on the remote server. If the file at <em>path</em> does not exist, it will be created. Otherwise, it will be overwritten.
 If the <em>path</em> refers to a folder or the file cannot be opened for writing, an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a> will be called in the returned <em>Deferred</em> errback.</li>
-<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>read</em> method. Data will read continuously from <em>file_obj</em> until EOF.</li>
+<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>read</em> method. Data will read continuously from <em>file_obj</em> until EOF. In Python3, this file-like object must have a <em>read</em> method which returns a bytes parameter.</li>
 </ul>
 </td>
 </tr>
@@ -394,6 +508,24 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.SIGN_NEVER">
+<tt class="descname">SIGN_NEVER</tt><em class="property"> = 0</em><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.SIGN_NEVER" title="Permalink to this definition">¶</a></dt>
+<dd><p>SMB messages will never be signed regardless of remote server&#8217;s configurations; access errors will occur if the remote server requires signing.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.SIGN_WHEN_REQUIRED">
+<tt class="descname">SIGN_WHEN_REQUIRED</tt><em class="property"> = 2</em><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.SIGN_WHEN_REQUIRED" title="Permalink to this definition">¶</a></dt>
+<dd><p>SMB messages will only be signed when remote server requires signing.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.SIGN_WHEN_SUPPORTED">
+<tt class="descname">SIGN_WHEN_SUPPORTED</tt><em class="property"> = 1</em><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.SIGN_WHEN_SUPPORTED" title="Permalink to this definition">¶</a></dt>
+<dd><p>SMB messages will be signed when remote server supports signing but not requires signing.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -406,6 +538,12 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
 <dt id="smb.SMBProtocol.SMBProtocolFactory.isReady">
 <tt class="descname">isReady</tt><a class="reference internal" href="../_modules/smb/SMBProtocol.html#SMBProtocolFactory.isReady"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.isReady" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenient property to return True if the underlying SMB connection has connected to remote server, has successfully authenticated itself and is ready for file operations.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.SMBProtocol.SMBProtocolFactory.isUsingSMB2">
+<tt class="descname">isUsingSMB2</tt><a class="headerlink" href="#smb.SMBProtocol.SMBProtocolFactory.isUsingSMB2" title="Permalink to this definition">¶</a></dt>
+<dd><p>A convenient property to return True if the underlying SMB connection is using SMB2 protocol.</p>
 </dd></dl>
 
 </dd></dl>
@@ -429,13 +567,13 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              >next</a> |</li>
         <li class="right" >
-          <a href="smb_SMBConnection.html" title="SMBConnection Class"
+          <a href="smb_SMBHandler.html" title="SMbHandler Class"
              >previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">pysmb 1.1.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011, Michael Teo.
+        &copy; Copyright 2001-2013, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>

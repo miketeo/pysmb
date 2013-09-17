@@ -1,0 +1,167 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SMbHandler Class &mdash; pysmb 1.1.5 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.1.5 documentation" href="../index.html" />
+    <link rel="next" title="SMBProtocolFactory Class" href="smb_SMBProtocolFactory.html" />
+    <link rel="prev" title="SMBConnection Class" href="smb_SMBConnection.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="smb_SMBProtocolFactory.html" title="SMBProtocolFactory Class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="smb_SMBConnection.html" title="SMBConnection Class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.1.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">SMbHandler Class</a><ul>
+<li><a class="reference internal" href="#notes">Notes</a></li>
+<li><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="smb_SMBConnection.html"
+                        title="previous chapter">SMBConnection Class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="smb_SMBProtocolFactory.html"
+                        title="next chapter">SMBProtocolFactory Class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/api/smb_SMBHandler.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="smbhandler-class">
+<h1>SMbHandler Class<a class="headerlink" href="#smbhandler-class" title="Permalink to this headline">¶</a></h1>
+<p>The SMBHandler class provides support for &#8220;<a class="reference external" href="smb://">smb://</a>&#8221; URLs in the <a class="reference external" href="http://docs.python.org/library/urllib2.html">urllib2</a> python package.</p>
+<div class="section" id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Note that you need to pass in a valid hostname or IP address for the host component of the URL.
+Do not use the Windows/NetBIOS machine name for the host component.</li>
+<li>The first component of the path in the URL points to the name of the shared folder.
+Subsequent path components will point to the directory/folder of the file.</li>
+<li>You can retrieve and upload files, but you cannot delete files/folders or create folders.
+In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> will be raised.</li>
+</ul>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>The following code snippet illustrates file retrieval.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">urllib2</span>
+<span class="kn">from</span> <span class="nn">smb.SMBHandler</span> <span class="kn">import</span> <span class="n">SMBHandler</span>
+
+<span class="n">director</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">build_opener</span><span class="p">(</span><span class="n">SMBHandler</span><span class="p">)</span>
+<span class="n">fh</span> <span class="o">=</span> <span class="n">director</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;smb://myuserID:mypassword@192.168.1.1/sharedfolder/rfc1001.txt&#39;</span><span class="p">)</span>
+
+<span class="c"># Process fh like a file-like object and then close it.</span>
+<span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c"># For paths/files with unicode characters, simply pass in the URL as an unicode string</span>
+<span class="n">fh2</span> <span class="o">=</span> <span class="n">director</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">u&#39;smb://myuserID:mypassword@192.168.1.1/sharedfolder/测试文件夹/垃圾文件.dat&#39;</span><span class="p">)</span>
+
+<span class="c"># Process fh2 like a file-like object and then close it.</span>
+<span class="n">fh2</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The following code snippet illustrates file upload. You need to provide a file-like object for the <em>data</em> parameter in the <em>open()</em> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">urllib2</span>
+<span class="kn">from</span> <span class="nn">smb.SMBHandler</span> <span class="kn">import</span> <span class="n">SMBHandler</span>
+
+<span class="n">file_fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;local_file.dat&#39;</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span>
+
+<span class="n">director</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">build_opener</span><span class="p">(</span><span class="n">SMBHandler</span><span class="p">)</span>
+<span class="n">fh</span> <span class="o">=</span> <span class="n">director</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;smb://myuserID:mypassword@192.168.1.1/sharedfolder/upload_file.dat&#39;</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">file_fh</span><span class="p">)</span>
+
+<span class="c"># Reading from fh will only return an empty string</span>
+<span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="smb_SMBProtocolFactory.html" title="SMBProtocolFactory Class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="smb_SMBConnection.html" title="SMBConnection Class"
+             >previous</a> |</li>
+        <li><a href="../index.html">pysmb 1.1.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2001-2013, Michael Teo http://miketeo.net/.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
