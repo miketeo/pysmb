@@ -422,7 +422,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 01 00 00 00 01 00 00 00 04 00 02 00 00 00 00 00
 00 00 00 00 ff ff ff ff 08 00 02 00 00 00 00 00
 """.replace(b' ', b'').replace(b'\n', b''))
-                m = SMB2Message(SMB2IoctlRequest(kwargs['fid'], 0x0011C017, flags = 0x01, max_out_size = 1024, in_data = data_bytes))
+                m = SMB2Message(SMB2IoctlRequest(kwargs['fid'], 0x0011C017, flags = 0x01, max_out_size = 8196, in_data = data_bytes))
                 m.tid = read_message.tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, listShareResultsCB, errback, fid = kwargs['fid'])
@@ -435,36 +435,66 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if result_message.status == 0:
                 # The payload.data_bytes will contain the results of the RPC call to NetrShareEnum (Opnum 15) at Server Service RPC.
                 data_bytes = result_message.payload.out_data
-                shares_count = struct.unpack('<I', data_bytes[36:40])[0]
 
-                results = [ ]     # A list of SharedDevice instances
-                offset = 36 + 12  # You need to study the byte stream to understand the meaning of these constants
-                for i in range(0, shares_count):
-                    results.append(SharedDevice(struct.unpack('<I', data_bytes[offset+4:offset+8])[0], None, None))
-                    offset += 12
-
-                for i in range(0, shares_count):
-                    max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
-                    offset += 12
-                    results[i].name = str(data_bytes[offset:offset+length*2-2], 'UTF-16LE')
-
-                    if length % 2 != 0:
-                        offset += (length * 2 + 2)
-                    else:
-                        offset += (length * 2)
-
-                    max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
-                    offset += 12
-                    results[i].comments = str(data_bytes[offset:offset+length*2-2], 'UTF-16LE')
-
-                    if length % 2 != 0:
-                        offset += (length * 2 + 2)
-                    else:
-                        offset += (length * 2)
-
-                closeFid(result_message.tid, kwargs['fid'], results = results)
+                if data_bytes[3] & 0x02 == 0:
+                    sendReadRequest(result_message.tid, kwargs['fid'], data_bytes)
+                else:
+                    decodeResults(result_message.tid, kwargs['fid'], data_bytes)
             else:
-                closeFid(result_message.tid, kwargs['fid'], error = 'Failed to list shares: Unable to retrieve shared device list')
+                closeFid(result_message.tid, kwargs['fid'])
+                errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
+
+        def decodeResults(tid, fid, data_bytes):
+            shares_count = struct.unpack('<I', data_bytes[36:40])[0]
+            results = [ ]     # A list of SharedDevice instances
+            offset = 36 + 12  # You need to study the byte stream to understand the meaning of these constants
+            for i in range(0, shares_count):
+                results.append(SharedDevice(struct.unpack('<I', data_bytes[offset+4:offset+8])[0], None, None))
+                offset += 12
+
+            for i in range(0, shares_count):
+                max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
+                offset += 12
+                results[i].name = data_bytes[offset:offset+length*2-2].decode('UTF-16LE')
+
+                if length % 2 != 0:
+                    offset += (length * 2 + 2)
+                else:
+                    offset += (length * 2)
+
+                max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
+                offset += 12
+                results[i].comments = data_bytes[offset:offset+length*2-2].decode('UTF-16LE')
+
+                if length % 2 != 0:
+                    offset += (length * 2 + 2)
+                else:
+                    offset += (length * 2)
+
+            closeFid(tid, fid)
+            callback(results)
+
+        def sendReadRequest(tid, fid, data_bytes):
+            read_count = min(4280, self.max_read_size)
+            m = SMB2Message(SMB2ReadRequest(fid, 0, read_count))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback,
+                                                           fid = fid, data_bytes = data_bytes)
+
+        def readCB(read_message, **kwargs):
+            messages_history.append(read_message)
+            if read_message.status == 0:
+                data_len = read_message.payload.data_length
+                data_bytes = read_message.payload.data
+
+                if ord(data_bytes[3]) & 0x02 == 0:
+                    sendReadRequest(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+                else:
+                    decodeResults(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+            else:
+                closeFid(read_message.tid, kwargs['fid'])
+                errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
 
         def closeFid(tid, fid, results = None, error = None):
             m = SMB2Message(SMB2CloseRequest(fid))
@@ -1571,37 +1601,67 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if not result_message.status.hasError:
                 # The payload.data_bytes will contain the results of the RPC call to NetrShareEnum (Opnum 15) at Server Service RPC.
                 data_bytes = result_message.payload.data_bytes
-                shares_count = struct.unpack('<I', data_bytes[36:40])[0]
 
-                results = [ ]     # A list of SharedDevice instances
-                offset = 36 + 12  # You need to study the byte stream to understand the meaning of these constants
-                for i in range(0, shares_count):
-                    results.append(SharedDevice(struct.unpack('<I', data_bytes[offset+4:offset+8])[0], None, None))
-                    offset += 12
-
-                for i in range(0, shares_count):
-                    max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
-                    offset += 12
-                    results[i].name = str(data_bytes[offset:offset+length*2-2], 'UTF-16LE')
-
-                    if length % 2 != 0:
-                        offset += (length * 2 + 2)
-                    else:
-                        offset += (length * 2)
-
-                    max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
-                    offset += 12
-                    results[i].comments = str(data_bytes[offset:offset+length*2-2], 'UTF-16LE')
-
-                    if length % 2 != 0:
-                        offset += (length * 2 + 2)
-                    else:
-                        offset += (length * 2)
-
-                closeFid(result_message.tid, kwargs['fid'])
-                callback(results)
+                if data_bytes[3] & 0x02 == 0:
+                    sendReadRequest(result_message.tid, kwargs['fid'], data_bytes)
+                else:
+                    decodeResults(result_message.tid, kwargs['fid'], data_bytes)
             else:
                 closeFid(result_message.tid, kwargs['fid'])
+                errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
+
+        def decodeResults(tid, fid, data_bytes):
+            shares_count = struct.unpack('<I', data_bytes[36:40])[0]
+            results = [ ]     # A list of SharedDevice instances
+            offset = 36 + 12  # You need to study the byte stream to understand the meaning of these constants
+            for i in range(0, shares_count):
+                results.append(SharedDevice(struct.unpack('<I', data_bytes[offset+4:offset+8])[0], None, None))
+                offset += 12
+
+            for i in range(0, shares_count):
+                max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
+                offset += 12
+                results[i].name = data_bytes[offset:offset+length*2-2].decode('UTF-16LE')
+
+                if length % 2 != 0:
+                    offset += (length * 2 + 2)
+                else:
+                    offset += (length * 2)
+
+                max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
+                offset += 12
+                results[i].comments = data_bytes[offset:offset+length*2-2].decode('UTF-16LE')
+
+                if length % 2 != 0:
+                    offset += (length * 2 + 2)
+                else:
+                    offset += (length * 2)
+
+            closeFid(tid, fid)
+            callback(results)
+
+        def sendReadRequest(tid, fid, data_bytes):
+            read_count = min(4280, self.max_raw_size - 2)
+            m = SMBMessage(ComReadAndxRequest(fid = fid,
+                                              offset = 0,
+                                              max_return_bytes_count = read_count,
+                                              min_return_bytes_count = read_count))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback, fid = fid, data_bytes = data_bytes)
+
+        def readCB(read_message, **kwargs):
+            messages_history.append(read_message)
+            if not read_message.status.hasError:
+                data_len = read_message.payload.data_length
+                data_bytes = read_message.payload.data
+
+                if ord(data_bytes[3]) & 0x02 == 0:
+                    sendReadRequest(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+                else:
+                    decodeResults(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+            else:
+                closeFid(read_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
 
         def closeFid(tid, fid):
