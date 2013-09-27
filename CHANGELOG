@@ -1,3 +1,11 @@
+pysmb-1.1.7, 27 Sep 2013
+========================
+
+- Improve listShares() function which can fail with the listing response is
+  separated into multiple SMB packets for large number of shares.
+- Fix bug in python3 implementation where session connection can fail when
+  remote server supports message signing.
+
 pysmb-1.1.6, 16 Aug 2013
 ========================
 
