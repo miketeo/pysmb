@@ -386,6 +386,10 @@ class ComNegotiateResponse(Payload):
             self.server_guid = message.data[:16]
             self.security_blob = message.data[16:]
 
+    @property
+    def supportsExtendedSecurity(self):
+        return bool(self.capabilities & CAP_EXTENDED_SECURITY)
+
 
 class ComSessionSetupAndxRequest__WithSecurityExtension(Payload):
     """

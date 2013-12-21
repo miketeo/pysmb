@@ -1492,7 +1492,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self.log.debug('SMB uid is now %d', message.uid)
             self.uid = message.uid
 
-        if message.hasExtendedSecurity:
+        if message.hasExtendedSecurity or message.payload.supportsExtendedSecurity:
             ntlm_data = ntlm.generateNegotiateMessage()
             blob = securityblob.generateNegotiateSecurityBlob(ntlm_data)
             self._sendSMBMessage(SMBMessage(ComSessionSetupAndxRequest__WithSecurityExtension(message.payload.session_key, blob)))
@@ -1963,7 +1963,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def sendOpen(tid):
             m = SMBMessage(ComOpenAndxRequest(filename = path,
                                               access_mode = 0x0041,  # Sharing mode: Deny nothing to others + Open for writing
-                                              open_mode = 0x0010,    # Create file if file does not exist
+                                              open_mode = 0x0011,    # Create file if file does not exist. Overwrite if exists.
                                               search_attributes = SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM,
                                               timeout = timeout * 1000))
             m.tid = tid
