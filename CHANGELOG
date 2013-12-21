@@ -1,3 +1,12 @@
+pysmb-1.1.8, 21 Dec 2013
+========================
+
+- Fix a bug in storeFile() method when the destination file is not overwritten if
+  it exists in SMB1 communication
+- Fix a SMB1 authentication problem when extended negotation is not carried out
+  because the remote server has specified its support for extended security in the
+  payload, instead of in the message flags2.
+
 pysmb-1.1.7, 27 Sep 2013
 ========================
 
