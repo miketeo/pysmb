@@ -49,7 +49,7 @@ def decodeChallengeSecurityBlob(data):
         if not token:
             raise BadSecurityBlobError('NTLMSSP_CHALLENGE security blob does not contain responseToken field')
 
-        provider_oid = nt.getComponentByName('mechListMIC')
+        provider_oid = nt.getComponentByName('supportedMech')
         if provider_oid and str(provider_oid) != '1.3.6.1.4.1.311.2.2.10':  # This OID is defined in [MS-NLMP]: 1.9
             raise UnsupportedSecurityProvider('Security provider "%s" is not supported by pysmb' % str(provider_oid))
 
