@@ -34,6 +34,11 @@ class SMBHandler(urllib.request.BaseHandler):
             passwd = None
         host = unquote(host)
         user = user or ''
+
+        domain = ''
+        if ';' in user:
+            domain, user = user.split(';', 1)
+
         passwd = passwd or ''
         myname = MACHINE_NAME or self.generateClientMachineName()
 
@@ -52,7 +57,7 @@ class SMBHandler(urllib.request.BaseHandler):
         service, path = dirs[0], '/'.join(dirs[1:])
 
         try:
-            conn = SMBConnection(user, passwd, myname, server_name, use_ntlm_v2 = USE_NTLM)
+            conn = SMBConnection(user, passwd, myname, server_name, domain=domain, use_ntlm_v2 = USE_NTLM)
             conn.connect(host, port)
 
             headers = email.message.Message()
