@@ -1,3 +1,9 @@
+pysmb-1.1.9, 1 Jun 2014
+=======================
+
+- Add support for domains in smb:// URLs
+- Fix a bug which fails to test for the correct GSS security provider OID values
+
 pysmb-1.1.8, 21 Dec 2013
 ========================
 
