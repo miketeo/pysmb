@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>smb.SMBProtocol &mdash; pysmb 1.1.5 documentation</title>
+    <title>smb.SMBProtocol &mdash; pysmb 1.1.10 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -16,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.5',
+        VERSION:     '1.1.10',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.5 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.1.10 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -35,7 +33,7 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -84,7 +82,10 @@
 
     <span class="k">def</span> <span class="nf">connectionMade</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">instance</span> <span class="o">=</span> <span class="bp">self</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">requestNMBSession</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_direct_tcp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">requestNMBSession</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">onNMBSessionOK</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">connectionLost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reason</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">instance</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
@@ -119,7 +120,7 @@
     <span class="k">def</span> <span class="nf">_cleanupPendingRequests</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="o">.</span><span class="n">instance</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">mid</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">mid</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_requests</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">expiry_time</span> <span class="o">&lt;</span> <span class="n">now</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">r</span><span class="o">.</span><span class="n">errback</span><span class="p">(</span><span class="n">SMBTimeout</span><span class="p">())</span>
@@ -134,15 +135,24 @@
     <span class="n">protocol</span> <span class="o">=</span> <span class="n">SMBProtocol</span>
     <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;SMB.SMBFactory&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">my_name</span><span class="p">,</span> <span class="n">remote_name</span><span class="p">,</span> <span class="n">domain</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+    <span class="c">#: SMB messages will never be signed regardless of remote server&#39;s configurations; access errors will occur if the remote server requires signing.</span>
+    <span class="n">SIGN_NEVER</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c">#: SMB messages will be signed when remote server supports signing but not requires signing.</span>
+    <span class="n">SIGN_WHEN_SUPPORTED</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c">#: SMB messages will only be signed when remote server requires signing.</span>
+    <span class="n">SIGN_WHEN_REQUIRED</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">my_name</span><span class="p">,</span> <span class="n">remote_name</span><span class="p">,</span> <span class="n">domain</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">sign_options</span> <span class="o">=</span> <span class="n">SIGN_WHEN_REQUIRED</span><span class="p">,</span> <span class="n">is_direct_tcp</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
 <div class="viewcode-block" id="SMBProtocolFactory.__init__"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.__init__">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Create a new SMBProtocolFactory instance.</span>
+<span class="sd">        Create a new SMBProtocolFactory instance. You will pass this instance to *reactor.connectTCP()* which will then instantiate the TCP connection to the remote SMB/CIFS server.</span>
+<span class="sd">        Note that the default TCP port for most SMB/CIFS servers using NetBIOS over TCP/IP is 139.</span>
+<span class="sd">        Some newer server installations might also support Direct hosting of SMB over TCP/IP; for these servers, the default TCP port is 445.</span>
 
 <span class="sd">        *username* and *password* are the user credentials required to authenticate the underlying SMB connection with the remote server.</span>
 <span class="sd">        File operations can only be proceeded after the connection has been authenticated successfully.</span>
 
 <span class="sd">        :param string my_name: The local NetBIOS machine name that will identify where this connection is originating from.</span>
-<span class="sd">                               You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of ``\/:*?&quot;;|+``</span>
+<span class="sd">                               You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of ``\/:*?&quot;;|+``.</span>
 <span class="sd">        :param string remote_name: The NetBIOS machine name of the remote server.</span>
 <span class="sd">                                   On windows, you can find out the machine name by right-clicking on the &quot;My Computer&quot; and selecting &quot;Properties&quot;.</span>
 <span class="sd">                                   This parameter must be the same as what has been configured on the remote server, or else the connection will be rejected.</span>
@@ -151,6 +161,12 @@
 <span class="sd">                                    The choice of NTLMv1 and NTLMv2 is configured on the remote server, and there is no mechanism to auto-detect which algorithm has been configured.</span>
 <span class="sd">                                    Hence, we can only &quot;guess&quot; or try both algorithms.</span>
 <span class="sd">                                    On Sambda, Windows Vista and Windows 7, NTLMv2 is enabled by default. On Windows XP, we can use NTLMv1 before NTLMv2.</span>
+<span class="sd">        :param int sign_options: Determines whether SMB messages will be signed. Default is *SIGN_WHEN_REQUIRED*.</span>
+<span class="sd">                                 If *SIGN_WHEN_REQUIRED* (value=2), SMB messages will only be signed when remote server requires signing.</span>
+<span class="sd">                                 If *SIGN_WHEN_SUPPORTED* (value=1), SMB messages will be signed when remote server supports signing but not requires signing.</span>
+<span class="sd">                                 If *SIGN_NEVER* (value=0), SMB messages will never be signed regardless of remote server&#39;s configurations; access errors will occur if the remote server requires signing.</span>
+<span class="sd">        :param boolean is_direct_tcp: Controls whether the NetBIOS over TCP/IP (is_direct_tcp=False) or the newer Direct hosting of SMB over TCP/IP (is_direct_tcp=True) will be used for the communication.</span>
+<span class="sd">                                      The default parameter is False which will use NetBIOS over TCP/IP for wider compatibility (TCP port: 139).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
@@ -158,6 +174,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span> <span class="o">=</span> <span class="n">remote_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="n">use_ntlm_v2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sign_options</span> <span class="o">=</span> <span class="n">sign_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_direct_tcp</span> <span class="o">=</span> <span class="n">is_direct_tcp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">instance</span> <span class="o">=</span> <span class="bp">None</span>    <span class="c">#: The single SMBProtocol instance for each SMBProtocolFactory instance. Usually, you should not need to touch this attribute directly.</span>
 
     <span class="c">#</span>
@@ -168,6 +186,11 @@
     <span class="k">def</span> <span class="nf">isReady</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <div class="viewcode-block" id="SMBProtocolFactory.isReady"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.isReady">[docs]</a>        <span class="sd">&quot;&quot;&quot;A convenient property to return True if the underlying SMB connection has connected to remote server, has successfully authenticated itself and is ready for file operations.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">has_authenticated</span><span class="p">)</span>
+
+    <span class="nd">@property</span></div>
+    <span class="k">def</span> <span class="nf">isUsingSMB2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBProtocolFactory.isUsingSMB2"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.isUsingSMB2">[docs]</a>        <span class="sd">&quot;&quot;&quot;A convenient property to return True if the underlying SMB connection is using SMB2 protocol.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">is_using_smb2</span>
 
     <span class="c">#</span>
     <span class="c"># Public Methods for Callbacks</span>
@@ -213,7 +236,7 @@
 
     <span class="k">def</span> <span class="nf">listPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span></div>
 <div class="viewcode-block" id="SMBProtocolFactory.listPath"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.listPath">[docs]</a>                 <span class="n">search</span> <span class="o">=</span> <span class="n">SMB_FILE_ATTRIBUTE_READONLY</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_HIDDEN</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_SYSTEM</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_DIRECTORY</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_ARCHIVE</span><span class="p">,</span>
-                 <span class="n">pattern</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">*&#39;</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+                 <span class="n">pattern</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve a directory listing of files/folders at *path*</span>
 
@@ -232,8 +255,59 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_listPath</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">search</span> <span class="o">=</span> <span class="n">search</span><span class="p">,</span> <span class="n">pattern</span> <span class="o">=</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">d</span>
 
+    <span class="k">def</span> <span class="nf">listSnapshots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.listSnapshots"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.listSnapshots">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve a list of available snapshots (a.k.a. shadow copies) for *path*.</span>
+
+<span class="sd">        Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions.</span>
+
+<span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
+<span class="sd">        :param string/unicode path: path relative to the *service_name* where we are interested in the list of available snapshots</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a list of python *datetime.DateTime*</span>
+<span class="sd">                 instances in GMT/UTC time zone</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_listSnapshots</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">getAttributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.getAttributes"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.getAttributes">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve information about the file at *path* on the *service_name*.</span>
+<span class="sd">        </span>
+<span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
+<span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be raised.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a :doc:`smb.base.SharedFile&lt;smb_SharedFile&gt;` instance containing the attributes of the file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_getAttributes</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
     <span class="k">def</span> <span class="nf">retrieveFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
 <div class="viewcode-block" id="SMBProtocolFactory.retrieveFile"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.retrieveFile">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.</span>
+
+<span class="sd">        Use *retrieveFileFromOffset()* method if you need to specify the offset to read from the remote *path* and/or the maximum number of bytes to write to the *file_obj*.</span>
+
+<span class="sd">        The meaning of the *timeout* parameter will be different from other file operation methods. As the downloaded file usually exceeeds the maximum size</span>
+<span class="sd">        of each SMB/CIFS data message, it will be packetized into a series of request messages (each message will request about about 60kBytes).</span>
+<span class="sd">        The *timeout* parameter is an integer/float value that specifies the timeout interval for these individual SMB/CIFS message to be transmitted and downloaded from the remote SMB/CIFS server.</span>
+
+<span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
+<span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be called in the returned *Deferred* errback.</span>
+<span class="sd">        :param file_obj: A file-like object that has a *write* method. Data will be written continuously to *file_obj* until EOF is received from the remote service.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a 3-element tuple of ( *file_obj*, file attributes of the file on server, number of bytes written to *file_obj* ).</span>
+<span class="sd">                 The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieveFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="il">0L</span><span class="p">,</span> <span class="o">-</span><span class="il">1L</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">retrieveFileFromOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="il">0L</span><span class="p">,</span> <span class="n">max_length</span> <span class="o">=</span> <span class="o">-</span><span class="il">1L</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBProtocolFactory.retrieveFileFromOffset"><a class="viewcode-back" href="../../api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.retrieveFileFromOffset">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.</span>
 
 <span class="sd">        The meaning of the *timeout* parameter will be different from other file operation methods. As the downloaded file usually exceeeds the maximum size</span>
@@ -243,14 +317,17 @@
 <span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
 <span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be called in the returned *Deferred* errback.</span>
 <span class="sd">        :param file_obj: A file-like object that has a *write* method. Data will be written continuously to *file_obj* until EOF is received from the remote service.</span>
-<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a 3-element tuple of ( *file_obj*, file attributes of the file on server, number of bytes retrieved ).</span>
+<span class="sd">        :param integer/long offset: the offset in the remote *path* where the first byte will be read and written to *file_obj*. Must be either zero or a positive integer/long value.</span>
+<span class="sd">        :param integer/long max_length: maximum number of bytes to read from the remote *path* and write to the *file_obj*. Specify a negative value to read from *offset* to the EOF.</span>
+<span class="sd">                                        If zero, the *Deferred* callback is invoked immediately after the file is opened successfully for reading.</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a 3-element tuple of ( *file_obj*, file attributes of the file on server, number of bytes written to *file_obj* ).</span>
 <span class="sd">                 The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
 
         <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_retrieveFile</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">_retrieveFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">d</span>
 
     <span class="k">def</span> <span class="nf">storeFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
@@ -377,7 +454,7 @@
     <span class="c">#</span>
 
     <span class="k">def</span> <span class="nf">buildProtocol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span></div>
-        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">my_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ntlm_v2</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">my_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ntlm_v2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sign_options</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_direct_tcp</span><span class="p">)</span>
         <span class="n">p</span><span class="o">.</span><span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">return</span> <span class="n">p</span>
 </pre></div></div>
@@ -393,13 +470,13 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2001-2013, Michael Teo http://miketeo.net/.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+        &copy; Copyright 2001-2014, Michael Teo http://miketeo.net/.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

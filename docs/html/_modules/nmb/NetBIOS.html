@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>nmb.NetBIOS &mdash; pysmb 1.1.5 documentation</title>
+    <title>nmb.NetBIOS &mdash; pysmb 1.1.10 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -16,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.5',
+        VERSION:     '1.1.10',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.5 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.1.10 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -35,7 +33,7 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -64,7 +62,8 @@
             
   <h1>Source code for nmb.NetBIOS</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">random</span><span class="o">,</span> <span class="nn">socket</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">select</span>
-<span class="kn">from</span> <span class="nn">base</span> <span class="kn">import</span> <span class="n">NBNS</span>
+<span class="kn">from</span> <span class="nn">base</span> <span class="kn">import</span> <span class="n">NBNS</span><span class="p">,</span> <span class="n">NotConnectedError</span>
+<span class="kn">from</span> <span class="nn">nmb_constants</span> <span class="kn">import</span> <span class="n">TYPE_CLIENT</span><span class="p">,</span> <span class="n">TYPE_SERVER</span><span class="p">,</span> <span class="n">TYPE_WORKSTATION</span>
 
 <span class="k">class</span> <span class="nc">NetBIOS</span><span class="p">(</span><span class="n">NBNS</span><span class="p">):</span>
 <div class="viewcode-block" id="NetBIOS"><a class="viewcode-back" href="../../api/nmb_NetBIOS.html#nmb.NetBIOS.NetBIOS">[docs]</a>
@@ -122,15 +121,38 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pollForNetBIOSPacket</span><span class="p">(</span><span class="n">trn_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">queryIPForName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="mi">137</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="NetBIOS.queryIPForName"><a class="viewcode-back" href="../../api/nmb_NetBIOS.html#nmb.NetBIOS.NetBIOS.queryIPForName">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send a query to the machine with *ip* and hopes that the machine will reply back with its name.</span>
+
+<span class="sd">        The implementation of this function is contributed by Jason Anderson.</span>
+
+<span class="sd">        :param string ip: If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.</span>
+<span class="sd">                          If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</span>
+<span class="sd">        :param integer port: The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds to wait for a reply, after which the method will return None</span>
+<span class="sd">        :return: A list of string containing the names of the machine at *ip*. On timeout, returns None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">,</span> <span class="s">&#39;Socket is already closed&#39;</span>
+
+        <span class="n">trn_id</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0xFFFF</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepareNetNameQuery</span><span class="p">(</span><span class="n">trn_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pollForQueryPacket</span><span class="p">(</span><span class="n">trn_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ret</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">TYPE_SERVER</span><span class="p">,</span> <span class="n">ret</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
     <span class="c">#</span>
     <span class="c"># Protected Methods</span>
     <span class="c">#</span>
 
     <span class="k">def</span> <span class="nf">_pollForNetBIOSPacket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_trn_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span></div>
-        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">timeout</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
         <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">_timeout</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">end_time</span>
+                <span class="n">_timeout</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">_timeout</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">return</span> <span class="bp">None</span>
 
@@ -139,7 +161,40 @@
                     <span class="k">return</span> <span class="bp">None</span>
 
                 <span class="n">data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mh">0xFFFF</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">NotConnectedError</span>
+
                 <span class="n">trn_id</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decodePacket</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">trn_id</span> <span class="o">==</span> <span class="n">wait_trn_id</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ret</span>
+            <span class="k">except</span> <span class="n">select</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span> <span class="ow">is</span> <span class="n">types</span><span class="o">.</span><span class="n">TupleType</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">EINTR</span> <span class="ow">and</span> <span class="n">ex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">EAGAIN</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">ex</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ex</span>
+
+    <span class="c">#</span>
+    <span class="c"># Contributed by Jason Anderson</span>
+    <span class="c">#</span>
+    <span class="k">def</span> <span class="nf">_pollForQueryPacket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait_trn_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_timeout</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">_timeout</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">None</span>
+
+                <span class="n">ready</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span> <span class="p">],</span> <span class="p">[</span> <span class="p">],</span> <span class="p">[</span> <span class="p">],</span> <span class="n">_timeout</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ready</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">None</span>
+
+                <span class="n">data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mh">0xFFFF</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">NotConnectedError</span>
+
+                <span class="n">trn_id</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decodeIPQueryPacket</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">trn_id</span> <span class="o">==</span> <span class="n">wait_trn_id</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">ret</span>
@@ -162,13 +217,13 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2001-2013, Michael Teo http://miketeo.net/.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+        &copy; Copyright 2001-2014, Michael Teo http://miketeo.net/.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

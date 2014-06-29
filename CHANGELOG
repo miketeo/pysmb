@@ -1,3 +1,10 @@
+
+pysmb-1.1.10, 29 Jun 2014
+=========================
+
+- Add getAttributes() method to SMBConnection and SMBProtocol class
+- Add isReadOnly property to SharedFile class
+
 pysmb-1.1.9, 1 Jun 2014
 =======================
 

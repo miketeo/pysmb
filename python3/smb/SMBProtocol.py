@@ -202,13 +202,29 @@ class SMBProtocolFactory(ClientFactory):
 
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: path relative to the *service_name* where we are interested in the list of available snapshots
-        :return: A list of python *datetime.DateTime* instances in GMT/UTC time zone
+        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a list of python *datetime.DateTime*
+                 instances in GMT/UTC time zone
         """
         if not self.instance:
             raise NotConnectedError('Not connected to server')
 
         d = defer.Deferred()
         self.instance._listSnapshots(service_name, path, d.callback, d.errback, timeout = timeout)
+        return d
+
+    def getAttributes(self, service_name, path, timeout = 30):
+        """
+        Retrieve information about the file at *path* on the *service_name*.
+        
+        :param string/unicode service_name: the name of the shared folder for the *path*
+        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure<smb_exceptions>` will be raised.
+        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a :doc:`smb.base.SharedFile<smb_SharedFile>` instance containing the attributes of the file.
+        """
+        if not self.instance:
+            raise NotConnectedError('Not connected to server')
+
+        d = defer.Deferred()
+        self.instance._getAttributes(service_name, path, d.callback, d.errback, timeout = timeout)
         return d
 
     def retrieveFile(self, service_name, path, file_obj, timeout = 30):

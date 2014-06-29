@@ -167,6 +167,7 @@ class SMB(NMBSession):
         self._listShares = self._listShares_SMB1
         self._listPath = self._listPath_SMB1
         self._listSnapshots = self._listSnapshots_SMB1
+        self._getAttributes = self._getAttributes_SMB1
         self._retrieveFile = self._retrieveFile_SMB1
         self._retrieveFileFromOffset = self._retrieveFileFromOffset_SMB1
         self._storeFile = self._storeFile_SMB1
@@ -186,6 +187,7 @@ class SMB(NMBSession):
         self._listShares = self._listShares_SMB2
         self._listPath = self._listPath_SMB2
         self._listSnapshots = self._listSnapshots_SMB2
+        self._getAttributes = self._getAttributes_SMB2
         self._retrieveFile = self._retrieveFile_SMB2
         self._retrieveFileFromOffset = self._retrieveFileFromOffset_SMB2
         self._storeFile = self._storeFile_SMB2
@@ -641,6 +643,81 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     sendCreate(connect_message.tid)
                 else:
                     errback(OperationFailure('Failed to list %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
+
+            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
+            messages_history.append(m)
+        else:
+            sendCreate(self.connected_trees[service_name])
+
+    def _getAttributes_SMB2(self, service_name, path, callback, errback, timeout = 30):
+        if not self.has_authenticated:
+            raise NotReadyError('SMB connection not authenticated')
+    
+        expiry_time = time.time() + timeout
+        path = path.replace('/', '\\')
+        if path.startswith('\\'):
+            path = path[1:]
+        if path.endswith('\\'):
+            path = path[:-1]
+        messages_history = [ ]
+
+        def sendCreate(tid):
+            create_context_data = binascii.unhexlify("""
+28 00 00 00 10 00 04 00 00 00 18 00 10 00 00 00
+44 48 6e 51 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 18 00 00 00 10 00 04 00
+00 00 18 00 00 00 00 00 4d 78 41 63 00 00 00 00
+00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
+51 46 69 64 00 00 00 00
+""".replace(' ', '').replace('\n', ''))
+            m = SMB2Message(SMB2CreateRequest(path,
+                                              file_attributes = 0,
+                                              access_mask = FILE_READ_DATA | FILE_READ_EA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
+                                              share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                              oplock = SMB2_OPLOCK_LEVEL_NONE,
+                                              impersonation = SEC_IMPERSONATE,
+                                              create_options = 0,
+                                              create_disp = FILE_OPEN,
+                                              create_context_data = create_context_data))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback)
+            messages_history.append(m)
+
+        def createCB(create_message, **kwargs):
+            messages_history.append(create_message)
+            if create_message.status == 0:
+                p = create_message.payload
+                info = SharedFile(p.create_time, p.lastaccess_time, p.lastwrite_time, p.change_time,
+                                  p.file_size, p.allocation_size, p.file_attributes,
+                                  path, path)
+                closeFid(create_message.tid, p.fid, info = info)
+            else:
+                errback(OperationFailure('Failed to get attributes for %s on %s: Unable to open remote file object' % ( path, service_name ), messages_history))
+
+        def closeFid(tid, fid, info = None, error = None):
+            m = SMB2Message(SMB2CloseRequest(fid))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, info = info, error = error)
+            messages_history.append(m)
+
+        def closeCB(close_message, **kwargs):
+            if kwargs['info'] is not None:
+                callback(kwargs['info'])
+            elif kwargs['error'] is not None:
+                errback(OperationFailure('Failed to get attributes for %s on %s: Query failed with errorcode 0x%08x' % ( path, service_name, kwargs['error'] ), messages_history))
+
+        if service_name not in self.connected_trees:
+            def connectCB(connect_message, **kwargs):
+                messages_history.append(connect_message)
+                if connect_message.status == 0:
+                    self.connected_trees[service_name] = connect_message.tid
+                    sendCreate(connect_message.tid)
+                else:
+                    errback(OperationFailure('Failed to get attributes for %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
@@ -1859,6 +1936,66 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         else:
             sendFindFirst(self.connected_trees[service_name])
 
+    def _getAttributes_SMB1(self, service_name, path, callback, errback, timeout = 30):
+        if not self.has_authenticated:
+            raise NotReadyError('SMB connection not authenticated')
+
+        expiry_time = time.time() + timeout
+        path = path.replace('/', '\\')
+        if path.startswith('\\'):
+            path = path[1:]
+        if path.endswith('\\'):
+            path = path[:-1]
+        messages_history = [ ]
+    
+        def sendQuery(tid):
+            setup_bytes = struct.pack('<H', 0x0005)  # TRANS2_QUERY_PATH_INFORMATION sub-command. See [MS-CIFS]: 2.2.6.6.1
+            params_bytes = \
+                struct.pack('<HI',
+                            0x0107, # SMB_QUERY_FILE_ALL_INFO ([MS-CIFS] 2.2.2.3.3)
+                            0x0000) # Reserved
+            params_bytes += (path + '\0').encode('UTF-16LE')
+
+            m = SMBMessage(ComTransaction2Request(max_params_count = 2,
+                                                  max_data_count = 65535,
+                                                  max_setup_count = 0,
+                                                  params_bytes = params_bytes,
+                                                  setup_bytes = setup_bytes))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback)
+            messages_history.append(m)
+            
+        def queryCB(query_message, **kwargs):
+            messages_history.append(query_message)
+            if not query_message.status.hasError:
+                info_format = '<QQQQIQQ'
+                info_size = struct.calcsize(info_format)
+                create_time, last_access_time, last_write_time, last_attr_change_time, \
+                file_attributes, alloc_size, file_size = struct.unpack(info_format, query_message.payload.data_bytes[:info_size])
+        
+                info = SharedFile(create_time, last_access_time, last_write_time, last_attr_change_time,
+                                  file_size, alloc_size, file_attributes, path, path)
+                callback(info)
+            else:
+                errback(OperationFailure('Failed to get attributes for %s on %s: Read failed' % ( path, service_name ), messages_history))
+
+        if service_name not in self.connected_trees:
+            def connectCB(connect_message, **kwargs):
+                messages_history.append(connect_message)
+                if not connect_message.status.hasError:
+                    self.connected_trees[service_name] = connect_message.tid
+                    sendQuery(connect_message.tid)
+                else:
+                    errback(OperationFailure('Failed to get attributes for %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
+
+            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
+            messages_history.append(m)
+        else:
+            sendQuery(self.connected_trees[service_name])
+    
     def _retrieveFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
         return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0, -1, timeout)
 

@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>nmb.NetBIOSProtocol &mdash; pysmb 1.1.5 documentation</title>
+    <title>nmb.NetBIOSProtocol &mdash; pysmb 1.1.10 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -16,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.5',
+        VERSION:     '1.1.10',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.5 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.1.10 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -35,7 +33,7 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -66,7 +64,10 @@
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">random</span><span class="o">,</span> <span class="nn">socket</span><span class="o">,</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">reactor</span><span class="p">,</span> <span class="n">defer</span>
 <span class="kn">from</span> <span class="nn">twisted.internet.protocol</span> <span class="kn">import</span> <span class="n">DatagramProtocol</span>
+<span class="kn">from</span> <span class="nn">nmb_constants</span> <span class="kn">import</span> <span class="n">TYPE_SERVER</span>
 <span class="kn">from</span> <span class="nn">base</span> <span class="kn">import</span> <span class="n">NBNS</span>
+
+<span class="n">IP_QUERY</span><span class="p">,</span> <span class="n">NAME_QUERY</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="k">class</span> <span class="nc">NetBIOSTimeout</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
 <div class="viewcode-block" id="NetBIOSTimeout"><a class="viewcode-back" href="../../api/nmb_NBNSProtocol.html#nmb.NetBIOSProtocol.NetBIOSTimeout">[docs]</a>    <span class="sd">&quot;&quot;&quot;Raised in NBNSProtocol via Deferred.errback method when queryName method has timeout waiting for reply&quot;&quot;&quot;</span>
@@ -92,11 +93,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">getHandle</span><span class="p">()</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_BROADCAST</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">reactor</span><span class="o">.</span><span class="n">callLater</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cleanupPendingTrns</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">datagramReceived</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)):</span></div>
+    <span class="k">def</span> <span class="nf">datagramReceived</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">from_info</span><span class="p">):</span></div>
+        <span class="n">host</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="n">from_info</span>
         <span class="n">trn_id</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decodePacket</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">trn_id</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">d</span><span class="p">:</span>
+        <span class="c"># pending transaction exists for trn_id - handle it and remove from queue</span>
+        <span class="k">if</span> <span class="n">trn_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">trn_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ip</span> <span class="ow">is</span> <span class="n">NAME_QUERY</span><span class="p">:</span>
+                <span class="c"># decode as query packet</span>
+                <span class="n">trn_id</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decodeIPQueryPacket</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
@@ -133,17 +139,60 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="p">[</span><span class="n">trn_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">+</span><span class="n">timeout</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="p">)</span>
         <span class="k">return</span> <span class="n">d</span>
 
+    <span class="k">def</span> <span class="nf">queryIPForName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="mi">137</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="NBNSProtocol.queryIPForName"><a class="viewcode-back" href="../../api/nmb_NBNSProtocol.html#nmb.NetBIOSProtocol.NBNSProtocol.queryIPForName">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send a query to the machine with *ip* and hopes that the machine will reply back with its name.</span>
+
+<span class="sd">        The implementation of this function is contributed by Jason Anderson.</span>
+
+<span class="sd">        :param string ip: If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.</span>
+<span class="sd">                          If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</span>
+<span class="sd">        :param integer port: The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.</span>
+<span class="sd">        :param integer/float timeout: Number of seconds to wait for a reply, after which the method will return None</span>
+<span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a list of names of the machine at *ip*.</span>
+<span class="sd">                 On timeout, the errback function will be called with a Failure instance wrapping around a NetBIOSTimeout exception</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">trn_id</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0xFFFF</span><span class="p">)</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">trn_id</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">trn_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">trn_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepareNetNameQuery</span><span class="p">(</span><span class="n">trn_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="n">d2</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">Deferred</span><span class="p">()</span>
+        <span class="n">d2</span><span class="o">.</span><span class="n">addErrback</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">stripCode</span><span class="p">(</span><span class="n">ret</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ret</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># got valid response. Somehow the callback is also called when there is an error.</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">TYPE_SERVER</span><span class="p">,</span> <span class="n">ret</span><span class="p">)))</span>
+
+        <span class="n">d2</span><span class="o">.</span><span class="n">addCallback</span><span class="p">(</span><span class="n">stripCode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="p">[</span><span class="n">trn_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">+</span><span class="n">timeout</span><span class="p">,</span> <span class="n">NAME_QUERY</span><span class="p">,</span> <span class="n">d2</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span>
+
     <span class="k">def</span> <span class="nf">stopProtocol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
         <span class="n">DatagramProtocol</span><span class="o">.</span><span class="n">stopProtocol</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">cleanupPendingTrns</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">trn_id</span><span class="p">,</span> <span class="p">(</span> <span class="n">expiry_time</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">expiry_time</span> <span class="o">&lt;</span> <span class="n">now</span><span class="p">:</span>
-                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="p">[</span><span class="n">trn_id</span><span class="p">]</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">(</span><span class="n">NetBIOSTimeout</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
-                <span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+
+        <span class="c"># reply should have been received in the past</span>
+        <span class="n">expired</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="p">(</span><span class="n">trn_id</span><span class="p">,</span> <span class="p">(</span><span class="n">expiry_time</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span><span class="p">)):</span> <span class="n">expiry_time</span> <span class="o">&lt;</span> <span class="n">now</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+
+        <span class="c"># remove expired items from dict + call errback</span>
+        <span class="k">def</span> <span class="nf">expire_item</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="n">trn_id</span><span class="p">,</span> <span class="p">(</span><span class="n">expiry_time</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="o">=</span> <span class="n">item</span>
+
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_trns</span><span class="p">[</span><span class="n">trn_id</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">errback</span><span class="p">(</span><span class="n">NetBIOSTimeout</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+
+        <span class="nb">map</span><span class="p">(</span><span class="n">expire_item</span><span class="p">,</span> <span class="n">expired</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="p">:</span>
             <span class="n">reactor</span><span class="o">.</span><span class="n">callLater</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cleanupPendingTrns</span><span class="p">)</span>
@@ -160,13 +209,13 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2001-2013, Michael Teo http://miketeo.net/.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+        &copy; Copyright 2001-2014, Michael Teo http://miketeo.net/.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>
