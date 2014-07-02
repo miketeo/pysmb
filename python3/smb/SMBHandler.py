@@ -17,10 +17,9 @@ class SMBHandler(urllib.request.BaseHandler):
     def smb_open(self, req):
         global USE_NTLM, MACHINE_NAME
 
-        host = req.get_host()
-        if not host:
+        if not req.host:
             raise urllib.error.URLError('SMB error: no host given')
-        host, port = splitport(host)
+        host, port = splitport(req.host)
         if port is None:
             port = 139
         else:
@@ -49,7 +48,7 @@ class SMBHandler(urllib.request.BaseHandler):
         else:
             raise urllib.error.URLError('SMB error: Hostname does not reply back with its machine name')
 
-        path, attrs = splitattr(req.get_selector())
+        path, attrs = splitattr(req.selector)
         if path.startswith('/'):
             path = path[1:]
         dirs = path.split('/')
@@ -61,9 +60,8 @@ class SMBHandler(urllib.request.BaseHandler):
             conn.connect(host, port)
 
             headers = email.message.Message()
-            if req.has_data():
-                data_fp = req.get_data()
-                filelen = conn.storeFile(service, path, data_fp)
+            if req.data:
+                filelen = conn.storeFile(service, path, req.data)
 
                 headers.add_header('Content-length', '0')
                 fp = BytesIO(b"")
