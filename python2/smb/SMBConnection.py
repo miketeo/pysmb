@@ -300,8 +300,11 @@ class SMBConnection(SMB):
             self.is_busy = False
 
         return results[0]
-
+    
     def storeFile(self, service_name, path, file_obj, timeout = 30):
+        self.storeFileFromOffset(service_name, path, file_obj, timeout)
+
+    def storeFileFromOffset(self, service_name, path, file_obj, offset = 0L, timeout = 30):
         """
         Store the contents of the *file_obj* at *path* on the *service_name*.
 
@@ -326,7 +329,7 @@ class SMBConnection(SMB):
 
         self.is_busy = True
         try:
-            self._storeFile(service_name, path, file_obj, cb, eb, timeout = timeout)
+            self._storeFileFromOffset(service_name, path, file_obj, cb, eb, offset, timeout = timeout)
             while self.is_busy:
                 self._pollForNetBIOSPacket(timeout)
         finally:
