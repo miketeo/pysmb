@@ -171,6 +171,7 @@ class SMB(NMBSession):
         self._retrieveFile = self._retrieveFile_SMB1
         self._retrieveFileFromOffset = self._retrieveFileFromOffset_SMB1
         self._storeFile = self._storeFile_SMB1
+        self._storeFileFromOffset = self._storeFileFromOffset_SMB1
         self._deleteFiles = self._deleteFiles_SMB1
         self._createDirectory = self._createDirectory_SMB1
         self._deleteDirectory = self._deleteDirectory_SMB1
@@ -191,6 +192,7 @@ class SMB(NMBSession):
         self._retrieveFile = self._retrieveFile_SMB2
         self._retrieveFileFromOffset = self._retrieveFileFromOffset_SMB2
         self._storeFile = self._storeFile_SMB2
+        self._storeFileFromOffset = self._storeFileFromOffset_SMB2
         self._deleteFiles = self._deleteFiles_SMB2
         self._createDirectory = self._createDirectory_SMB2
         self._deleteDirectory = self._deleteDirectory_SMB2
@@ -857,6 +859,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             sendCreate(self.connected_trees[service_name])
 
     def _storeFile_SMB2(self, service_name, path, file_obj, callback, errback, timeout = 30):
+        self._storeFileFromOffset_SMB2(service_name, path, file_obj, callback, errback, 0, timeout)
+        
+    def _storeFileFromOffset_SMB2(self, service_name, path, file_obj, callback, errback, starting_offset, timeout = 30):        
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -895,7 +900,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
-                sendWrite(create_message.tid, create_message.payload.fid, 0)
+                sendWrite(create_message.tid, create_message.payload.fid, starting_offset)
             else:
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
@@ -2091,6 +2096,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             sendOpen(self.connected_trees[service_name])
 
     def _storeFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
+        self._storeFileFromOffset_SMB1(service_name, path, file_obj, callback, errback, 0, timeout)
+        
+    def _storeFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, timeout = 30):        
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -2111,7 +2119,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def openCB(open_message, **kwargs):
             messages_history.append(open_message)
             if not open_message.status.hasError:
-                sendWrite(open_message.tid, open_message.payload.fid, 0)
+                sendWrite(open_message.tid, open_message.payload.fid, starting_offset)
             else:
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
