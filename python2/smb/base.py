@@ -29,6 +29,12 @@ class SMBTimeout(Exception):
     pass
 
 
+def _convert_to_unicode(string):
+    if not isinstance(string, unicode):
+        string = unicode(string, "utf-8")
+    return string
+
+
 class SMB(NMBSession):
     """
     This class represents a "connection" to the remote SMB/CIFS server.
@@ -52,9 +58,9 @@ class SMB(NMBSession):
 
     def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False):
         NMBSession.__init__(self, my_name, remote_name, is_direct_tcp = is_direct_tcp)
-        self.username = username
-        self.password = password
-        self.domain = domain
+        self.username = _convert_to_unicode(username)
+        self.password = _convert_to_unicode(password)
+        self.domain = _convert_to_unicode(domain)
         self.sign_options = sign_options
         self.is_direct_tcp = is_direct_tcp
         self.use_ntlm_v2 = use_ntlm_v2 #: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1
