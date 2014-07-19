@@ -700,7 +700,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 p = create_message.payload
                 info = SharedFile(p.create_time, p.lastaccess_time, p.lastwrite_time, p.change_time,
                                   p.file_size, p.allocation_size, p.file_attributes,
-                                  path, path)
+                                  unicode(path), unicode(path))
                 closeFid(create_message.tid, p.fid, info = info)
             else:
                 errback(OperationFailure('Failed to get attributes for %s on %s: Unable to open remote file object' % ( path, service_name ), messages_history))
@@ -1980,13 +1980,13 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def queryCB(query_message, **kwargs):
             messages_history.append(query_message)
             if not query_message.status.hasError:
-                info_format = '<QQQQIQQ'
+                info_format = '<QQQQIIQQ'
                 info_size = struct.calcsize(info_format)
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
-                file_attributes, alloc_size, file_size = struct.unpack(info_format, query_message.payload.data_bytes[:info_size])
+                file_attributes, _, alloc_size, file_size = struct.unpack(info_format, query_message.payload.data_bytes[:info_size])
         
                 info = SharedFile(create_time, last_access_time, last_write_time, last_attr_change_time,
-                                  file_size, alloc_size, file_attributes, path, path)
+                                  file_size, alloc_size, file_attributes, unicode(path), unicode(path))
                 callback(info)
             else:
                 errback(OperationFailure('Failed to get attributes for %s on %s: Read failed' % ( path, service_name ), messages_history))

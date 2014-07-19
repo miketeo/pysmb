@@ -33,6 +33,8 @@ def test_getAttributes_SMB2():
     
     info = conn.getAttributes('smbtest', '/rfc1001.txt')
     assert not info.isDirectory
+    assert info.file_size == 158437
+    assert info.alloc_size == 159744
     
     info = conn.getAttributes('smbtest', u'/\u6d4b\u8bd5\u6587\u4ef6\u5939')
     assert info.isDirectory
@@ -45,6 +47,8 @@ def test_getAttributes_SMB1():
     
     info = conn.getAttributes('smbtest', '/rfc1001.txt')
     assert not info.isDirectory
+    assert info.file_size == 158437
+    assert info.alloc_size == 159744
     
     info = conn.getAttributes('smbtest', u'/\u6d4b\u8bd5\u6587\u4ef6\u5939')
     assert info.isDirectory
