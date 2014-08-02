@@ -536,6 +536,7 @@ class ComTreeConnectAndxRequest(Payload):
     References:
     ===========
     - [MS-CIFS]: 2.2.4.55.1
+    - [MS-SMB]: 2.2.4.7.1
     """
 
     PAYLOAD_STRUCT_FORMAT = '<HH'
@@ -555,7 +556,9 @@ class ComTreeConnectAndxRequest(Payload):
         message.parameters_data = \
             self.DEFAULT_ANDX_PARAM_HEADER + \
             struct.pack(self.PAYLOAD_STRUCT_FORMAT,
-                        0x08 | (message.tid and 0x0001) or 0x00,  # Disconnect tid, if message.tid must be non-zero
+                        0x08 | \
+                            ((message.hasExtendedSecurity and 0x0004) or 0x00) | \
+                            ((message.tid and 0x0001) or 0x00),  # Disconnect tid, if message.tid must be non-zero
                         password_len)
 
         padding = ''
