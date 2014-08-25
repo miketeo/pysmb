@@ -1768,6 +1768,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     errback(OperationFailure('Failed to list shares: Unable to connect to IPC$', messages_history))
 
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), path ), SERVICE_ANY, ''))
+            m.flags2 &= ~SMB_FLAGS2_IS_LONG_NAME
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = path)
             messages_history.append(m)
