@@ -99,7 +99,7 @@ class SMBConnection(SMB):
 
         self.auth_result = None
         self.sock = socket.socket(sock_family)
-        self.sock.connect_ex(( ip, port ))
+        self.sock.connect(( ip, port ))
 
         self.is_busy = True
         try:
@@ -302,7 +302,7 @@ class SMBConnection(SMB):
         return results[0]
     
     def storeFile(self, service_name, path, file_obj, timeout = 30):
-        self.storeFileFromOffset(service_name, path, file_obj, timeout)
+        self.storeFileFromOffset(service_name, path, file_obj, 0L, timeout)
 
     def storeFileFromOffset(self, service_name, path, file_obj, offset = 0L, timeout = 30):
         """
