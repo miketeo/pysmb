@@ -74,7 +74,7 @@ class NetBIOS(NBNS):
         assert self.sock, 'Socket is already closed'
 
         trn_id = random.randint(1, 0xFFFF)
-        data = self.prepareNetNameQuery(trn_id)
+        data = self.prepareNetNameQuery(trn_id, False)
         self.write(data, ip, port)
         ret = self._pollForQueryPacket(trn_id, timeout)
         if ret:

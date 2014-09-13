@@ -170,9 +170,9 @@ class NBNS:
     #
     # Contributed by Jason Anderson
     #
-    def prepareNetNameQuery(self, trn_id):
+    def prepareNetNameQuery(self, trn_id, is_broadcast = True):
         header = struct.pack(self.HEADER_STRUCT_FORMAT,
-                             trn_id, 0x0010, 1, 0, 0, 0)
+                             trn_id, (is_broadcast and 0x0010) or 0x0000, 1, 0, 0, 0)
         payload = encode_name('*', 0) + '\x00\x21\x00\x01'
 
         return header + payload
