@@ -1,4 +1,13 @@
 
+pysmb-1.1.11, 13 Sep 2014
+=========================
+
+- Add support for unicode characters in domain, username and password.
+- Add storeFileFromOffset method to SMB API
+- Fix bug in getAttributes implementation for SMB1
+- Fix bug for NMB which uses broadcast flag for unicast queries
+- Update the Tree Connect Andx request implementation to MS-SMB 2.2.4.7.1 extensions
+
 pysmb-1.1.10, 29 Jun 2014
 =========================
 
