@@ -1600,7 +1600,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
-        rpc_uid = self.uid 
         expiry_time = time.time() + timeout
         path = 'IPC$'
         messages_history = [ ]

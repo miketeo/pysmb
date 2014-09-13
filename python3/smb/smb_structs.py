@@ -261,7 +261,7 @@ class Payload:
         # rewritten to check for OEM/Unicode strings which will be tedious. Fortunately, almost all tested CIFS services
         # support SMB_FLAGS2_UNICODE by default.
         assert message.payload == self
-        message.flags =  SMB_FLAGS_CASE_INSENSITIVE
+        message.flags =  SMB_FLAGS_CASE_INSENSITIVE | SMB_FLAGS_CANONICALIZED_PATHS
         message.flags2 = SMB_FLAGS2_UNICODE | SMB_FLAGS2_NT_STATUS | SMB_FLAGS2_IS_LONG_NAME | SMB_FLAGS2_LONG_NAMES
 
         if SUPPORT_EXTENDED_SECURITY:
@@ -412,7 +412,7 @@ class ComSessionSetupAndxRequest__WithSecurityExtension(Payload):
 
         message.flags2 |= SMB_FLAGS2_UNICODE
 
-        cap = CAP_UNICODE | CAP_STATUS32 | CAP_EXTENDED_SECURITY
+        cap = CAP_UNICODE | CAP_STATUS32 | CAP_EXTENDED_SECURITY | CAP_NT_SMBS
 
         message.parameters_data = \
             self.DEFAULT_ANDX_PARAM_HEADER + \
@@ -557,7 +557,7 @@ class ComTreeConnectAndxRequest(Payload):
             struct.pack(self.PAYLOAD_STRUCT_FORMAT,
                         0x08 | \
                             ((message.hasExtendedSecurity and 0x0004) or 0x00) | \
-                            ((message.tid and 0x0001) or 0x00),  # Disconnect tid, if message.tid must be non-zero
+                            ((message.tid and message.tid != 0xffff and 0x0001) or 0x00),  # Disconnect tid, if message.tid must be non-zero
                         password_len)
 
         padding = b''

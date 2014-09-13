@@ -8,7 +8,7 @@ from smb_constants import *
 SUPPORT_EXTENDED_SECURITY = True
 
 # Set to True if you want to enable SMB2 protocol.
-SUPPORT_SMB2 = False
+SUPPORT_SMB2 = True
 
 # Supported dialects
 DIALECTS = [ ]
