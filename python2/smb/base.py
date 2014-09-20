@@ -1465,6 +1465,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                         try:
                             result = securityblob.decodeAuthResponseSecurityBlob(message.payload.security_blob)
                             if result == securityblob.RESULT_ACCEPT_COMPLETED:
+                                self.log.debug('SMB uid is now %d', message.uid)
+                                self.uid = message.uid
                                 self.has_authenticated = True
                                 self.log.info('Authentication (with extended security) successful!')
                                 self.onAuthOK()
@@ -1488,6 +1490,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                             message.raw_data, message)
                 else:
                     if message.status.internal_value == 0:
+                        self.log.debug('SMB uid is now %d', message.uid)
+                        self.uid = message.uid
                         self.has_authenticated = True
                         self.log.info('Authentication (without extended security) successful!')
                         self.onAuthOK()
@@ -1526,7 +1530,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         assert message.hasExtendedSecurity
 
         if message.uid and not self.uid:
-            self.log.debug('SMB uid is now %d', message.uid)
             self.uid = message.uid
 
         server_challenge, server_flags, server_info = ntlm.decodeChallengeMessage(ntlm_token)
@@ -1578,7 +1581,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
     def _handleNegotiateResponse_SMB1(self, message):
         if message.uid and not self.uid:
-            self.log.debug('SMB uid is now %d', message.uid)
             self.uid = message.uid
 
         if message.hasExtendedSecurity or message.payload.supportsExtendedSecurity:
@@ -1604,7 +1606,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         path = 'IPC$'
         messages_history = [ ]
 
-        def connectSrvSvc(uid, tid):
+        def connectSrvSvc(tid):
             m = SMBMessage(ComNTCreateAndxRequest('\\srvsvc',
                                                   flags = NT_CREATE_REQUEST_EXTENDED_RESPONSE,
                                                   access_mask = READ_CONTROL | FILE_WRITE_ATTRIBUTES | FILE_READ_ATTRIBUTES | FILE_WRITE_EA | FILE_READ_EA | FILE_APPEND_DATA | FILE_WRITE_DATA | FILE_READ_DATA,
@@ -1614,7 +1616,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                   impersonation = SEC_IMPERSONATE,
                                                   security_flags = 0))
             m.tid = tid
-            m.uid = uid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectSrvSvcCB, errback)
             messages_history.append(m)
@@ -1641,7 +1642,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                      data_bytes = data_bytes,
                                                      setup_bytes = setup_bytes))
                 m.tid = create_message.tid
-                m.uid = create_message.uid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcBindCB, errback, fid = create_message.payload.fid)
                 messages_history.append(m)
@@ -1680,12 +1680,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                      data_bytes = data_bytes,
                                                      setup_bytes = setup_bytes))
                 m.tid = trans_message.tid
-                m.uid = trans_message.uid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, listShareResultsCB, errback, fid = kwargs['fid'])
                 messages_history.append(m)
             else:
-                closeFid(trans_message.uid, trans_message.tid, kwargs['fid'])
+                closeFid(trans_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to bind to Server Service RPC endpoint', messages_history))
 
         def listShareResultsCB(result_message, **kwargs):
@@ -1695,14 +1694,14 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 data_bytes = result_message.payload.data_bytes
 
                 if ord(data_bytes[3]) & 0x02 == 0:
-                    sendReadRequest(result_message.uid, result_message.tid, kwargs['fid'], data_bytes)
+                    sendReadRequest(result_message.tid, kwargs['fid'], data_bytes)
                 else:
-                    decodeResults(result_message.uid, result_message.tid, kwargs['fid'], data_bytes)
+                    decodeResults(result_message.tid, kwargs['fid'], data_bytes)
             else:
-                closeFid(result_message.uid, result_message.tid, kwargs['fid'])
+                closeFid(result_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
 
-        def decodeResults(uid, tid, fid, data_bytes):
+        def decodeResults(tid, fid, data_bytes):
             shares_count = struct.unpack('<I', data_bytes[36:40])[0]
             results = [ ]     # A list of SharedDevice instances
             offset = 36 + 12  # You need to study the byte stream to understand the meaning of these constants
@@ -1729,17 +1728,16 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     offset += (length * 2)
 
-            closeFid(uid, tid, fid)
+            closeFid(tid, fid)
             callback(results)
 
-        def sendReadRequest(uid, tid, fid, data_bytes):
+        def sendReadRequest(tid, fid, data_bytes):
             read_count = min(4280, self.max_raw_size - 2)
             m = SMBMessage(ComReadAndxRequest(fid = fid,
                                               offset = 0,
                                               max_return_bytes_count = read_count,
                                               min_return_bytes_count = read_count))
             m.tid = tid
-            m.uid = uid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback, fid = fid, data_bytes = data_bytes)
 
@@ -1750,16 +1748,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 data_bytes = read_message.payload.data
 
                 if ord(data_bytes[3]) & 0x02 == 0:
-                    sendReadRequest(read_message.uid, read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+                    sendReadRequest(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
                 else:
-                    decodeResults(read_message.uid, read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+                    decodeResults(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
             else:
-                closeFid(read_message.uid, read_message.tid, kwargs['fid'])
+                closeFid(read_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
 
-        def closeFid(uid, tid, fid):
+        def closeFid(tid, fid):
             m = SMBMessage(ComCloseRequest(fid))
-            m.uid = uid
             m.tid = tid
             self._sendSMBMessage(m)
             messages_history.append(m)
@@ -1768,13 +1765,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(connect_message)
             if not connect_message.status.hasError:
                 self.connected_trees[path] = connect_message.tid
-                connectSrvSvc(connect_message.uid, connect_message.tid)
-            elif connect_message.uid == self.uid:
-                m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), path ), SERVICE_ANY, ''))
-                m.uid = connect_message.uid + 1
-                self._sendSMBMessage(m)
-                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = path)
-                messages_history.append(m)                    
+                connectSrvSvc(connect_message.tid)
             else:
                 errback(OperationFailure('Failed to list shares: Unable to connect to IPC$', messages_history))
 
