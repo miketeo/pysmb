@@ -116,7 +116,8 @@ class NBNSProtocol(DatagramProtocol, NBNS):
         now = time.time()
 
         # reply should have been received in the past
-        expired = filter(lambda (trn_id, (expiry_time, name, d)): expiry_time < now, self.pending_trns.iteritems())
+        # info is tuple of ( expiry_time, name, d )
+        expired = filter(lambda trn_id, info: info[0] < now, self.pending_trns.iteritems())
 
         # remove expired items from dict + call errback
         def expire_item(item):
