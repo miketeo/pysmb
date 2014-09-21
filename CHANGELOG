@@ -1,4 +1,10 @@
 
+pysmb-1.1.12, 21 Sep 2014
+=========================
+
+- Fix syntax error for python3 NBNSProtocol implementation
+- Fix bug in SMB1 implementation which results in access denied errors with Samba 3.0 
+
 pysmb-1.1.11, 13 Sep 2014
 =========================
 
