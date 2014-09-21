@@ -263,10 +263,10 @@ class Payload:
         # support SMB_FLAGS2_UNICODE by default.
         assert message.payload == self
         message.flags =  SMB_FLAGS_CASE_INSENSITIVE | SMB_FLAGS_CANONICALIZED_PATHS
-        message.flags2 = SMB_FLAGS2_UNICODE | SMB_FLAGS2_NT_STATUS | SMB_FLAGS2_IS_LONG_NAME | SMB_FLAGS2_LONG_NAMES
+        message.flags2 = SMB_FLAGS2_UNICODE | SMB_FLAGS2_NT_STATUS | SMB_FLAGS2_LONG_NAMES | SMB_FLAGS2_EAS
 
         if SUPPORT_EXTENDED_SECURITY:
-            message.flags2 |= SMB_FLAGS2_EXTENDED_SECURITY
+            message.flags2 |= SMB_FLAGS2_EXTENDED_SECURITY | SMB_FLAGS2_SMB_SECURITY_SIGNATURE
 
     def prepare(self, message):
         raise NotImplementedError
