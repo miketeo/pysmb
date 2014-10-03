@@ -656,7 +656,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
     def _getAttributes_SMB2(self, service_name, path, callback, errback, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
-    
+
         expiry_time = time.time() + timeout
         path = path.replace('/', '\\')
         if path.startswith('\\'):
@@ -860,8 +860,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
     def _storeFile_SMB2(self, service_name, path, file_obj, callback, errback, timeout = 30):
         self._storeFileFromOffset_SMB2(service_name, path, file_obj, callback, errback, 0, timeout)
-        
-    def _storeFileFromOffset_SMB2(self, service_name, path, file_obj, callback, errback, starting_offset, timeout = 30):        
+
+    def _storeFileFromOffset_SMB2(self, service_name, path, file_obj, callback, errback, starting_offset, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -1952,7 +1952,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         if path.endswith('\\'):
             path = path[:-1]
         messages_history = [ ]
-    
+
         def sendQuery(tid):
             setup_bytes = struct.pack('<H', 0x0005)  # TRANS2_QUERY_PATH_INFORMATION sub-command. See [MS-CIFS]: 2.2.6.6.1
             params_bytes = \
@@ -1970,7 +1970,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback)
             messages_history.append(m)
-            
+
         def queryCB(query_message, **kwargs):
             messages_history.append(query_message)
             if not query_message.status.hasError:
@@ -1978,7 +1978,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 info_size = struct.calcsize(info_format)
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_attributes, _, alloc_size, file_size = struct.unpack(info_format, query_message.payload.data_bytes[:info_size])
-        
+
                 info = SharedFile(create_time, last_access_time, last_write_time, last_attr_change_time,
                                   file_size, alloc_size, file_attributes, unicode(path), unicode(path))
                 callback(info)
@@ -2000,7 +2000,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
         else:
             sendQuery(self.connected_trees[service_name])
-    
+
     def _retrieveFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
         return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0, -1, timeout)
 
@@ -2097,8 +2097,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
     def _storeFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
         self._storeFileFromOffset_SMB1(service_name, path, file_obj, callback, errback, 0, timeout)
-        
-    def _storeFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, timeout = 30):        
+
+    def _storeFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -2494,6 +2494,11 @@ class SharedFile:
     def isDirectory(self):
         """A convenience property to return True if this file resource is a directory on the remote server"""
         return bool(self.file_attributes & ATTR_DIRECTORY)
+
+    @property
+    def isReadOnly(self):
+        """A convenient property to return True if this file resource is read-only on the remote server"""
+        return bool(self.file_attributes & ATTR_READONLY)
 
     def __unicode__(self):
         return 'Shared file: %s (FileSize:%d bytes, isDirectory:%s)' % ( self.filename, self.file_size, self.isDirectory )
