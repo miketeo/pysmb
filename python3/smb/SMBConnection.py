@@ -302,7 +302,7 @@ class SMBConnection(SMB):
         return results[0]
     
     def storeFile(self, service_name, path, file_obj, timeout = 30):
-        self.storeFileFromOffset(service_name, path, file_obj, 0, timeout)
+        return self.storeFileFromOffset(service_name, path, file_obj, 0, timeout)
 
     def storeFileFromOffset(self, service_name, path, file_obj, offset = 0, timeout = 30):    
         """

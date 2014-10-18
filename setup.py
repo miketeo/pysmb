@@ -8,13 +8,13 @@ pkgdir = { '': 'python%s' % sys.version_info[0] }
 
 setup(
     name = "pysmb",
-    version = "1.1.12",
+    version = "1.1.13",
     author = "Michael Teo",
     author_email = "miketeo@miketeo.net",
     license = "zlib/libpng",
     description = "pysmb is an experimental SMB/CIFS library written in Python to support file sharing between Windows and Linux machines",
     keywords = "windows samba cifs sharing ftp smb linux",
-    url = "http://miketeo.net/projects/pysmb",
+    url = "https://miketeo.net/projects/pysmb",
     package_dir = pkgdir,
     packages = [ 'smb', 'smb.utils', 'nmb' ],
     install_requires = [ 'pyasn1' ],

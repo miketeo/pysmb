@@ -1,4 +1,10 @@
 
+pysmb-1.1.13, 18 Oct 2014
+=========================
+
+- Add missing methods and improve compatibility with python3
+- Fix bug in SMB2 rename implementation which fails to rename directory
+
 pysmb-1.1.12, 21 Sep 2014
 =========================
 
