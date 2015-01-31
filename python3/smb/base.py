@@ -622,7 +622,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     offset += next_offset
                 else:
                     break
-            return ''
+            return b''
 
         def closeFid(tid, fid, results = None, error = None):
             m = SMB2Message(SMB2CloseRequest(fid))
