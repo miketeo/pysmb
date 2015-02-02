@@ -99,7 +99,8 @@ class SMBConnection(SMB):
 
         self.auth_result = None
         self.sock = socket.socket(sock_family)
-        self.sock.connect(( ip, port ))
+        self.sock.settimeout(timeout)
+	self.sock.connect(( ip, port ))
 
         self.is_busy = True
         try:
