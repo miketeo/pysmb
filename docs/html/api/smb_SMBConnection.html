@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>SMBConnection Class &mdash; pysmb 1.1.10 documentation</title>
+    <title>SMBConnection Class &mdash; pysmb 1.1.15 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.10',
+        VERSION:     '1.1.15',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.10 documentation" href="../index.html" />
+    <link rel="top" title="pysmb 1.1.15 documentation" href="../index.html" />
     <link rel="next" title="SMbHandler Class" href="smb_SMBHandler.html" />
     <link rel="prev" title="NetBIOS class" href="nmb_NetBIOS.html" /> 
   </head>
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="nmb_NetBIOS.html" title="NetBIOS class"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.1.10 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">pysmb 1.1.15 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -431,7 +431,8 @@ The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FIL
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.storeFile">
 <tt class="descname">storeFile</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.</p>
+<dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.
+If the file already exists on the remote server, it will be truncated and overwritten.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -445,6 +446,31 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Number of bytes uploaded</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.storeFileFromOffset">
+<tt class="descname">storeFileFromOffset</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>offset=0L</em>, <em>truncate=False</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFileFromOffset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFileFromOffset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; the name of the shared folder for the <em>path</em></li>
+<li><strong>path</strong> (<em>string/unicode</em>) &#8211; Path of the file on the remote server. If the file at <em>path</em> does not exist, it will be created.
+If the <em>path</em> refers to a folder or the file cannot be opened for writing, an <a class="reference internal" href="smb_exceptions.html"><em>OperationFailure</em></a> will be raised.</li>
+<li><strong>file_obj</strong> &#8211; A file-like object that has a <em>read</em> method. Data will read continuously from <em>file_obj</em> until EOF.</li>
+<li><strong>offset</strong> &#8211; Long integer value which specifies the offset in the remote server to start writing. First byte of the file is 0.</li>
+<li><strong>truncate</strong> &#8211; Boolean value. If True and the file exists on the remote server, it will be truncated first before writing. Default is False.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the file position where the next byte will be written.</p>
 </td>
 </tr>
 </tbody>
@@ -498,11 +524,11 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
         <li class="right" >
           <a href="nmb_NetBIOS.html" title="NetBIOS class"
              >previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.1.10 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">pysmb 1.1.15 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2001-2014, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2015, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

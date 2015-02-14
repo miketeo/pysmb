@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>smb.smb_structs &mdash; pysmb 1.1.10 documentation</title>
+    <title>smb.smb_structs &mdash; pysmb 1.1.15 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.10',
+        VERSION:     '1.1.15',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.10 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.1.15 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -33,7 +33,7 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.15 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -324,11 +324,11 @@
         <span class="c"># rewritten to check for OEM/Unicode strings which will be tedious. Fortunately, almost all tested CIFS services</span>
         <span class="c"># support SMB_FLAGS2_UNICODE by default.</span>
         <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">payload</span> <span class="o">==</span> <span class="bp">self</span>
-        <span class="n">message</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span>  <span class="n">SMB_FLAGS_CASE_INSENSITIVE</span>
-        <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">=</span> <span class="n">SMB_FLAGS2_UNICODE</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_NT_STATUS</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_IS_LONG_NAME</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_LONG_NAMES</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span>  <span class="n">SMB_FLAGS_CASE_INSENSITIVE</span> <span class="o">|</span> <span class="n">SMB_FLAGS_CANONICALIZED_PATHS</span>
+        <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">=</span> <span class="n">SMB_FLAGS2_UNICODE</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_NT_STATUS</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_LONG_NAMES</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_EAS</span>
 
         <span class="k">if</span> <span class="n">SUPPORT_EXTENDED_SECURITY</span><span class="p">:</span>
-            <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">|=</span> <span class="n">SMB_FLAGS2_EXTENDED_SECURITY</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">|=</span> <span class="n">SMB_FLAGS2_EXTENDED_SECURITY</span> <span class="o">|</span> <span class="n">SMB_FLAGS2_SMB_SECURITY_SIGNATURE</span>
 
     <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
@@ -475,7 +475,7 @@
 
         <span class="n">message</span><span class="o">.</span><span class="n">flags2</span> <span class="o">|=</span> <span class="n">SMB_FLAGS2_UNICODE</span>
 
-        <span class="n">cap</span> <span class="o">=</span> <span class="n">CAP_UNICODE</span> <span class="o">|</span> <span class="n">CAP_STATUS32</span> <span class="o">|</span> <span class="n">CAP_EXTENDED_SECURITY</span>
+        <span class="n">cap</span> <span class="o">=</span> <span class="n">CAP_UNICODE</span> <span class="o">|</span> <span class="n">CAP_STATUS32</span> <span class="o">|</span> <span class="n">CAP_EXTENDED_SECURITY</span> <span class="o">|</span> <span class="n">CAP_NT_SMBS</span>
 
         <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
             <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
@@ -598,6 +598,7 @@
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.55.1</span>
+<span class="sd">    - [MS-SMB]: 2.2.4.7.1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s">&#39;&lt;HH&#39;</span>
@@ -617,7 +618,9 @@
         <span class="n">message</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">=</span> \
             <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_ANDX_PARAM_HEADER</span> <span class="o">+</span> \
             <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">,</span>
-                        <span class="mh">0x08</span> <span class="o">|</span> <span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">tid</span> <span class="ow">and</span> <span class="mh">0x0001</span><span class="p">)</span> <span class="ow">or</span> <span class="mh">0x00</span><span class="p">,</span>  <span class="c"># Disconnect tid, if message.tid must be non-zero</span>
+                        <span class="mh">0x08</span> <span class="o">|</span> \
+                            <span class="p">((</span><span class="n">message</span><span class="o">.</span><span class="n">hasExtendedSecurity</span> <span class="ow">and</span> <span class="mh">0x0004</span><span class="p">)</span> <span class="ow">or</span> <span class="mh">0x00</span><span class="p">)</span> <span class="o">|</span> \
+                            <span class="p">((</span><span class="n">message</span><span class="o">.</span><span class="n">tid</span> <span class="ow">and</span> <span class="n">message</span><span class="o">.</span><span class="n">tid</span> <span class="o">!=</span> <span class="mh">0xFFFF</span> <span class="ow">and</span> <span class="mh">0x0001</span><span class="p">)</span> <span class="ow">or</span> <span class="mh">0x00</span><span class="p">),</span>  <span class="c"># Disconnect tid, if message.tid must be non-zero</span>
                         <span class="n">password_len</span><span class="p">)</span>
 
         <span class="n">padding</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
@@ -1490,12 +1493,12 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.15 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2001-2014, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2015, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

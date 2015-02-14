@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>smb.SMBConnection &mdash; pysmb 1.1.10 documentation</title>
+    <title>smb.SMBConnection &mdash; pysmb 1.1.15 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.10',
+        VERSION:     '1.1.15',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.10 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.1.15 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -33,7 +33,7 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.15 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -161,7 +161,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">auth_result</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">sock_family</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">connect_ex</span><span class="p">((</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span> <span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="k">try</span><span class="p">:</span>
@@ -362,16 +363,31 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span> <span class="o">=</span> <span class="bp">False</span>
 
         <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
+    
     <span class="k">def</span> <span class="nf">storeFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
 <div class="viewcode-block" id="SMBConnection.storeFile"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.storeFile">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Store the contents of the *file_obj* at *path* on the *service_name*.</span>
+<span class="sd">        If the file already exists on the remote server, it will be truncated and overwritten.</span>
 
 <span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
 <span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file at *path* does not exist, it will be created. Otherwise, it will be overwritten.</span>
 <span class="sd">                                    If the *path* refers to a folder or the file cannot be opened for writing, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be raised.</span>
 <span class="sd">        :param file_obj: A file-like object that has a *read* method. Data will read continuously from *file_obj* until EOF.</span>
 <span class="sd">        :return: Number of bytes uploaded</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">storeFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="il">0L</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">storeFileFromOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="il">0L</span><span class="p">,</span> <span class="n">truncate</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span></div>
+<div class="viewcode-block" id="SMBConnection.storeFileFromOffset"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.storeFileFromOffset">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Store the contents of the *file_obj* at *path* on the *service_name*.</span>
+
+<span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
+<span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file at *path* does not exist, it will be created.</span>
+<span class="sd">                                    If the *path* refers to a folder or the file cannot be opened for writing, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be raised.</span>
+<span class="sd">        :param file_obj: A file-like object that has a *read* method. Data will read continuously from *file_obj* until EOF.</span>
+<span class="sd">        :param offset: Long integer value which specifies the offset in the remote server to start writing. First byte of the file is 0.</span>
+<span class="sd">        :param truncate: Boolean value. If True and the file exists on the remote server, it will be truncated first before writing. Default is False.</span>
+<span class="sd">        :return: the file position where the next byte will be written.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s">&#39;Not connected to server&#39;</span><span class="p">)</span>
@@ -388,7 +404,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_storeFile</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">eb</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_storeFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">eb</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">truncate</span> <span class="o">=</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
             <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_pollForNetBIOSPacket</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
@@ -608,12 +624,12 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.15 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2001-2014, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2015, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

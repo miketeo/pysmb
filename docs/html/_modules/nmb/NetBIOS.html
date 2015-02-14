@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>nmb.NetBIOS &mdash; pysmb 1.1.10 documentation</title>
+    <title>nmb.NetBIOS &mdash; pysmb 1.1.15 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.10',
+        VERSION:     '1.1.15',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.10 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.1.15 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -33,7 +33,7 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.15 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -136,7 +136,7 @@
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">,</span> <span class="s">&#39;Socket is already closed&#39;</span>
 
         <span class="n">trn_id</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0xFFFF</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepareNetNameQuery</span><span class="p">(</span><span class="n">trn_id</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepareNetNameQuery</span><span class="p">(</span><span class="n">trn_id</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pollForQueryPacket</span><span class="p">(</span><span class="n">trn_id</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">ret</span><span class="p">:</span>
@@ -217,12 +217,12 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../index.html">pysmb 1.1.10 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">pysmb 1.1.15 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2001-2014, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2015, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
