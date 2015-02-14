@@ -302,17 +302,29 @@ class SMBConnection(SMB):
         return results[0]
     
     def storeFile(self, service_name, path, file_obj, timeout = 30):
-        return self.storeFileFromOffset(service_name, path, file_obj, 0, timeout)
-
-    def storeFileFromOffset(self, service_name, path, file_obj, offset = 0, timeout = 30):    
         """
         Store the contents of the *file_obj* at *path* on the *service_name*.
+        If the file already exists on the remote server, it will be truncated and overwritten.
 
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: Path of the file on the remote server. If the file at *path* does not exist, it will be created. Otherwise, it will be overwritten.
                                     If the *path* refers to a folder or the file cannot be opened for writing, an :doc:`OperationFailure<smb_exceptions>` will be raised.
         :param file_obj: A file-like object that has a *read* method. Data will read continuously from *file_obj* until EOF. In Python3, this file-like object must have a *read* method which returns a bytes parameter.
         :return: Number of bytes uploaded
+        """
+        return self.storeFileFromOffset(service_name, path, file_obj, 0, True, timeout)
+
+    def storeFileFromOffset(self, service_name, path, file_obj, offset = 0, truncate = False, timeout = 30):    
+        """
+        Store the contents of the *file_obj* at *path* on the *service_name*.
+
+        :param string/unicode service_name: the name of the shared folder for the *path*
+        :param string/unicode path: Path of the file on the remote server. If the file at *path* does not exist, it will be created.
+                                    If the *path* refers to a folder or the file cannot be opened for writing, an :doc:`OperationFailure<smb_exceptions>` will be raised.
+        :param file_obj: A file-like object that has a *read* method. Data will read continuously from *file_obj* until EOF.
+        :param offset: Long integer value which specifies the offset in the remote server to start writing. First byte of the file is 0.
+        :param truncate: Boolean value. If True and the file exists on the remote server, it will be truncated first before writing. Default is False.
+        :return: the file position where the next byte will be written.
         """
         if not self.sock:
             raise NotConnectedError('Not connected to server')
@@ -329,7 +341,7 @@ class SMBConnection(SMB):
 
         self.is_busy = True
         try:
-            self._storeFile(service_name, path, file_obj, cb, eb, timeout = timeout)
+            self._storeFileFromOffset(service_name, path, file_obj, cb, eb, offset, truncate = truncate, timeout = timeout)
             while self.is_busy:
                 self._pollForNetBIOSPacket(timeout)
         finally:

@@ -63,6 +63,25 @@ def test_store_long_filename_SMB1():
 
     conn.deleteFiles('smbtest', filename)
 
+@with_setup(setup_func_SMB1, teardown_func)
+def test_store_from_offset_SMB1():
+    filename = os.sep + 'StoreTest %d-%d.dat' % ( time.time(), random.randint(0, 10000) )
+
+    buf = StringIO('0123456789')
+    filesize = conn.storeFile('smbtest', filename, buf)
+    assert filesize == 10
+
+    buf = StringIO('aa')
+    pos = conn.storeFileFromOffset('smbtest', filename, buf, 5)
+    assert pos == 7
+
+    buf = StringIO()
+    file_attributes, file_size = conn.retrieveFile('smbtest', filename, buf)
+    assert file_size == 10
+    assert buf.getvalue() == '01234aa789'
+    buf.close()
+
+    conn.deleteFiles('smbtest', filename)
 
 @with_setup(setup_func_SMB2, teardown_func)
 def test_store_long_filename_SMB2():
@@ -131,3 +150,24 @@ def test_store_unicode_filename_SMB2():
     buf.close()
 
     conn.deleteFiles('smbtest', filename)
+
+@with_setup(setup_func_SMB2, teardown_func)
+def test_store_from_offset_SMB2():
+    filename = os.sep + 'StoreTest %d-%d.dat' % ( time.time(), random.randint(0, 10000) )
+
+    buf = StringIO('0123456789')
+    filesize = conn.storeFile('smbtest', filename, buf)
+    assert filesize == 10
+
+    buf = StringIO('aa')
+    pos = conn.storeFileFromOffset('smbtest', filename, buf, 5)
+    assert pos == 7
+
+    buf = StringIO()
+    file_attributes, file_size = conn.retrieveFile('smbtest', filename, buf)
+    assert file_size == 10
+    assert buf.getvalue() == '01234aa789'
+    buf.close()
+
+    conn.deleteFiles('smbtest', filename)
+    

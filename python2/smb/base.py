@@ -865,9 +865,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             sendCreate(self.connected_trees[service_name])
 
     def _storeFile_SMB2(self, service_name, path, file_obj, callback, errback, timeout = 30):
-        self._storeFileFromOffset_SMB2(service_name, path, file_obj, callback, errback, 0L, timeout)
+        self._storeFileFromOffset_SMB2(service_name, path, file_obj, callback, errback, 0L, True, timeout)
 
-    def _storeFileFromOffset_SMB2(self, service_name, path, file_obj, callback, errback, starting_offset, timeout = 30):
+    def _storeFileFromOffset_SMB2(self, service_name, path, file_obj, callback, errback, starting_offset, truncate = False, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -896,7 +896,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                               oplock = SMB2_OPLOCK_LEVEL_NONE,
                                               impersonation = SEC_IMPERSONATE,
                                               create_options = FILE_SEQUENTIAL_ONLY | FILE_NON_DIRECTORY_FILE,
-                                              create_disp = FILE_OVERWRITE_IF,
+                                              create_disp = FILE_OVERWRITE_IF if truncate else FILE_OPEN_IF,
                                               create_context_data = create_context_data))
             m.tid = tid
             self._sendSMBMessage(m)
@@ -2133,9 +2133,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             sendOpen(self.connected_trees[service_name])
             
     def _storeFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):   
-        self._storeFileFromOffset_SMB1(service_name, path, file_obj, callback, errback, 0L, timeout) 
+        self._storeFileFromOffset_SMB1(service_name, path, file_obj, callback, errback, 0L, True, timeout) 
 
-    def _storeFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, timeout = 30):
+    def _storeFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, truncate = False, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -2145,7 +2145,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def sendOpen(tid):
             m = SMBMessage(ComOpenAndxRequest(filename = path,
                                               access_mode = 0x0041,  # Sharing mode: Deny nothing to others + Open for writing
-                                              open_mode = 0x0011,    # Create file if file does not exist. Overwrite if exists.
+                                              open_mode = 0x0012 if truncate else 0x0011,    # Create file if file does not exist. Overwrite or append depending on truncate parameter.
                                               search_attributes = SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM,
                                               timeout = timeout * 1000))
             m.tid = tid
