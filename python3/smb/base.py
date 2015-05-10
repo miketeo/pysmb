@@ -444,6 +444,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     sendReadRequest(result_message.tid, kwargs['fid'], data_bytes)
                 else:
                     decodeResults(result_message.tid, kwargs['fid'], data_bytes)
+            elif result_message.status == 0x0103:   # STATUS_PENDING
+                self.pending_requests[result_message.mid] = _PendingRequest(result_message.mid, expiry_time, listShareResultsCB, errback, fid = kwargs['fid'])
             else:
                 closeFid(result_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
