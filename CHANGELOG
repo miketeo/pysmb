@@ -1,4 +1,10 @@
 
+pysmb-1.1.16, 10 May 2015
+=========================
+
+- Fix typo errors in authentication error messages
+- Improve share listings on SMB2 protocol by ignoring interim STATUS_PENDING responses.
+
 pysmb-1.1.15, 15 Feb 2015
 =========================
 
