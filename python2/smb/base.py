@@ -99,7 +99,7 @@ class SMB(NMBSession):
 
         self._setupSMB1Methods()
 
-        self.log.info('Authetication with remote machine "%s" for user "%s" will be using NTLM %s authentication (%s extended security)',
+        self.log.info('Authentication with remote machine "%s" for user "%s" will be using NTLM %s authentication (%s extended security)',
                       self.remote_name, self.username,
                       (self.use_ntlm_v2 and 'v2') or 'v1',
                       (SUPPORT_EXTENDED_SECURITY and 'with') or 'without')
