@@ -893,7 +893,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 """.replace(' ', '').replace('\n', ''))
             m = SMB2Message(SMB2CreateRequest(path,
                                               file_attributes = ATTR_ARCHIVE,
-                                              access_mask = FILE_READ_DATA | FILE_WRITE_DATA | FILE_APPEND_DATA | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | FILE_READ_EA | FILE_WRITE_EA | WRITE_DAC | READ_CONTROL | SYNCHRONIZE,
+                                              access_mask = FILE_READ_DATA | FILE_WRITE_DATA | FILE_APPEND_DATA | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | FILE_READ_EA | FILE_WRITE_EA | READ_CONTROL | SYNCHRONIZE,
                                               share_access = 0,
                                               oplock = SMB2_OPLOCK_LEVEL_NONE,
                                               impersonation = SEC_IMPERSONATE,
@@ -1075,7 +1075,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 """.replace(' ', '').replace('\n', ''))
             m = SMB2Message(SMB2CreateRequest(path,
                                               file_attributes = 0,
-                                              access_mask = FILE_READ_DATA | FILE_WRITE_DATA | FILE_READ_EA | FILE_WRITE_EA | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | WRITE_DAC | READ_CONTROL | DELETE | SYNCHRONIZE,
+                                              access_mask = FILE_READ_DATA | FILE_WRITE_DATA | FILE_READ_EA | FILE_WRITE_EA | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | READ_CONTROL | DELETE | SYNCHRONIZE,
                                               share_access = 0,
                                               oplock = SMB2_OPLOCK_LEVEL_NONE,
                                               impersonation = SEC_IMPERSONATE,
