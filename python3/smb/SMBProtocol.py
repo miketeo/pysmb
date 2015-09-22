@@ -59,12 +59,16 @@ class SMBProtocol(Protocol, SMB):
     def _cleanupPendingRequests(self):
         if self.factory.instance == self:
             now = time.time()
+            to_remove = []
             for mid, r in self.pending_requests.items():
                 if r.expiry_time < now:
                     try:
                         r.errback(SMBTimeout())
                     except Exception: pass
-                    del self.pending_requests[mid]
+                    to_remove.append(mid)
+
+            for mid in to_remove:
+                del self.pending_requests[mid]
 
             reactor.callLater(1, self._cleanupPendingRequests)
 
@@ -215,7 +219,7 @@ class SMBProtocolFactory(ClientFactory):
     def getAttributes(self, service_name, path, timeout = 30):
         """
         Retrieve information about the file at *path* on the *service_name*.
-        
+
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure<smb_exceptions>` will be raised.
         :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a :doc:`smb.base.SharedFile<smb_SharedFile>` instance containing the attributes of the file.
