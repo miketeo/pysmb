@@ -1007,6 +1007,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 0x0d,  # SMB2_FILE_DISPOSITION_INFO
                                                data = b'\x01'))
+            '''
+                Resources:
+                https://msdn.microsoft.com/en-us/library/cc246560.aspx
+                https://msdn.microsoft.com/en-us/library/cc232098.aspx
+            '''
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback, fid = fid)
