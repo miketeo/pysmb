@@ -173,6 +173,7 @@ class SMB(NMBSession):
         self._storeFile = self._storeFile_SMB1
         self._storeFileFromOffset = self._storeFileFromOffset_SMB1
         self._deleteFiles = self._deleteFiles_SMB1
+        self._resetFileAttributes = self._resetFileAttributes_SMB1
         self._createDirectory = self._createDirectory_SMB1
         self._deleteDirectory = self._deleteDirectory_SMB1
         self._rename = self._rename_SMB1
@@ -194,6 +195,7 @@ class SMB(NMBSession):
         self._storeFile = self._storeFile_SMB2
         self._storeFileFromOffset = self._storeFileFromOffset_SMB2
         self._deleteFiles = self._deleteFiles_SMB2
+        self._resetFileAttributes = self._resetFileAttributes_SMB2
         self._createDirectory = self._createDirectory_SMB2
         self._deleteDirectory = self._deleteDirectory_SMB2
         self._rename = self._rename_SMB2
@@ -1005,6 +1007,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 0x0d,  # SMB2_FILE_DISPOSITION_INFO
                                                data = b'\x01'))
+            '''
+                Resources:
+                https://msdn.microsoft.com/en-us/library/cc246560.aspx
+                https://msdn.microsoft.com/en-us/library/cc232098.aspx
+            '''
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback, fid = fid)
@@ -1045,6 +1052,105 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
         else:
             sendCreate(self.connected_trees[service_name])
+
+    def _resetFileAttributes_SMB2(self, service_name, path_file_pattern, callback, errback, timeout = 30):
+        if not self.has_authenticated:
+            raise NotReadyError('SMB connection not authenticated')
+
+        expiry_time = time.time() + timeout
+        path = path_file_pattern.replace('/', '\\')
+        if path.startswith('\\'):
+            path = path[1:]
+        if path.endswith('\\'):
+            path = path[:-1]
+        messages_history = [ ]
+
+        def sendCreate(tid):
+            create_context_data = binascii.unhexlify("""
+28 00 00 00 10 00 04 00 00 00 18 00 10 00 00 00
+44 48 6e 51 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 18 00 00 00 10 00 04 00
+00 00 18 00 00 00 00 00 4d 78 41 63 00 00 00 00
+00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
+51 46 69 64 00 00 00 00
+""".replace(' ', '').replace('\n', ''))
+
+            m = SMB2Message(SMB2CreateRequest(path,
+                                              file_attributes = 0,
+                                              access_mask = FILE_WRITE_ATTRIBUTES,
+                                              share_access = FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                              oplock = SMB2_OPLOCK_LEVEL_NONE,
+                                              impersonation = SEC_IMPERSONATE,
+                                              create_options = 0,
+                                              create_disp = FILE_OPEN,
+                                              create_context_data = create_context_data))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
+            messages_history.append(m)
+
+        def createCB(open_message, **kwargs):
+            messages_history.append(open_message)
+            if open_message.status == 0:
+                sendReset(open_message.tid, open_message.payload.fid)
+            else:
+                errback(OperationFailure('Failed to reset attributes of %s on %s: Unable to open file' % ( path, service_name ), messages_history))
+
+        def sendReset(tid, fid):
+            m = SMB2Message(SMB2SetInfoRequest(fid,
+                                               additional_info = 0,
+                                               info_type = SMB2_INFO_FILE,
+                                               file_info_class = 4,  # FileBasicInformation
+                                               data = struct.pack('qqqqii',0,0,0,0,0x80,0))) # FILE_ATTRIBUTE_NORMAL
+            '''
+                Resources:
+                https://msdn.microsoft.com/en-us/library/cc246560.aspx
+                https://msdn.microsoft.com/en-us/library/cc232064.aspx
+                https://msdn.microsoft.com/en-us/library/cc232094.aspx
+                https://msdn.microsoft.com/en-us/library/cc232110.aspx
+            '''
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, resetCB, errback, fid = fid)
+            messages_history.append(m)
+
+        def resetCB(reset_message, **kwargs):
+            messages_history.append(reset_message)
+            if reset_message.status == 0:
+                closeFid(reset_message.tid, kwargs['fid'], status = 0)
+            else:
+                closeFid(reset_message.tid, kwargs['fid'], status = reset_message.status)
+
+        def closeFid(tid, fid, status = None):
+            m = SMB2Message(SMB2CloseRequest(fid))
+            m.tid = tid
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback, status = status)
+            messages_history.append(m)
+
+        def closeCB(close_message, **kwargs):
+            if kwargs['status'] == 0:
+                callback(path_file_pattern)
+            else:
+                errback(OperationFailure('Failed to reset attributes of %s on %s: Reset failed' % ( path, service_name ), messages_history))
+
+        if service_name not in self.connected_trees:
+            def connectCB(connect_message, **kwargs):
+                messages_history.append(connect_message)
+                if connect_message.status == 0:
+                    self.connected_trees[service_name] = connect_message.tid
+                    sendCreate(connect_message.tid)
+                else:
+                    errback(OperationFailure('Failed to reset attributes of %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
+
+            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            self._sendSMBMessage(m)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
+            messages_history.append(m)
+        else:
+            sendCreate(self.connected_trees[service_name])
+
+
 
     def _createDirectory_SMB2(self, service_name, path, callback, errback, timeout = 30):
         if not self.has_authenticated:
@@ -2238,6 +2344,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
         else:
             sendDelete(self.connected_trees[service_name])
+
+    def _resetFileAttributes_SMB1(self, service_name, path_file_pattern, callback, errback, timeout = 30):
+        raise NotReadyError('resetFileAttributes is not yet implemented for SMB1')
 
     def _createDirectory_SMB1(self, service_name, path, callback, errback, timeout = 30):
         if not self.has_authenticated:
