@@ -1977,7 +1977,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 elif end_of_search:
                     callback(results)
                 else:
-                    sendFindNext(find_message.tid, sid, last_name_offset, kwargs['support_dfs'])
+                    sendFindNext(find_message.tid, sid, last_name_offset, kwargs.get('support_dfs', False))
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
 
@@ -2039,7 +2039,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 elif end_of_search:
                     callback(results)
                 else:
-                    sendFindNext(find_message.tid, kwargs['sid'], last_name_offset, kwargs['support_dfs'])
+                    sendFindNext(find_message.tid, kwargs['sid'], last_name_offset, kwargs.get('support_dfs', False))
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
 
