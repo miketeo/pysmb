@@ -666,7 +666,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
     def _getAttributes_SMB2(self, service_name, path, callback, errback, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
-    
+
         expiry_time = time.time() + timeout
         path = path.replace('/', '\\')
         if path.startswith('\\'):
@@ -1331,7 +1331,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             old_path = old_path[1:]
         if old_path.endswith('\\'):
             old_path = old_path[:-1]
-            
+
         def sendCreate(tid):
             create_context_data = binascii.unhexlify("""
 28 00 00 00 10 00 04 00 00 00 18 00 10 00 00 00
@@ -1702,7 +1702,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                                                            self.username,
                                                                                            nt_password,
                                                                                            True,
-                                                                                           message.payload.domain)))
+                                                                                           self.domain)))
 
     def _listShares_SMB1(self, callback, errback, timeout = 30):
         if not self.has_authenticated:
@@ -2061,10 +2061,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, dfsReferralCB, errback)
             messages_history.append(m)
-    
+
         def dfsReferralCB(dfs_message, **kwargs):
             sendFindFirst(dfs_message.tid, True)
-    
+
         if not self.connected_trees.has_key(service_name):
             def connectCB(connect_message, **kwargs):
                 messages_history.append(connect_message)
@@ -2095,7 +2095,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         if path.endswith('\\'):
             path = path[:-1]
         messages_history = [ ]
-    
+
         def sendQuery(tid):
             setup_bytes = struct.pack('<H', 0x0005)  # TRANS2_QUERY_PATH_INFORMATION sub-command. See [MS-CIFS]: 2.2.6.6.1
             params_bytes = \
@@ -2113,7 +2113,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback)
             messages_history.append(m)
-            
+
         def queryCB(query_message, **kwargs):
             messages_history.append(query_message)
             if not query_message.status.hasError:
@@ -2121,7 +2121,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 info_size = struct.calcsize(info_format)
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_attributes, _, alloc_size, file_size = struct.unpack(info_format, query_message.payload.data_bytes[:info_size])
-        
+
                 info = SharedFile(create_time, last_access_time, last_write_time, last_attr_change_time,
                                   file_size, alloc_size, file_attributes, unicode(path), unicode(path))
                 callback(info)
@@ -2143,7 +2143,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
         else:
             sendQuery(self.connected_trees[service_name])
-    
+
     def _retrieveFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
         return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0L, -1L, timeout)
 
@@ -2237,9 +2237,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
         else:
             sendOpen(self.connected_trees[service_name])
-            
-    def _storeFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):   
-        self._storeFileFromOffset_SMB1(service_name, path, file_obj, callback, errback, 0L, True, timeout) 
+
+    def _storeFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
+        self._storeFileFromOffset_SMB1(service_name, path, file_obj, callback, errback, 0L, True, timeout)
 
     def _storeFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, truncate = False, timeout = 30):
         if not self.has_authenticated:
@@ -2645,7 +2645,7 @@ class SharedFile:
     def isReadOnly(self):
         """A convenient property to return True if this file resource is read-only on the remote server"""
         return bool(self.file_attributes & ATTR_READONLY)
-    
+
     def __unicode__(self):
         return u'Shared file: %s (FileSize:%d bytes, isDirectory:%s)' % ( self.filename, self.file_size, self.isDirectory )
 

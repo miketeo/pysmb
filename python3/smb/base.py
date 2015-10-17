@@ -1698,7 +1698,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                                                            self.username,
                                                                                            nt_password,
                                                                                            True,
-                                                                                           message.payload.domain)))
+                                                                                           self.domain)))
 
     def _listShares_SMB1(self, callback, errback, timeout = 30):
         if not self.has_authenticated:
@@ -2057,7 +2057,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, dfsReferralCB, errback)
             messages_history.append(m)
-    
+
         def dfsReferralCB(dfs_message, **kwargs):
             sendFindFirst(dfs_message.tid, True)
 

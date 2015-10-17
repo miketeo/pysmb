@@ -14,5 +14,6 @@ def getConnectionInfo():
         'client_name': cp.get('client', 'name'),
         'user': cp.get('user', 'name'),
         'password': cp.get('user', 'password'),
+        'domain': cp.get('user', 'domain')
     }
     return info
