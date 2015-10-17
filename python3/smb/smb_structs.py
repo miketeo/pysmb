@@ -366,11 +366,11 @@ class ComNegotiateResponse(Payload):
                 if data_len >= self.challenge_length:
                     self.challenge = message.data[:self.challenge_length]
 
-                    s = ''
+                    s = b''
                     offset = self.challenge_length
                     while offset < data_len:
                         _s = message.data[offset:offset+2]
-                        if _s == '\0\0':
+                        if _s == b'\0\0':
                             self.domain = s.decode('UTF-16LE')
                             break
                         else:
@@ -465,20 +465,20 @@ class ComSessionSetupAndxRequest__NoSecurityExtension(Payload):
 
         message.data = self.password
         if (est_offset + len(message.data)) % 2 != 0 and message.flags2 & SMB_FLAGS2_UNICODE:
-            message.data = message.data + '\0'
+            message.data = message.data + b'\0'
 
         if message.flags2 & SMB_FLAGS2_UNICODE:
-            message.data = message.data + self.username.encode('UTF-16LE') + '\0'
+            message.data = message.data + self.username.encode('UTF-16LE') + b'\0'
         else:
-            message.data = message.data + str(self.username) + '\0'
+            message.data = message.data + str(self.username).encode('UTF-8') + b'\0'
 
         if (est_offset + len(message.data)) % 2 != 0 and message.flags2 & SMB_FLAGS2_UNICODE:
-            message.data = message.data + '\0'
+            message.data = message.data + b'\0'
 
         if message.flags2 & SMB_FLAGS2_UNICODE:
-            message.data = message.data + self.domain.encode('UTF-16LE') + '\0\0' + 'pysmb'.encode('UTF-16LE') + '\0\0'
+            message.data = message.data + self.domain.encode('UTF-16LE') + b'\0\0' + 'pysmb'.encode('UTF-16LE') + b'\0\0'
         else:
-            message.data = message.data + self.domain + '\0pysmb\0'
+            message.data = message.data + self.domain.encode('UTF-8') + b'\0pysmb\0'
 
 
 class ComSessionSetupAndxResponse(Payload):
