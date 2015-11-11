@@ -1,3 +1,9 @@
+pysmb-1.1.17, 11 Nov 2015
+=========================
+
+- Fix crashes in directory listing with keyerror 'support_dfs'
+- Fix bugs in NTLMv2 response algorithm.
+- Fix bugs where client domain is not included as part of the session negotiation.
 
 pysmb-1.1.16, 10 May 2015
 =========================
@@ -27,7 +33,7 @@ pysmb-1.1.12, 21 Sep 2014
 =========================
 
 - Fix syntax error for python3 NBNSProtocol implementation
-- Fix bug in SMB1 implementation which results in access denied errors with Samba 3.0 
+- Fix bug in SMB1 implementation which results in access denied errors with Samba 3.0
 
 pysmb-1.1.11, 13 Sep 2014
 =========================
