@@ -496,7 +496,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 data_len = read_message.payload.data_length
                 data_bytes = read_message.payload.data
 
-                if ord(data_bytes[3]) & 0x02 == 0:
+                if data_bytes[3] & 0x02 == 0:
                     sendReadRequest(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
                 else:
                     decodeResults(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
@@ -1849,7 +1849,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 data_len = read_message.payload.data_length
                 data_bytes = read_message.payload.data
 
-                if ord(data_bytes[3]) & 0x02 == 0:
+                if data_bytes[3] & 0x02 == 0:
                     sendReadRequest(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
                 else:
                     decodeResults(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
