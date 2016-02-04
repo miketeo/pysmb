@@ -1,5 +1,5 @@
 
-import os, logging, select, socket, types, struct
+import os, logging, select, socket, struct
 from smb_constants import *
 from smb_structs import *
 from base import SMB, NotConnectedError, NotReadyError, SMBTimeout
@@ -545,13 +545,10 @@ class SMBConnection(SMB):
                 data = data + d
                 read_len -= len(d)
             except select.error, ex:
-                if type(ex) is types.TupleType:
-                    if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
-                        raise ex
-                else:
+                if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                     raise ex
 
-        type, flags, length = struct.unpack('>BBH', data)
+        type_, flags, length = struct.unpack('>BBH', data)
         if flags & 0x01:
             length = length | 0x10000
 
@@ -572,10 +569,7 @@ class SMBConnection(SMB):
                 data = data + d
                 read_len -= len(d)
             except select.error, ex:
-                if type(ex) is types.TupleType:
-                    if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
-                        raise ex
-                else:
+                if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                     raise ex
 
         self.feedData(data)
