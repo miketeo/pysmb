@@ -1,5 +1,5 @@
 
-import os, logging, select, socket, struct
+import os, logging, select, socket, struct, errno
 from smb_constants import *
 from smb_structs import *
 from base import SMB, NotConnectedError, NotReadyError, SMBTimeout
