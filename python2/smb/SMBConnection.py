@@ -545,7 +545,10 @@ class SMBConnection(SMB):
                 data = data + d
                 read_len -= len(d)
             except select.error, ex:
-                if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
+                if isinstance(ex, types.TupleType):
+                    if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
+                        raise ex
+                else:
                     raise ex
 
         type_, flags, length = struct.unpack('>BBH', data)
@@ -569,7 +572,10 @@ class SMBConnection(SMB):
                 data = data + d
                 read_len -= len(d)
             except select.error, ex:
-                if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
+                if isinstance(ex, types.TupleType):
+                    if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
+                        raise ex
+                else:
                     raise ex
 
         self.feedData(data)
