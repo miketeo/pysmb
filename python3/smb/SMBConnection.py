@@ -545,7 +545,7 @@ class SMBConnection(SMB):
                 data = data + d
                 read_len -= len(d)
             except select.error as ex:
-                if type(ex) is tuple:
+                if isinstance(ex, tuple):
                     if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                         raise ex
                 else:
@@ -572,7 +572,7 @@ class SMBConnection(SMB):
                 data = data + d
                 read_len -= len(d)
             except select.error as ex:
-                if type(ex) is tuple:
+                if isinstance(ex, tuple):
                     if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
                         raise ex
                 else:
