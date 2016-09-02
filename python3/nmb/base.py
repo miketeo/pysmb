@@ -109,7 +109,8 @@ class NBNS:
         if len(data) < self.HEADER_STRUCT_SIZE:
             raise Exception
 
-        trn_id, code, question_count, answer_count, authority_count, additional_count = struct.unpack(self.HEADER_STRUCT_FORMAT, data[:self.HEADER_STRUCT_SIZE])
+        trn_id, code, question_count, answer_count, authority_count, additional_count = \
+            struct.unpack(self.HEADER_STRUCT_FORMAT, data[:self.HEADER_STRUCT_SIZE])
 
         is_response = bool((code >> 15) & 0x01)
         opcode = (code >> 11) & 0x0F
@@ -117,19 +118,20 @@ class NBNS:
         rcode = code & 0x0F
 
         if opcode == 0x0000 and is_response:
-            name_len = ord(data[self.HEADER_STRUCT_SIZE])
-            offset = self.HEADER_STRUCT_SIZE+2+name_len+8 # constant 2 for the padding bytes before/after the Name and constant 8 for the Type, Class and TTL fields in the Answer section after the Name
-            record_count = (struct.unpack('>H', data[offset:offset+2])[0]) / 6
+            name_len = data[self.HEADER_STRUCT_SIZE]
+            # Constant 2 for the padding bytes before/after the Name and constant 8 for the Type,
+            # Class and TTL fields in the Answer section after the Name:
+            offset = self.HEADER_STRUCT_SIZE + 2 + name_len + 8
+            record_count = (struct.unpack('>H', data[offset:offset+2])[0]) // 6
 
             offset += 4  # Constant 4 for the Data Length and Flags field
-            ret = [ ]
+            ret = []
             for i in range(0, record_count):
                 ret.append('%d.%d.%d.%d' % struct.unpack('4B', (data[offset:offset + 4])))
                 offset += 6
             return trn_id, ret
         else:
             return trn_id, None
-
 
     def prepareNameQuery(self, trn_id, name, is_broadcast = True):
         header = struct.pack(self.HEADER_STRUCT_FORMAT,
