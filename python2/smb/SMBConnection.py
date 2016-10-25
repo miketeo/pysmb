@@ -224,7 +224,7 @@ class SMBConnection(SMB):
     def getAttributes(self, service_name, path, timeout = 30):
         """
         Retrieve information about the file at *path* on the *service_name*.
-        
+
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure<smb_exceptions>` will be raised.
         :return: A :doc:`smb.base.SharedFile<smb_SharedFile>` instance containing the attributes of the file.
@@ -301,7 +301,7 @@ class SMBConnection(SMB):
             self.is_busy = False
 
         return results[0]
-    
+
     def storeFile(self, service_name, path, file_obj, timeout = 30):
         """
         Store the contents of the *file_obj* at *path* on the *service_name*.
@@ -384,9 +384,10 @@ class SMBConnection(SMB):
         It supports the use of wildcards in file names, allowing for unlocking of multiple files/folders in a single request.
         This function is very helpful when deleting files/folders that are read-only.
         Note: this function is currently only implemented for SMB2! Technically, it sets the FILE_ATTRIBUTE_NORMAL flag, therefore clearing all other flags. (See https://msdn.microsoft.com/en-us/library/cc232110.aspx for further information)
+
         :param string/unicode service_name: Contains the name of the shared folder.
         :param string/unicode path_file_pattern: The pathname of the file(s) to be deleted, relative to the service_name.
-                                                 Wildcards may be used in th filename component of the path.
+                                                 Wildcards may be used in the filename component of the path.
                                                  If your path/filename contains non-English characters, you must pass in an unicode string.
         :return: None
         """

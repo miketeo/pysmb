@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>SharedFile Class &mdash; pysmb 1.1.15 documentation</title>
+    <title>SharedFile Class &mdash; pysmb 1.1.18 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.15',
+        VERSION:     '1.1.18',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,12 +23,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.15 documentation" href="../index.html" />
+    <link rel="top" title="pysmb 1.1.18 documentation" href="../index.html" />
     <link rel="next" title="SMB Exceptions" href="smb_exceptions.html" />
     <link rel="prev" title="SharedDevice Class" href="smb_SharedDevice.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -40,10 +40,10 @@
         <li class="right" >
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.1.15 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.18 documentation</a> &raquo;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="smb_SharedDevice.html"
@@ -51,12 +51,14 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="smb_exceptions.html"
                         title="next chapter">SMB Exceptions</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="../_sources/api/smb_SharedFile.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/smb_SharedFile.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -75,13 +77,13 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="sharedfile-class">
 <h1>SharedFile Class<a class="headerlink" href="#sharedfile-class" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="smb.base.SharedFile">
-<em class="property">class </em><tt class="descclassname">smb.base.</tt><tt class="descname">SharedFile</tt><big>(</big><em>create_time</em>, <em>last_access_time</em>, <em>last_write_time</em>, <em>last_attr_change_time</em>, <em>file_size</em>, <em>alloc_size</em>, <em>file_attributes</em>, <em>short_name</em>, <em>filename</em><big>)</big><a class="reference internal" href="../_modules/smb/base.html#SharedFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedFile" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">smb.base.</code><code class="descname">SharedFile</code><span class="sig-paren">(</span><em>create_time</em>, <em>last_access_time</em>, <em>last_write_time</em>, <em>last_attr_change_time</em>, <em>file_size</em>, <em>alloc_size</em>, <em>file_attributes</em>, <em>short_name</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/base.html#SharedFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contain information about a file/folder entry that is shared on the shared device.</p>
 <p>As an application developer, you should not need to instantiate a <em>SharedFile</em> instance directly in your application.
 These <em>SharedFile</em> instances are usually returned via a call to <em>listPath</em> method in <a class="reference internal" href="smb_SMBProtocolFactory.html"><em>smb.SMBProtocol.SMBProtocolFactory</em></a>.</p>
@@ -90,67 +92,67 @@ to any files/folders on your remote shared device, it could be that the original
 one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2.2.1.1.1 for more details).</p>
 <dl class="attribute">
 <dt id="smb.base.SharedFile.alloc_size">
-<tt class="descname">alloc_size</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.alloc_size" title="Permalink to this definition">¶</a></dt>
+<code class="descname">alloc_size</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.alloc_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Total number of bytes allocated to store this file</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.create_time">
-<tt class="descname">create_time</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.create_time" title="Permalink to this definition">¶</a></dt>
+<code class="descname">create_time</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.create_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Float value in number of seconds since 1970-01-01 00:00:00 to the time of creation of this file resource on the remote server</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.file_attributes">
-<tt class="descname">file_attributes</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.file_attributes" title="Permalink to this definition">¶</a></dt>
+<code class="descname">file_attributes</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.file_attributes" title="Permalink to this definition">¶</a></dt>
 <dd><p>A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.file_size">
-<tt class="descname">file_size</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.file_size" title="Permalink to this definition">¶</a></dt>
+<code class="descname">file_size</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.file_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>File size in number of bytes</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.filename">
-<tt class="descname">filename</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.filename" title="Permalink to this definition">¶</a></dt>
+<code class="descname">filename</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.filename" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.isDirectory">
-<tt class="descname">isDirectory</tt><a class="reference internal" href="../_modules/smb/base.html#SharedFile.isDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedFile.isDirectory" title="Permalink to this definition">¶</a></dt>
+<code class="descname">isDirectory</code><a class="headerlink" href="#smb.base.SharedFile.isDirectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenient property to return True if this file resource is a directory on the remote server</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.isReadOnly">
-<tt class="descname">isReadOnly</tt><a class="reference internal" href="../_modules/smb/base.html#SharedFile.isReadOnly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedFile.isReadOnly" title="Permalink to this definition">¶</a></dt>
+<code class="descname">isReadOnly</code><a class="headerlink" href="#smb.base.SharedFile.isReadOnly" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenient property to return True if this file resource is read-only on the remote server</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.last_access_time">
-<tt class="descname">last_access_time</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.last_access_time" title="Permalink to this definition">¶</a></dt>
+<code class="descname">last_access_time</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.last_access_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Float value in number of seconds since 1970-01-01 00:00:00 to the time of last access of this file resource on the remote server</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.last_attr_change_time">
-<tt class="descname">last_attr_change_time</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.last_attr_change_time" title="Permalink to this definition">¶</a></dt>
+<code class="descname">last_attr_change_time</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.last_attr_change_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.last_write_time">
-<tt class="descname">last_write_time</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.last_write_time" title="Permalink to this definition">¶</a></dt>
+<code class="descname">last_write_time</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.last_write_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Float value in number of seconds since 1970-01-01 00:00:00 to the time of last modification of this file resource on the remote server</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.base.SharedFile.short_name">
-<tt class="descname">short_name</tt><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.short_name" title="Permalink to this definition">¶</a></dt>
+<code class="descname">short_name</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.short_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unicode string containing the short name of this file (usually in 8.3 notation)</p>
 </dd></dl>
 
@@ -164,7 +166,7 @@ one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -176,12 +178,12 @@ one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2
         <li class="right" >
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              >previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.1.15 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.18 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2001-2015, Michael Teo http://miketeo.net/.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
 </html>

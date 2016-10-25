@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>SMBConnection Class &mdash; pysmb 1.1.15 documentation</title>
+    <title>SMBConnection Class &mdash; pysmb 1.1.18 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.15',
+        VERSION:     '1.1.18',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,12 +23,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.15 documentation" href="../index.html" />
+    <link rel="top" title="pysmb 1.1.18 documentation" href="../index.html" />
     <link rel="next" title="SMbHandler Class" href="smb_SMBHandler.html" />
     <link rel="prev" title="NetBIOS class" href="nmb_NetBIOS.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -40,10 +40,10 @@
         <li class="right" >
           <a href="nmb_NetBIOS.html" title="NetBIOS class"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.1.15 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.18 documentation</a> &raquo;</li> 
       </ul>
     </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
@@ -61,12 +61,14 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="smb_SMBHandler.html"
                         title="next chapter">SMbHandler Class</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="../_sources/api/smb_SMBConnection.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/smb_SMBConnection.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -85,7 +87,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="smbconnection-class">
 <h1>SMBConnection Class<a class="headerlink" href="#smbconnection-class" title="Permalink to this headline">¶</a></h1>
@@ -97,20 +99,20 @@
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">tempfile</span>
 <span class="kn">from</span> <span class="nn">smb.SMBConnection</span> <span class="kn">import</span> <span class="n">SMBConnection</span>
 
-<span class="c"># There will be some mechanism to capture userID, password, client_machine_name, server_name and server_ip</span>
-<span class="c"># client_machine_name can be an arbitary ASCII string</span>
-<span class="c"># server_name should match the remote machine name, or else the connection will be rejected</span>
+<span class="c1"># There will be some mechanism to capture userID, password, client_machine_name, server_name and server_ip</span>
+<span class="c1"># client_machine_name can be an arbitary ASCII string</span>
+<span class="c1"># server_name should match the remote machine name, or else the connection will be rejected</span>
 <span class="n">conn</span> <span class="o">=</span> <span class="n">SMBConnection</span><span class="p">(</span><span class="n">userID</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">client_machine_name</span><span class="p">,</span> <span class="n">server_name</span><span class="p">,</span> <span class="n">use_ntlm_v2</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">conn</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">server_ip</span><span class="p">,</span> <span class="mi">139</span><span class="p">)</span>
 
 <span class="n">file_obj</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">()</span>
-<span class="n">file_attributes</span><span class="p">,</span> <span class="n">filesize</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">retrieveFile</span><span class="p">(</span><span class="s">&#39;smbtest&#39;</span><span class="p">,</span> <span class="s">&#39;/rfc1001.txt&#39;</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">)</span>
+<span class="n">file_attributes</span><span class="p">,</span> <span class="n">filesize</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">retrieveFile</span><span class="p">(</span><span class="s1">&#39;smbtest&#39;</span><span class="p">,</span> <span class="s1">&#39;/rfc1001.txt&#39;</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">)</span>
 
-<span class="c"># Retrieved file contents are inside file_obj</span>
-<span class="c"># Do what you need with the file_obj and then close it</span>
-<span class="c"># Note that the file obj is positioned at the end-of-file,</span>
-<span class="c"># so you might need to perform a file_obj.seek() if you need</span>
-<span class="c"># to read from the beginning</span>
+<span class="c1"># Retrieved file contents are inside file_obj</span>
+<span class="c1"># Do what you need with the file_obj and then close it</span>
+<span class="c1"># Note that the file obj is positioned at the end-of-file,</span>
+<span class="c1"># so you might need to perform a file_obj.seek() if you need</span>
+<span class="c1"># to read from the beginning</span>
 <span class="n">file_obj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -136,10 +138,10 @@ If the clients fail to respond within the timeout limit, the SMB/CIFS server may
 </ul>
 <dl class="class">
 <dt id="smb.SMBConnection.SMBConnection">
-<em class="property">class </em><tt class="descclassname">smb.SMBConnection.</tt><tt class="descname">SMBConnection</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em>, <em>sign_options=2</em>, <em>is_direct_tcp=False</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">smb.SMBConnection.</code><code class="descname">SMBConnection</code><span class="sig-paren">(</span><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em>, <em>sign_options=2</em>, <em>is_direct_tcp=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em>, <em>sign_options=2</em>, <em>is_direct_tcp=False</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>username</em>, <em>password</em>, <em>my_name</em>, <em>remote_name</em>, <em>domain=''</em>, <em>use_ntlm_v2=True</em>, <em>sign_options=2</em>, <em>is_direct_tcp=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new SMBConnection instance.</p>
 <p><em>username</em> and <em>password</em> are the user credentials required to authenticate the underlying SMB connection with the remote server.
 File operations can only be proceeded after the connection has been authenticated successfully.</p>
@@ -152,7 +154,7 @@ Some newer server installations might also support Direct hosting of SMB over TC
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>my_name</strong> (<em>string</em>) &#8211; The local NetBIOS machine name that will identify where this connection is originating from.
-You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of <tt class="docutils literal"><span class="pre">\/:*?&quot;;|+</span></tt></li>
+You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of <code class="docutils literal"><span class="pre">\/:*?&quot;;|+</span></code></li>
 <li><strong>remote_name</strong> (<em>string</em>) &#8211; The NetBIOS machine name of the remote server.
 On windows, you can find out the machine name by right-clicking on the &#8220;My Computer&#8221; and selecting &#8220;Properties&#8221;.
 This parameter must be the same as what has been configured on the remote server, or else the connection will be rejected.</li>
@@ -176,13 +178,13 @@ The default parameter is False which will use NetBIOS over TCP/IP for wider comp
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.close" title="Permalink to this definition">¶</a></dt>
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminate the SMB connection (if it has been started) and release any sources held by the underlying socket.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.connect">
-<tt class="descname">connect</tt><big>(</big><em>ip</em>, <em>port=139</em>, <em>sock_family=2</em>, <em>timeout=60</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.connect" title="Permalink to this definition">¶</a></dt>
+<code class="descname">connect</code><span class="sig-paren">(</span><em>ip</em>, <em>port=139</em>, <em>sock_family=2</em>, <em>timeout=60</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.connect" title="Permalink to this definition">¶</a></dt>
 <dd><p>Establish the SMB connection to the remote SMB/CIFS server.</p>
 <p>You must call this method before attempting any of the file operations with the remote server.
 This method will block until the SMB connection has attempted at least one authentication.</p>
@@ -198,7 +200,7 @@ This method will block until the SMB connection has attempted at least one authe
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.createDirectory">
-<tt class="descname">createDirectory</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.createDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.createDirectory" title="Permalink to this definition">¶</a></dt>
+<code class="descname">createDirectory</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.createDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.createDirectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a new directory <em>path</em> on the <em>service_name</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -220,7 +222,7 @@ If the path contains non-English characters, an unicode string must be used to p
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.deleteDirectory">
-<tt class="descname">deleteDirectory</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteDirectory" title="Permalink to this definition">¶</a></dt>
+<code class="descname">deleteDirectory</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteDirectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete the empty folder at <em>path</em> on <em>service_name</em></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -242,7 +244,7 @@ If the path contains non-English characters, an unicode string must be used to p
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.deleteFiles">
-<tt class="descname">deleteFiles</tt><big>(</big><em>service_name</em>, <em>path_file_pattern</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteFiles" title="Permalink to this definition">¶</a></dt>
+<code class="descname">deleteFiles</code><span class="sig-paren">(</span><em>service_name</em>, <em>path_file_pattern</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteFiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -265,7 +267,7 @@ If your path/filename contains non-English characters, you must pass in an unico
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.echo">
-<tt class="descname">echo</tt><big>(</big><em>data</em>, <em>timeout=10</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.echo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.echo" title="Permalink to this definition">¶</a></dt>
+<code class="descname">echo</code><span class="sig-paren">(</span><em>data</em>, <em>timeout=10</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.echo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.echo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send an echo command containing <em>data</em> to the remote SMB/CIFS server. The remote SMB/CIFS will reply with the same <em>data</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -281,7 +283,7 @@ If your path/filename contains non-English characters, you must pass in an unico
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.getAttributes">
-<tt class="descname">getAttributes</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.getAttributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.getAttributes" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getAttributes</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.getAttributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.getAttributes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve information about the file at <em>path</em> on the <em>service_name</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -302,7 +304,7 @@ If your path/filename contains non-English characters, you must pass in an unico
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.listPath">
-<tt class="descname">listPath</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>search=55</em>, <em>pattern='*'</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listPath" title="Permalink to this definition">¶</a></dt>
+<code class="descname">listPath</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>search=55</em>, <em>pattern='*'</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listPath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a directory listing of files/folders at <em>path</em></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -326,7 +328,7 @@ The default <em>search</em> value will query for all read-only, hidden, system, 
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.listShares">
-<tt class="descname">listShares</tt><big>(</big><em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listShares"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listShares" title="Permalink to this definition">¶</a></dt>
+<code class="descname">listShares</code><span class="sig-paren">(</span><em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listShares"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listShares" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a list of shared resources on remote server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -340,7 +342,7 @@ The default <em>search</em> value will query for all read-only, hidden, system, 
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.listSnapshots">
-<tt class="descname">listSnapshots</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listSnapshots"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listSnapshots" title="Permalink to this definition">¶</a></dt>
+<code class="descname">listSnapshots</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listSnapshots"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listSnapshots" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a list of available snapshots (shadow copies) for <em>path</em>.</p>
 <p>Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -362,7 +364,7 @@ The default <em>search</em> value will query for all read-only, hidden, system, 
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.rename">
-<tt class="descname">rename</tt><big>(</big><em>service_name</em>, <em>old_path</em>, <em>new_path</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.rename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.rename" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rename</code><span class="sig-paren">(</span><em>service_name</em>, <em>old_path</em>, <em>new_path</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.rename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.rename" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rename a file or folder at <em>old_path</em> to <em>new_path</em> shared at <em>service_name</em>. Note that this method cannot be used to rename file/folder across different shared folders</p>
 <p><em>old_path</em> and <em>new_path</em> are string/unicode referring to the old and new path of the renamed resources (relative to) the shared folder.
 If the path contains non-English characters, an unicode string must be used to pass in the path.</p>
@@ -379,8 +381,34 @@ If the path contains non-English characters, an unicode string must be used to p
 </dd></dl>
 
 <dl class="method">
+<dt id="smb.SMBConnection.SMBConnection.resetFileAttributes">
+<code class="descname">resetFileAttributes</code><span class="sig-paren">(</span><em>service_name</em>, <em>path_file_pattern</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.resetFileAttributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.resetFileAttributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset file attributes of one or more regular files or folders.
+It supports the use of wildcards in file names, allowing for unlocking of multiple files/folders in a single request.
+This function is very helpful when deleting files/folders that are read-only.
+Note: this function is currently only implemented for SMB2! Technically, it sets the FILE_ATTRIBUTE_NORMAL flag, therefore clearing all other flags. (See <a class="reference external" href="https://msdn.microsoft.com/en-us/library/cc232110.aspx">https://msdn.microsoft.com/en-us/library/cc232110.aspx</a> for further information)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> (<em>string/unicode</em>) &#8211; Contains the name of the shared folder.</li>
+<li><strong>path_file_pattern</strong> (<em>string/unicode</em>) &#8211; The pathname of the file(s) to be deleted, relative to the service_name.
+Wildcards may be used in the filename component of the path.
+If your path/filename contains non-English characters, you must pass in an unicode string.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.retrieveFile">
-<tt class="descname">retrieveFile</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFile" title="Permalink to this definition">¶</a></dt>
+<code class="descname">retrieveFile</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the contents of the file at <em>path</em> on the <em>service_name</em> and write these contents to the provided <em>file_obj</em>.</p>
 <p>Use <em>retrieveFileFromOffset()</em> method if you wish to specify the offset to read from the remote <em>path</em> and/or the number of bytes to write to the <em>file_obj</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -404,7 +432,7 @@ The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FIL
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.retrieveFileFromOffset">
-<tt class="descname">retrieveFileFromOffset</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>offset=0L</em>, <em>max_length=-1L</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFileFromOffset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFileFromOffset" title="Permalink to this definition">¶</a></dt>
+<code class="descname">retrieveFileFromOffset</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>offset=0L</em>, <em>max_length=-1L</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFileFromOffset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFileFromOffset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the contents of the file at <em>path</em> on the <em>service_name</em> and write these contents to the provided <em>file_obj</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -430,7 +458,7 @@ The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FIL
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.storeFile">
-<tt class="descname">storeFile</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFile" title="Permalink to this definition">¶</a></dt>
+<code class="descname">storeFile</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.
 If the file already exists on the remote server, it will be truncated and overwritten.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -454,7 +482,7 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
 
 <dl class="method">
 <dt id="smb.SMBConnection.SMBConnection.storeFileFromOffset">
-<tt class="descname">storeFileFromOffset</tt><big>(</big><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>offset=0L</em>, <em>truncate=False</em>, <em>timeout=30</em><big>)</big><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFileFromOffset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFileFromOffset" title="Permalink to this definition">¶</a></dt>
+<code class="descname">storeFileFromOffset</code><span class="sig-paren">(</span><em>service_name</em>, <em>path</em>, <em>file_obj</em>, <em>offset=0L</em>, <em>truncate=False</em>, <em>timeout=30</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFileFromOffset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFileFromOffset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -479,25 +507,25 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
 
 <dl class="attribute">
 <dt id="smb.SMBConnection.SMBConnection.SIGN_NEVER">
-<tt class="descname">SIGN_NEVER</tt><em class="property"> = 0</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_NEVER" title="Permalink to this definition">¶</a></dt>
+<code class="descname">SIGN_NEVER</code><em class="property"> = 0</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_NEVER" title="Permalink to this definition">¶</a></dt>
 <dd><p>SMB messages will never be signed regardless of remote server&#8217;s configurations; access errors will occur if the remote server requires signing.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.SMBConnection.SMBConnection.SIGN_WHEN_REQUIRED">
-<tt class="descname">SIGN_WHEN_REQUIRED</tt><em class="property"> = 2</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_WHEN_REQUIRED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">SIGN_WHEN_REQUIRED</code><em class="property"> = 2</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_WHEN_REQUIRED" title="Permalink to this definition">¶</a></dt>
 <dd><p>SMB messages will only be signed when remote server requires signing.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED">
-<tt class="descname">SIGN_WHEN_SUPPORTED</tt><em class="property"> = 1</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">SIGN_WHEN_SUPPORTED</code><em class="property"> = 1</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED" title="Permalink to this definition">¶</a></dt>
 <dd><p>SMB messages will be signed when remote server supports signing but not requires signing.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="smb.SMBConnection.SMBConnection.isUsingSMB2">
-<tt class="descname">isUsingSMB2</tt><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.isUsingSMB2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.isUsingSMB2" title="Permalink to this definition">¶</a></dt>
+<code class="descname">isUsingSMB2</code><a class="headerlink" href="#smb.SMBConnection.SMBConnection.isUsingSMB2" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenient property to return True if the underlying SMB connection is using SMB2 protocol.</p>
 </dd></dl>
 
@@ -512,7 +540,7 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -524,12 +552,12 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
         <li class="right" >
           <a href="nmb_NetBIOS.html" title="NetBIOS class"
              >previous</a> |</li>
-        <li><a href="../index.html">pysmb 1.1.15 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.18 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2001-2015, Michael Teo http://miketeo.net/.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
 </html>
