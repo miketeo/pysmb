@@ -913,9 +913,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if create_message.status == 0:
                 sendWrite(create_message.tid, create_message.payload.fid, starting_offset)
             elif create_message.status == 0x0103:  # STATUS_PENDING
-                self.pending_requests[open_message.mid] = _PendingRequest(create_message.mid, expiry_time,
+                self.pending_requests[create_message.mid] = _PendingRequest(create_message.mid, expiry_time,
                                                                           createCB, errback,
-                                                                            fid=kwargs['fid'])
+                                                                            tid=kwargs['tid'])
             else:
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
@@ -1012,7 +1012,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             elif open_message.status == 0x0103:  # STATUS_PENDING
                 self.pending_requests[open_message.mid] = _PendingRequest(open_message.mid, expiry_time,
                                                                           createCB, errback,
-                                                                            fid=kwargs['fid'])
+                                                                          tid=kwargs['tid'])
             else:
                 errback(OperationFailure('Failed to delete %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
