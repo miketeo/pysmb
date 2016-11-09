@@ -903,6 +903,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
 
         def createCB(create_message, **kwargs):
+            create_message.tid = kwargs['tid']
             messages_history.append(create_message)
             if create_message.status == 0:
                 sendWrite(create_message.tid, create_message.payload.fid, starting_offset)
@@ -1000,6 +1001,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
 
         def createCB(open_message, **kwargs):
+            open_message.tid = kwargs['tid']
             messages_history.append(open_message)
             if open_message.status == 0:
                 sendDelete(open_message.tid, open_message.payload.fid)
