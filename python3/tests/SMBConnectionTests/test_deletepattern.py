@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os, time, random
-from StringIO import StringIO
+from io import BytesIO
 from smb.SMBConnection import SMBConnection
-from util import getConnectionInfo
+from .util import getConnectionInfo
 from nose.tools import with_setup
 from smb import smb_structs
 
@@ -37,10 +37,10 @@ def test_delete_SMB1():
     conn.createDirectory('smbtest', path)
 
     for filename in [ 'aaTest.txt', 'aaBest.txt', 'aaTest.bin', 'aaBest.bin', 'random.txt' ]:
-        conn.storeFile('smbtest', path+"/"+filename, StringIO("0123456789"))
+        conn.storeFile('smbtest', path+"/"+filename, BytesIO(b"0123456789"))
 
     results = conn.listPath('smbtest', path)
-    filenames = map(lambda r: r.filename, results)
+    filenames = list(map(lambda r: r.filename, results))
     assert 'aaTest.txt' in filenames
     assert 'aaBest.txt' in filenames
     assert 'aaTest.bin' in filenames
@@ -50,7 +50,7 @@ def test_delete_SMB1():
     conn.deleteFiles('smbtest', path+'/aa*.txt')
 
     results = conn.listPath('smbtest', path)
-    filenames = map(lambda r: r.filename, results)
+    filenames = list(map(lambda r: r.filename, results))
     assert 'aaTest.txt' not in filenames
     assert 'aaBest.txt' not in filenames
     assert 'aaTest.bin' in filenames
@@ -60,7 +60,7 @@ def test_delete_SMB1():
     conn.deleteFiles('smbtest', path+'/aaTest.*')
 
     results = conn.listPath('smbtest', path)
-    filenames = map(lambda r: r.filename, results)
+    filenames = list(map(lambda r: r.filename, results))
     assert 'aaTest.bin' not in filenames
     assert 'aaBest.bin' in filenames
     assert 'random.txt' in filenames
@@ -76,10 +76,10 @@ def test_delete_SMB2():
     conn.createDirectory('smbtest', path)
 
     for filename in [ 'aaTest.txt', 'aaBest.txt', 'aaTest.bin', 'aaBest.bin', 'random.txt' ]:
-        conn.storeFile('smbtest', path+"/"+filename, StringIO("0123456789"))
+        conn.storeFile('smbtest', path+"/"+filename, BytesIO(b"0123456789"))
 
     results = conn.listPath('smbtest', path)
-    filenames = map(lambda r: r.filename, results)
+    filenames = list(map(lambda r: r.filename, results))
     assert 'aaTest.txt' in filenames
     assert 'aaBest.txt' in filenames
     assert 'aaTest.bin' in filenames
@@ -89,7 +89,7 @@ def test_delete_SMB2():
     conn.deleteFiles('smbtest', path+'/aa*.txt')
 
     results = conn.listPath('smbtest', path)
-    filenames = map(lambda r: r.filename, results)
+    filenames = list(map(lambda r: r.filename, results))
     assert 'aaTest.txt' not in filenames
     assert 'aaBest.txt' not in filenames
     assert 'aaTest.bin' in filenames
@@ -99,7 +99,7 @@ def test_delete_SMB2():
     conn.deleteFiles('smbtest', path+'/aaTest.*')
 
     results = conn.listPath('smbtest', path)
-    filenames = map(lambda r: r.filename, results)
+    filenames = list(map(lambda r: r.filename, results))
     assert 'aaTest.bin' not in filenames
     assert 'aaBest.bin' in filenames
     assert 'random.txt' in filenames
