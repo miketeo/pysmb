@@ -1910,7 +1910,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if support_dfs:
                 params_bytes += ("\\" + self.remote_name + "\\" + service_name + path + pattern + '\0').encode('UTF-16LE')
             else:
-                params_bytes += (path + pattern).encode('UTF-16LE')
+                params_bytes += (path + pattern + '\0').encode('UTF-16LE')
 
             m = SMBMessage(ComTransaction2Request(max_params_count = 10,
                                                   max_data_count = 16644,
