@@ -82,16 +82,18 @@ class MD4:
         dest.C = self.C
         dest.D = self.D
         dest.count = self.count
-        for i in range(self.count):
+        for i in range(int(self.count)):
             dest.buf[i] = self.buf[i]
 
         return dest
 
     #-----------------------------------------------------
     def update(self, str):
+        if isinstance(str, bytes):
+            buf = list(str)
+        else:
+            buf = [ord(i) for i in str]
 
-        buf = []
-        for i in str: buf.append(ord(i))
         ilen = U32(len(buf))
 
         # check if the first length is out of range
@@ -227,7 +229,7 @@ class MD4:
         res[14]=(temp.D >> 16) & U32(0xFF)
         res[15]=(temp.D >> 24) & U32(0xFF)
 
-        return int_array2str(res)
+        return int_array2str(res).encode('UTF-16LE')
 
 #====================================================================
 # helpers
