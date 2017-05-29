@@ -153,7 +153,11 @@ class SID(object):
         self.subauthorities = subauthorities
 
     def __str__(self):
-        auths = [self.revision, self.identifier_authority] + self.subauthorities
+        if self.identifier_authority >= 2**32:
+            id_auth = '%#x' % (self.identifier_authority,)
+        else:
+            id_auth = self.identifier_authority
+        auths = [self.revision, id_auth] + self.subauthorities
         return 'S-' + '-'.join(str(subauth) for subauth in auths)
 
     def __repr__(self):
