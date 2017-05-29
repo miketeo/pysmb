@@ -146,13 +146,25 @@ SID_KEY_PROPERTY_ATTESTATION = "S-1-18-6"
 
 
 class SID(object):
-    # TODO: docstring
+    """
+    A Windows security identifier. Represents a single principal, such a
+    user or a group, as a sequence of numbers consisting of the revision,
+    identifier authority, and a variable-length list of subauthorities.
+
+    See [MS-DTYP]: 2.4.2
+    """
     def __init__(self, revision, identifier_authority, subauthorities):
+        #: Revision, should always be 1.
         self.revision = revision
+        #: An integer representing the identifier authority.
         self.identifier_authority = identifier_authority
+        #: A list of integers representing all subauthorities.
         self.subauthorities = subauthorities
 
     def __str__(self):
+        """
+        String representation, as specified in [MS-DTYP]: 2.4.2.1
+        """
         if self.identifier_authority >= 2**32:
             id_auth = '%#x' % (self.identifier_authority,)
         else:
@@ -177,14 +189,34 @@ class SID(object):
 
 
 class ACE(object):
-    # TODO: docstring
+    """
+    Represents a single access control entry.
+
+    See [MS-DTYP]: 2.4.4
+    """
     HEADER_FORMAT = '<BBH'
 
     def __init__(self, type_, flags, mask, sid, additional_data):
+        #: An integer representing the type of the ACE. One of the
+        #: ``ACE_TYPE_*`` constants. Corresponds to the ``AceType`` field
+        #: from [MS-DTYP] 2.4.4.1.
         self.type = type_
+        #: An integer bitmask with ACE flags, corresponds to the
+        #: ``AceFlags`` field.
         self.flags = flags
+        #: An integer representing the ``ACCESS_MASK`` as specified in
+        #: [MS-DTYP] 2.4.3.
         self.mask = mask
+        #: The :class:`SID` of a trustee.
         self.sid = sid
+        #: A dictionary of additional fields present in the ACE, depending
+        #: on the type. The following fields can be present:
+        #:
+        #: * ``flags``
+        #: * ``object_type``
+        #: * ``inherited_object_type``
+        #: * ``application_data``
+        #: * ``attribute_data``
         self.additional_data = additional_data
 
     def __repr__(self):
@@ -248,11 +280,18 @@ class ACE(object):
 
 
 class ACL(object):
-    # TODO: docstring
+    """
+    Access control list, encapsulating a sequence of access control
+    entries.
+
+    See [MS-DTYP]: 2.4.5
+    """
     HEADER_FORMAT = '<BBHHH'
 
     def __init__(self, revision, aces):
+        #: Integer value of the revision.
         self.revision = revision
+        #: List of :class:`ACE` instances.
         self.aces = aces
 
     def __repr__(self):
@@ -279,25 +318,26 @@ class ACL(object):
 
 class SecurityDescriptor(object):
     """
-    Represents a security descriptor, with the following attributes:
-    - flags
-    - owner
-    - group
-    - dacl
-    - sacl
+    Represents a security descriptor.
 
-    References:
-    ===========
-    - [MS-DTYP]: 2.4.6
+    See [MS-DTYP]: 2.4.6
     """
 
     HEADER_FORMAT = '<BBHIIII'
 
     def __init__(self, flags, owner, group, dacl, sacl):
+        #: Integer bitmask of control flags. Corresponds to the
+        #: ``Control`` field in [MS-DTYP] 2.4.6.
         self.flags = flags
+        #: Instance of :class:`SID` representing the owner user.
         self.owner = owner
+        #: Instance of :class:`SID` representing the owner group.
         self.group = group
+        #: Instance of :class:`ACL` representing the discretionary access
+        #: control list, which specifies access restrictions of an object.
         self.dacl = dacl
+        #: Instance of :class:`ACL` representing the system access control
+        #: list, which specifies audit logging of an object.
         self.sacl = sacl
 
     @classmethod

@@ -258,7 +258,7 @@ class SMBConnection(SMB):
 
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure<smb_exceptions>` will be raised.
-        :return: A :doc:`smb.security_descriptors.SecurityDescriptor` instance containing the security information of the file.
+        :return: A :class:`smb.security_descriptors.SecurityDescriptor` instance containing the security information of the file.
         """
         if not self.sock:
             raise NotConnectedError('Not connected to server')
