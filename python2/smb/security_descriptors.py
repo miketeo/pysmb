@@ -2,7 +2,6 @@
 This module implements security descriptors, and the partial structures
 used in them, as specified in [MS-DTYP].
 """
-# TODO: document class APIs
 
 import struct
 
