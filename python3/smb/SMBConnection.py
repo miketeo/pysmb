@@ -252,6 +252,37 @@ class SMBConnection(SMB):
 
         return results[0]
 
+    def getSecurity(self, service_name, path, timeout = 30):
+        """
+        Retrieve the security descriptor of the file at *path* on the *service_name*.
+
+        :param string/unicode service_name: the name of the shared folder for the *path*
+        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure<smb_exceptions>` will be raised.
+        :return: A :class:`smb.security_descriptors.SecurityDescriptor` instance containing the security information of the file.
+        """
+        if not self.sock:
+            raise NotConnectedError('Not connected to server')
+
+        results = [ ]
+
+        def cb(info):
+            self.is_busy = False
+            results.append(info)
+
+        def eb(failure):
+            self.is_busy = False
+            raise failure
+
+        self.is_busy = True
+        try:
+            self._getSecurity(service_name, path, cb, eb, timeout)
+            while self.is_busy:
+                self._pollForNetBIOSPacket(timeout)
+        finally:
+            self.is_busy = False
+
+        return results[0]
+
     def retrieveFile(self, service_name, path, file_obj, timeout = 30):
         """
         Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.
