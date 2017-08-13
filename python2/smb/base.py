@@ -222,7 +222,7 @@ class SMB(NMBSession):
         if smb_message.mid == 0:
             smb_message.mid = self._getNextMID_SMB2()
 
-        if smb_message.command != SMB2_COM_NEGOTIATE and smb_message.command != SMB2_COM_ECHO:
+        if smb_message.command != SMB2_COM_NEGOTIATE:
             smb_message.session_id = self.session_id
 
         if self.is_signing_active:
