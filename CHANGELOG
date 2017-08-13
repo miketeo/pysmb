@@ -1,5 +1,13 @@
+pysmb-1.1.20, 13 Aug 2017
+=========================
+- Add getSecurity() method to support security descriptors query via SMB2
+- Improve retrieveFile() and retrieveFileFromOffset() methods to allow file
+  retrievals over SMB2 even when the file is being locked on the server.
+- Silently discards NMB SESSION_KEEPALIVE packets instead of raising warnings.
+- Fix type errors for MD4 functions in python3.
+
 pysmb-1.1.19, 13 Nov 2016
-========================
+=========================
 - Ignore STATUS_PENDING during delete and file store operations
 
 pysmb-1.1.18, 9 Apr 2016
