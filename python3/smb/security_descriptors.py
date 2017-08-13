@@ -177,7 +177,7 @@ class SID(object):
     @classmethod
     def from_bytes(cls, data, return_tail=False):
         revision, subauth_count = struct.unpack('<BB', data[:2])
-        identifier_authority = struct.unpack('>Q', '\x00\x00' + data[2:8])[0]
+        identifier_authority = struct.unpack('>Q', b'\x00\x00' + data[2:8])[0]
         subauth_data = data[8:]
         subauthorities = [struct.unpack('<L', subauth_data[4 * i : 4 * (i+1)])[0]
                           for i in range(subauth_count)]
