@@ -4,6 +4,7 @@ pysmb-1.1.20, 13 Aug 2017
 - Improve retrieveFile() and retrieveFileFromOffset() methods to allow file
   retrievals over SMB2 even when the file is being locked on the server.
 - Silently discards NMB SESSION_KEEPALIVE packets instead of raising warnings.
+- SMB sessionID will be sent in ECHO requests to conform to SMB2 specs.
 - Fix type errors for MD4 functions in python3.
 
 pysmb-1.1.19, 13 Nov 2016
