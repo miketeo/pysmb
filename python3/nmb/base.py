@@ -77,6 +77,9 @@ class NMBSession:
             self.onNMBSessionOK()
         elif packet.type == NEGATIVE_SESSION_RESPONSE:
             self.onNMBSessionFailed()
+        elif packet.type == SESSION_KEEPALIVE:
+            # Discard keepalive packets - [RFC1002]: 5.2.2.1
+            pass
         else:
             self.log.warning('Unrecognized NMB session type: 0x%02x', packet.type)
 
