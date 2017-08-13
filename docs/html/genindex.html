@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; pysmb 1.1.18 documentation</title>
+    <title>Index &mdash; pysmb 1.1.20 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1.18',
+        VERSION:     '1.1.20',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.18 documentation" href="index.html" /> 
+    <link rel="top" title="pysmb 1.1.20 documentation" href="index.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -33,7 +33,10 @@
         <li class="right" style="margin-right: 10px">
           <a href="#" title="General Index"
              accesskey="I">index</a></li>
-        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.1.18 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.1.20 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -75,6 +78,7 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
@@ -112,6 +116,24 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACE">ACE (class in smb.security_descriptors)</a>
+  </dt>
+
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACL.aces">aces (smb.security_descriptors.ACL attribute)</a>
+  </dt>
+
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACL">ACL (class in smb.security_descriptors)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACE.additional_data">additional_data (smb.security_descriptors.ACE attribute)</a>
+  </dt>
+
       
   <dt><a href="api/smb_SharedFile.html#smb.base.SharedFile.alloc_size">alloc_size (smb.base.SharedFile attribute)</a>
   </dt>
@@ -166,6 +188,10 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SecurityDescriptor.dacl">dacl (smb.security_descriptors.SecurityDescriptor attribute)</a>
+  </dt>
+
       
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.deleteDirectory">deleteDirectory() (smb.SMBConnection.SMBConnection method)</a>
   </dt>
@@ -224,6 +250,16 @@
   <dt><a href="api/smb_SharedFile.html#smb.base.SharedFile.filename">filename (smb.base.SharedFile attribute)</a>
   </dt>
 
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACE.flags">flags (smb.security_descriptors.ACE attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SecurityDescriptor.flags">(smb.security_descriptors.SecurityDescriptor attribute)</a>
+  </dt>
+
+      </dl></dd>
   </dl></td>
 </tr></table>
 
@@ -240,12 +276,26 @@
   </dt>
 
       </dl></dd>
+      
+  <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.getSecurity">getSecurity() (smb.SMBConnection.SMBConnection method)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SecurityDescriptor.group">group (smb.security_descriptors.SecurityDescriptor attribute)</a>
+  </dt>
+
   </dl></td>
 </tr></table>
 
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SID.identifier_authority">identifier_authority (smb.security_descriptors.SID attribute)</a>
+  </dt>
+
       
   <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.instance">instance (smb.SMBProtocol.SMBProtocolFactory attribute)</a>
   </dt>
@@ -255,15 +305,19 @@
   </dt>
 
       
-  <dt><a href="api/smb_SharedFile.html#smb.base.SharedFile.isReadOnly">isReadOnly (smb.base.SharedFile attribute)</a>
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACE.isInheritOnly">isInheritOnly (smb.security_descriptors.ACE attribute)</a>
   </dt>
 
       
-  <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.isReady">isReady (smb.SMBProtocol.SMBProtocolFactory attribute)</a>
+  <dt><a href="api/smb_SharedFile.html#smb.base.SharedFile.isReadOnly">isReadOnly (smb.base.SharedFile attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_SMBProtocolFactory.html#smb.SMBProtocol.SMBProtocolFactory.isReady">isReady (smb.SMBProtocol.SMBProtocolFactory attribute)</a>
+  </dt>
+
       
   <dt><a href="api/smb_SharedDevice.html#smb.base.SharedDevice.isSpecial">isSpecial (smb.base.SharedDevice attribute)</a>
   </dt>
@@ -335,6 +389,16 @@
   </dl></td>
 </tr></table>
 
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACE.mask">mask (smb.security_descriptors.ACE attribute)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
@@ -382,6 +446,10 @@
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="api/smb_exceptions.html#smb.smb_structs.OperationFailure">OperationFailure (class in smb.smb_structs)</a>
+  </dt>
+
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SecurityDescriptor.owner">owner (smb.security_descriptors.SecurityDescriptor attribute)</a>
   </dt>
 
   </dl></td>
@@ -442,8 +510,6 @@
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.resetFileAttributes">resetFileAttributes() (smb.SMBConnection.SMBConnection method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.retrieveFile">retrieveFile() (smb.SMBConnection.SMBConnection method)</a>
   </dt>
@@ -454,6 +520,8 @@
   </dt>
 
       </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.retrieveFileFromOffset">retrieveFileFromOffset() (smb.SMBConnection.SMBConnection method)</a>
   </dt>
@@ -464,12 +532,30 @@
   </dt>
 
       </dl></dd>
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACL.revision">revision (smb.security_descriptors.ACL attribute)</a>
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SID.revision">(smb.security_descriptors.SID attribute)</a>
+  </dt>
+
+      </dl></dd>
   </dl></td>
 </tr></table>
 
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SecurityDescriptor.sacl">sacl (smb.security_descriptors.SecurityDescriptor attribute)</a>
+  </dt>
+
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SecurityDescriptor">SecurityDescriptor (class in smb.security_descriptors)</a>
+  </dt>
+
       
   <dt><a href="api/smb_SharedDevice.html#smb.base.SharedDevice">SharedDevice (class in smb.base)</a>
   </dt>
@@ -480,6 +566,14 @@
 
       
   <dt><a href="api/smb_SharedFile.html#smb.base.SharedFile.short_name">short_name (smb.base.SharedFile attribute)</a>
+  </dt>
+
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SID">SID (class in smb.security_descriptors)</a>
+  </dt>
+
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACE.sid">sid (smb.security_descriptors.ACE attribute)</a>
   </dt>
 
       
@@ -502,6 +596,8 @@
   </dt>
 
       </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED">SIGN_WHEN_SUPPORTED (smb.SMBConnection.SMBConnection attribute)</a>
   </dt>
@@ -512,8 +608,10 @@
   </dt>
 
       </dl></dd>
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="api/smb_security_descriptors.html#module-smb.security_descriptors">smb.security_descriptors (module)</a>
+  </dt>
+
       
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection">SMBConnection (class in smb.SMBConnection)</a>
   </dt>
@@ -540,6 +638,10 @@
   <dt><a href="api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.storeFileFromOffset">storeFileFromOffset() (smb.SMBConnection.SMBConnection method)</a>
   </dt>
 
+      
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.SID.subauthorities">subauthorities (smb.security_descriptors.SID attribute)</a>
+  </dt>
+
   </dl></td>
 </tr></table>
 
@@ -550,6 +652,12 @@
   <dt><a href="api/smb_SharedDevice.html#smb.base.SharedDevice.type">type (smb.base.SharedDevice attribute)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="api/smb_security_descriptors.html#smb.security_descriptors.ACE.type">(smb.security_descriptors.ACE attribute)</a>
+  </dt>
+
+      </dl></dd>
   </dl></td>
 </tr></table>
 
@@ -576,11 +684,14 @@
         <li class="right" style="margin-right: 10px">
           <a href="#" title="General Index"
              >index</a></li>
-        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.1.18 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.1.20 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2001-2015, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2017, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>

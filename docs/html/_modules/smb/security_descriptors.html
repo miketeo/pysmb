@@ -1,0 +1,459 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>smb.security_descriptors &mdash; pysmb 1.1.20 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.20',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pysmb 1.1.20 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.20 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for smb.security_descriptors</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module implements security descriptors, and the partial structures</span>
+<span class="sd">used in them, as specified in [MS-DTYP].</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">struct</span>
+
+
+<span class="c1"># Security descriptor control flags</span>
+<span class="c1"># [MS-DTYP]: 2.4.6</span>
+<span class="n">SECURITY_DESCRIPTOR_OWNER_DEFAULTED</span> <span class="o">=</span> <span class="mh">0x0001</span>
+<span class="n">SECURITY_DESCRIPTOR_GROUP_DEFAULTED</span> <span class="o">=</span> <span class="mh">0x0002</span>
+<span class="n">SECURITY_DESCRIPTOR_DACL_PRESENT</span> <span class="o">=</span> <span class="mh">0x0004</span>
+<span class="n">SECURITY_DESCRIPTOR_DACL_DEFAULTED</span> <span class="o">=</span> <span class="mh">0x0008</span>
+<span class="n">SECURITY_DESCRIPTOR_SACL_PRESENT</span> <span class="o">=</span> <span class="mh">0x0010</span>
+<span class="n">SECURITY_DESCRIPTOR_SACL_DEFAULTED</span> <span class="o">=</span> <span class="mh">0x0020</span>
+<span class="n">SECURITY_DESCRIPTOR_SERVER_SECURITY</span> <span class="o">=</span> <span class="mh">0x0040</span>
+<span class="n">SECURITY_DESCRIPTOR_DACL_TRUSTED</span> <span class="o">=</span> <span class="mh">0x0080</span>
+<span class="n">SECURITY_DESCRIPTOR_DACL_COMPUTED_INHERITANCE_REQUIRED</span> <span class="o">=</span> <span class="mh">0x0100</span>
+<span class="n">SECURITY_DESCRIPTOR_SACL_COMPUTED_INHERITANCE_REQUIRED</span> <span class="o">=</span> <span class="mh">0x0200</span>
+<span class="n">SECURITY_DESCRIPTOR_DACL_AUTO_INHERITED</span> <span class="o">=</span> <span class="mh">0x0400</span>
+<span class="n">SECURITY_DESCRIPTOR_SACL_AUTO_INHERITED</span> <span class="o">=</span> <span class="mh">0x0800</span>
+<span class="n">SECURITY_DESCRIPTOR_DACL_PROTECTED</span> <span class="o">=</span> <span class="mh">0x1000</span>
+<span class="n">SECURITY_DESCRIPTOR_SACL_PROTECTED</span> <span class="o">=</span> <span class="mh">0x2000</span>
+<span class="n">SECURITY_DESCRIPTOR_RM_CONTROL_VALID</span> <span class="o">=</span> <span class="mh">0x4000</span>
+<span class="n">SECURITY_DESCRIPTOR_SELF_RELATIVE</span> <span class="o">=</span> <span class="mh">0x8000</span>
+
+<span class="c1"># ACE types</span>
+<span class="c1"># [MS-DTYP]: 2.4.4.1</span>
+<span class="n">ACE_TYPE_ACCESS_ALLOWED</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">ACE_TYPE_ACCESS_DENIED</span> <span class="o">=</span> <span class="mh">0x01</span>
+<span class="n">ACE_TYPE_SYSTEM_AUDIT</span> <span class="o">=</span> <span class="mh">0x02</span>
+<span class="n">ACE_TYPE_SYSTEM_ALARM</span> <span class="o">=</span> <span class="mh">0x03</span>
+<span class="n">ACE_TYPE_ACCESS_ALLOWED_COMPOUND</span> <span class="o">=</span> <span class="mh">0x04</span>
+<span class="n">ACE_TYPE_ACCESS_ALLOWED_OBJECT</span> <span class="o">=</span> <span class="mh">0x05</span>
+<span class="n">ACE_TYPE_ACCESS_DENIED_OBJECT</span> <span class="o">=</span> <span class="mh">0x06</span>
+<span class="n">ACE_TYPE_SYSTEM_AUDIT_OBJECT</span> <span class="o">=</span> <span class="mh">0x07</span>
+<span class="n">ACE_TYPE_SYSTEM_ALARM_OBJECT</span> <span class="o">=</span> <span class="mh">0x08</span>
+<span class="n">ACE_TYPE_ACCESS_ALLOWED_CALLBACK</span> <span class="o">=</span> <span class="mh">0x09</span>
+<span class="n">ACE_TYPE_ACCESS_DENIED_CALLBACK</span> <span class="o">=</span> <span class="mh">0x0A</span>
+<span class="n">ACE_TYPE_ACCESS_ALLOWED_CALLBACK_OBJECT</span> <span class="o">=</span> <span class="mh">0x0B</span>
+<span class="n">ACE_TYPE_ACCESS_DENIED_CALLBACK_OBJECT</span> <span class="o">=</span> <span class="mh">0x0C</span>
+<span class="n">ACE_TYPE_SYSTEM_AUDIT_CALLBACK</span> <span class="o">=</span> <span class="mh">0x0D</span>
+<span class="n">ACE_TYPE_SYSTEM_ALARM_CALLBACK</span> <span class="o">=</span> <span class="mh">0x0E</span>
+<span class="n">ACE_TYPE_SYSTEM_AUDIT_CALLBACK_OBJECT</span> <span class="o">=</span> <span class="mh">0x0F</span>
+<span class="n">ACE_TYPE_SYSTEM_ALARM_CALLBACK_OBJECT</span> <span class="o">=</span> <span class="mh">0x10</span>
+<span class="n">ACE_TYPE_SYSTEM_MANDATORY_LABEL</span> <span class="o">=</span> <span class="mh">0x11</span>
+<span class="n">ACE_TYPE_SYSTEM_RESOURCE_ATTRIBUTE</span> <span class="o">=</span> <span class="mh">0x12</span>
+<span class="n">ACE_TYPE_SYSTEM_SCOPED_POLICY_ID</span> <span class="o">=</span> <span class="mh">0x13</span>
+
+<span class="c1"># ACE flags</span>
+<span class="c1"># [MS-DTYP]: 2.4.4.1</span>
+<span class="n">ACE_FLAG_OBJECT_INHERIT</span> <span class="o">=</span> <span class="mh">0x01</span>
+<span class="n">ACE_FLAG_CONTAINER_INHERIT</span> <span class="o">=</span> <span class="mh">0x02</span>
+<span class="n">ACE_FLAG_NO_PROPAGATE_INHERIT</span> <span class="o">=</span> <span class="mh">0x04</span>
+<span class="n">ACE_FLAG_INHERIT_ONLY</span> <span class="o">=</span> <span class="mh">0x08</span>
+<span class="n">ACE_FLAG_INHERITED</span> <span class="o">=</span> <span class="mh">0x10</span>
+<span class="n">ACE_FLAG_SUCCESSFUL_ACCESS</span> <span class="o">=</span> <span class="mh">0x40</span>
+<span class="n">ACE_FLAG_FAILED_ACCESS</span> <span class="o">=</span> <span class="mh">0x80</span>
+
+<span class="c1"># Pre-defined well-known SIDs</span>
+<span class="c1"># [MS-DTYP]: 2.4.2.4</span>
+<span class="n">SID_NULL</span> <span class="o">=</span> <span class="s2">&quot;S-1-0-0&quot;</span>
+<span class="n">SID_EVERYONE</span> <span class="o">=</span> <span class="s2">&quot;S-1-1-0&quot;</span>
+<span class="n">SID_LOCAL</span> <span class="o">=</span> <span class="s2">&quot;S-1-2-0&quot;</span>
+<span class="n">SID_CONSOLE_LOGON</span> <span class="o">=</span> <span class="s2">&quot;S-1-2-1&quot;</span>
+<span class="n">SID_CREATOR_OWNER</span> <span class="o">=</span> <span class="s2">&quot;S-1-3-0&quot;</span>
+<span class="n">SID_CREATOR_GROUP</span> <span class="o">=</span> <span class="s2">&quot;S-1-3-1&quot;</span>
+<span class="n">SID_OWNER_SERVER</span> <span class="o">=</span> <span class="s2">&quot;S-1-3-2&quot;</span>
+<span class="n">SID_GROUP_SERVER</span> <span class="o">=</span> <span class="s2">&quot;S-1-3-3&quot;</span>
+<span class="n">SID_OWNER_RIGHTS</span> <span class="o">=</span> <span class="s2">&quot;S-1-3-4&quot;</span>
+<span class="n">SID_NT_AUTHORITY</span> <span class="o">=</span> <span class="s2">&quot;S-1-5&quot;</span>
+<span class="n">SID_DIALUP</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-1&quot;</span>
+<span class="n">SID_NETWORK</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-2&quot;</span>
+<span class="n">SID_BATCH</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-3&quot;</span>
+<span class="n">SID_INTERACTIVE</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-4&quot;</span>
+<span class="n">SID_SERVICE</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-6&quot;</span>
+<span class="n">SID_ANONYMOUS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-7&quot;</span>
+<span class="n">SID_PROXY</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-8&quot;</span>
+<span class="n">SID_ENTERPRISE_DOMAIN_CONTROLLERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-9&quot;</span>
+<span class="n">SID_PRINCIPAL_SELF</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-10&quot;</span>
+<span class="n">SID_AUTHENTICATED_USERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-11&quot;</span>
+<span class="n">SID_RESTRICTED_CODE</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-12&quot;</span>
+<span class="n">SID_TERMINAL_SERVER_USER</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-13&quot;</span>
+<span class="n">SID_REMOTE_INTERACTIVE_LOGON</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-14&quot;</span>
+<span class="n">SID_THIS_ORGANIZATION</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-15&quot;</span>
+<span class="n">SID_IUSR</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-17&quot;</span>
+<span class="n">SID_LOCAL_SYSTEM</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-18&quot;</span>
+<span class="n">SID_LOCAL_SERVICE</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-19&quot;</span>
+<span class="n">SID_NETWORK_SERVICE</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-20&quot;</span>
+<span class="n">SID_COMPOUNDED_AUTHENTICATION</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-21-0-0-0-496&quot;</span>
+<span class="n">SID_CLAIMS_VALID</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-21-0-0-0-497&quot;</span>
+<span class="n">SID_BUILTIN_ADMINISTRATORS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-544&quot;</span>
+<span class="n">SID_BUILTIN_USERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-545&quot;</span>
+<span class="n">SID_BUILTIN_GUESTS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-546&quot;</span>
+<span class="n">SID_POWER_USERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-547&quot;</span>
+<span class="n">SID_ACCOUNT_OPERATORS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-548&quot;</span>
+<span class="n">SID_SERVER_OPERATORS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-549&quot;</span>
+<span class="n">SID_PRINTER_OPERATORS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-550&quot;</span>
+<span class="n">SID_BACKUP_OPERATORS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-551&quot;</span>
+<span class="n">SID_REPLICATOR</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-552&quot;</span>
+<span class="n">SID_ALIAS_PREW2KCOMPACC</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-554&quot;</span>
+<span class="n">SID_REMOTE_DESKTOP</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-555&quot;</span>
+<span class="n">SID_NETWORK_CONFIGURATION_OPS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-556&quot;</span>
+<span class="n">SID_INCOMING_FOREST_TRUST_BUILDERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-557&quot;</span>
+<span class="n">SID_PERFMON_USERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-558&quot;</span>
+<span class="n">SID_PERFLOG_USERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-559&quot;</span>
+<span class="n">SID_WINDOWS_AUTHORIZATION_ACCESS_GROUP</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-560&quot;</span>
+<span class="n">SID_TERMINAL_SERVER_LICENSE_SERVERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-561&quot;</span>
+<span class="n">SID_DISTRIBUTED_COM_USERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-562&quot;</span>
+<span class="n">SID_IIS_IUSRS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-568&quot;</span>
+<span class="n">SID_CRYPTOGRAPHIC_OPERATORS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-569&quot;</span>
+<span class="n">SID_EVENT_LOG_READERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-573&quot;</span>
+<span class="n">SID_CERTIFICATE_SERVICE_DCOM_ACCESS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-574&quot;</span>
+<span class="n">SID_RDS_REMOTE_ACCESS_SERVERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-575&quot;</span>
+<span class="n">SID_RDS_ENDPOINT_SERVERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-576&quot;</span>
+<span class="n">SID_RDS_MANAGEMENT_SERVERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-577&quot;</span>
+<span class="n">SID_HYPER_V_ADMINS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-578&quot;</span>
+<span class="n">SID_ACCESS_CONTROL_ASSISTANCE_OPS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-579&quot;</span>
+<span class="n">SID_REMOTE_MANAGEMENT_USERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-32-580&quot;</span>
+<span class="n">SID_WRITE_RESTRICTED_CODE</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-33&quot;</span>
+<span class="n">SID_NTLM_AUTHENTICATION</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-64-10&quot;</span>
+<span class="n">SID_SCHANNEL_AUTHENTICATION</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-64-14&quot;</span>
+<span class="n">SID_DIGEST_AUTHENTICATION</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-64-21&quot;</span>
+<span class="n">SID_THIS_ORGANIZATION_CERTIFICATE</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-65-1&quot;</span>
+<span class="n">SID_NT_SERVICE</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-80&quot;</span>
+<span class="n">SID_USER_MODE_DRIVERS</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-84-0-0-0-0-0&quot;</span>
+<span class="n">SID_LOCAL_ACCOUNT</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-113&quot;</span>
+<span class="n">SID_LOCAL_ACCOUNT_AND_MEMBER_OF_ADMINISTRATORS_GROUP</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-114&quot;</span>
+<span class="n">SID_OTHER_ORGANIZATION</span> <span class="o">=</span> <span class="s2">&quot;S-1-5-1000&quot;</span>
+<span class="n">SID_ALL_APP_PACKAGES</span> <span class="o">=</span> <span class="s2">&quot;S-1-15-2-1&quot;</span>
+<span class="n">SID_ML_UNTRUSTED</span> <span class="o">=</span> <span class="s2">&quot;S-1-16-0&quot;</span>
+<span class="n">SID_ML_LOW</span> <span class="o">=</span> <span class="s2">&quot;S-1-16-4096&quot;</span>
+<span class="n">SID_ML_MEDIUM</span> <span class="o">=</span> <span class="s2">&quot;S-1-16-8192&quot;</span>
+<span class="n">SID_ML_MEDIUM_PLUS</span> <span class="o">=</span> <span class="s2">&quot;S-1-16-8448&quot;</span>
+<span class="n">SID_ML_HIGH</span> <span class="o">=</span> <span class="s2">&quot;S-1-16-12288&quot;</span>
+<span class="n">SID_ML_SYSTEM</span> <span class="o">=</span> <span class="s2">&quot;S-1-16-16384&quot;</span>
+<span class="n">SID_ML_PROTECTED_PROCESS</span> <span class="o">=</span> <span class="s2">&quot;S-1-16-20480&quot;</span>
+<span class="n">SID_AUTHENTICATION_AUTHORITY_ASSERTED_IDENTITY</span> <span class="o">=</span> <span class="s2">&quot;S-1-18-1&quot;</span>
+<span class="n">SID_SERVICE_ASSERTED_IDENTITY</span> <span class="o">=</span> <span class="s2">&quot;S-1-18-2&quot;</span>
+<span class="n">SID_FRESH_PUBLIC_KEY_IDENTITY</span> <span class="o">=</span> <span class="s2">&quot;S-1-18-3&quot;</span>
+<span class="n">SID_KEY_TRUST_IDENTITY</span> <span class="o">=</span> <span class="s2">&quot;S-1-18-4&quot;</span>
+<span class="n">SID_KEY_PROPERTY_MFA</span> <span class="o">=</span> <span class="s2">&quot;S-1-18-5&quot;</span>
+<span class="n">SID_KEY_PROPERTY_ATTESTATION</span> <span class="o">=</span> <span class="s2">&quot;S-1-18-6&quot;</span>
+
+
+<div class="viewcode-block" id="SID"><a class="viewcode-back" href="../../api/smb_security_descriptors.html#smb.security_descriptors.SID">[docs]</a><span class="k">class</span> <span class="nc">SID</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Windows security identifier. Represents a single principal, such a</span>
+<span class="sd">    user or a group, as a sequence of numbers consisting of the revision,</span>
+<span class="sd">    identifier authority, and a variable-length list of subauthorities.</span>
+
+<span class="sd">    See [MS-DTYP]: 2.4.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revision</span><span class="p">,</span> <span class="n">identifier_authority</span><span class="p">,</span> <span class="n">subauthorities</span><span class="p">):</span>
+        <span class="c1">#: Revision, should always be 1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revision</span> <span class="o">=</span> <span class="n">revision</span>
+        <span class="c1">#: An integer representing the identifier authority.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">identifier_authority</span> <span class="o">=</span> <span class="n">identifier_authority</span>
+        <span class="c1">#: A list of integers representing all subauthorities.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subauthorities</span> <span class="o">=</span> <span class="n">subauthorities</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        String representation, as specified in [MS-DTYP]: 2.4.2.1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifier_authority</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="p">:</span>
+            <span class="n">id_auth</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%#x</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier_authority</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">id_auth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifier_authority</span>
+        <span class="n">auths</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">revision</span><span class="p">,</span> <span class="n">id_auth</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">subauthorities</span>
+        <span class="k">return</span> <span class="s1">&#39;S-&#39;</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">subauth</span><span class="p">)</span> <span class="k">for</span> <span class="n">subauth</span> <span class="ow">in</span> <span class="n">auths</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;SID(</span><span class="si">%r</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_bytes</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">return_tail</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="n">revision</span><span class="p">,</span> <span class="n">subauth_count</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;BB&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">identifier_authority</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&gt;Q&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\x00\x00</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">8</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">subauth_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">8</span><span class="p">:]</span>
+        <span class="n">subauthorities</span> <span class="o">=</span> <span class="p">[</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;L&#39;</span><span class="p">,</span> <span class="n">subauth_data</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">i</span> <span class="p">:</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)])[</span><span class="mi">0</span><span class="p">]</span>
+                          <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">subauth_count</span><span class="p">)]</span>
+        <span class="n">sid</span> <span class="o">=</span> <span class="n">cls</span><span class="p">(</span><span class="n">revision</span><span class="p">,</span> <span class="n">identifier_authority</span><span class="p">,</span> <span class="n">subauthorities</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_tail</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sid</span><span class="p">,</span> <span class="n">subauth_data</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">subauth_count</span> <span class="p">:]</span>
+        <span class="k">return</span> <span class="n">sid</span></div>
+
+
+<div class="viewcode-block" id="ACE"><a class="viewcode-back" href="../../api/smb_security_descriptors.html#smb.security_descriptors.ACE">[docs]</a><span class="k">class</span> <span class="nc">ACE</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a single access control entry.</span>
+
+<span class="sd">    See [MS-DTYP]: 2.4.4</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">HEADER_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;BBH&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">sid</span><span class="p">,</span> <span class="n">additional_data</span><span class="p">):</span>
+        <span class="c1">#: An integer representing the type of the ACE. One of the</span>
+        <span class="c1">#: ``ACE_TYPE_*`` constants. Corresponds to the ``AceType`` field</span>
+        <span class="c1">#: from [MS-DTYP] 2.4.4.1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">type_</span>
+        <span class="c1">#: An integer bitmask with ACE flags, corresponds to the</span>
+        <span class="c1">#: ``AceFlags`` field.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="c1">#: An integer representing the ``ACCESS_MASK`` as specified in</span>
+        <span class="c1">#: [MS-DTYP] 2.4.3.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span>
+        <span class="c1">#: The :class:`SID` of a trustee.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sid</span> <span class="o">=</span> <span class="n">sid</span>
+        <span class="c1">#: A dictionary of additional fields present in the ACE, depending</span>
+        <span class="c1">#: on the type. The following fields can be present:</span>
+        <span class="c1">#:</span>
+        <span class="c1">#: * ``flags``</span>
+        <span class="c1">#: * ``object_type``</span>
+        <span class="c1">#: * ``inherited_object_type``</span>
+        <span class="c1">#: * ``application_data``</span>
+        <span class="c1">#: * ``attribute_data``</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">additional_data</span> <span class="o">=</span> <span class="n">additional_data</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;ACE(type=</span><span class="si">%#04x</span><span class="s2">, flags=</span><span class="si">%#04x</span><span class="s2">, mask=</span><span class="si">%#010x</span><span class="s2">, sid=</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sid</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">isInheritOnly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convenience property which indicates if this ACE is inherit</span>
+<span class="sd">        only, meaning that it doesn&#39;t apply to the object itself.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">ACE_FLAG_INHERIT_ONLY</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_bytes</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">header_size</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">HEADER_FORMAT</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="n">header_size</span><span class="p">]</span>
+        <span class="n">type_</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">HEADER_FORMAT</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">size</span>
+
+        <span class="n">body</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">header_size</span><span class="p">:</span><span class="n">size</span><span class="p">]</span>
+        <span class="n">additional_data</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># In all ACE types, the mask immediately follows the header.</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="n">body</span><span class="p">[:</span><span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">body</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+
+        <span class="c1"># All OBJECT-type ACEs contain additional flags, and two GUIDs as</span>
+        <span class="c1"># the following fields.</span>
+        <span class="k">if</span> <span class="n">type_</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ACE_TYPE_ACCESS_ALLOWED_OBJECT</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_ACCESS_DENIED_OBJECT</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_ACCESS_ALLOWED_CALLBACK_OBJECT</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_ACCESS_DENIED_CALLBACK_OBJECT</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_SYSTEM_AUDIT_OBJECT</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_SYSTEM_AUDIT_CALLBACK_OBJECT</span><span class="p">):</span>
+            <span class="n">additional_data</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;I&#39;</span><span class="p">,</span> <span class="n">body</span><span class="p">[:</span><span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">additional_data</span><span class="p">[</span><span class="s1">&#39;object_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">body</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
+            <span class="n">additional_data</span><span class="p">[</span><span class="s1">&#39;inherited_object_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">body</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="mi">36</span><span class="p">]</span>
+            <span class="n">body</span> <span class="o">=</span> <span class="n">body</span><span class="p">[</span><span class="mi">36</span><span class="p">:]</span>
+
+        <span class="c1"># Then the SID in all types.</span>
+        <span class="n">sid</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">SID</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">return_tail</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c1"># CALLBACK-type ACEs (and for some obscure reason,</span>
+        <span class="c1"># SYSTEM_AUDIT_OBJECT) have a final tail of application data.</span>
+        <span class="k">if</span> <span class="n">type_</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ACE_TYPE_ACCESS_ALLOWED_CALLBACK</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_ACCESS_DENIED_CALLBACK</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_ACCESS_ALLOWED_CALLBACK_OBJECT</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_ACCESS_DENIED_CALLBACK_OBJECT</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_SYSTEM_AUDIT_OBJECT</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_SYSTEM_AUDIT_CALLBACK</span><span class="p">,</span>
+                     <span class="n">ACE_TYPE_SYSTEM_AUDIT_CALLBACK_OBJECT</span><span class="p">):</span>
+            <span class="n">additional_data</span><span class="p">[</span><span class="s1">&#39;application_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">body</span>
+
+        <span class="c1"># SYSTEM_RESOURCE_ATTRIBUTE ACEs have a tail of attribute data.</span>
+        <span class="k">if</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ACE_TYPE_SYSTEM_RESOURCE_ATTRIBUTE</span><span class="p">:</span>
+            <span class="n">additional_data</span><span class="p">[</span><span class="s1">&#39;attribute_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">body</span>
+
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">type_</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">sid</span><span class="p">,</span> <span class="n">additional_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ACL"><a class="viewcode-back" href="../../api/smb_security_descriptors.html#smb.security_descriptors.ACL">[docs]</a><span class="k">class</span> <span class="nc">ACL</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Access control list, encapsulating a sequence of access control</span>
+<span class="sd">    entries.</span>
+
+<span class="sd">    See [MS-DTYP]: 2.4.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">HEADER_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;BBHHH&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revision</span><span class="p">,</span> <span class="n">aces</span><span class="p">):</span>
+        <span class="c1">#: Integer value of the revision.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revision</span> <span class="o">=</span> <span class="n">revision</span>
+        <span class="c1">#: List of :class:`ACE` instances.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aces</span> <span class="o">=</span> <span class="n">aces</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;ACL(</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aces</span><span class="p">,)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_bytes</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">revision</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">aces</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">header_size</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">HEADER_FORMAT</span><span class="p">)</span>
+        <span class="n">header</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="n">header_size</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">header_size</span><span class="p">:]</span>
+        <span class="n">revision</span><span class="p">,</span> <span class="n">sbz1</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">sbz2</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">HEADER_FORMAT</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">size</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+            <span class="n">ace_size</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="n">remaining</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ace_data</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="n">remaining</span><span class="p">[:</span><span class="n">ace_size</span><span class="p">],</span> <span class="n">remaining</span><span class="p">[</span><span class="n">ace_size</span><span class="p">:]</span>
+            <span class="n">aces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ACE</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">ace_data</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">revision</span><span class="p">,</span> <span class="n">aces</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDescriptor"><a class="viewcode-back" href="../../api/smb_security_descriptors.html#smb.security_descriptors.SecurityDescriptor">[docs]</a><span class="k">class</span> <span class="nc">SecurityDescriptor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a security descriptor.</span>
+
+<span class="sd">    See [MS-DTYP]: 2.4.6</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">HEADER_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;BBHIIII&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">dacl</span><span class="p">,</span> <span class="n">sacl</span><span class="p">):</span>
+        <span class="c1">#: Integer bitmask of control flags. Corresponds to the</span>
+        <span class="c1">#: ``Control`` field in [MS-DTYP] 2.4.6.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="c1">#: Instance of :class:`SID` representing the owner user.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">owner</span> <span class="o">=</span> <span class="n">owner</span>
+        <span class="c1">#: Instance of :class:`SID` representing the owner group.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
+        <span class="c1">#: Instance of :class:`ACL` representing the discretionary access</span>
+        <span class="c1">#: control list, which specifies access restrictions of an object.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dacl</span> <span class="o">=</span> <span class="n">dacl</span>
+        <span class="c1">#: Instance of :class:`ACL` representing the system access control</span>
+        <span class="c1">#: list, which specifies audit logging of an object.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sacl</span> <span class="o">=</span> <span class="n">sacl</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_bytes</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">dacl</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">sacl</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="n">header</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">HEADER_FORMAT</span><span class="p">)]</span>
+        <span class="p">(</span><span class="n">revision</span><span class="p">,</span> <span class="n">sbz1</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">owner_offset</span><span class="p">,</span> <span class="n">group_offset</span><span class="p">,</span> <span class="n">sacl_offset</span><span class="p">,</span>
+         <span class="n">dacl_offset</span><span class="p">)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">cls</span><span class="o">.</span><span class="n">HEADER_FORMAT</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">revision</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">SECURITY_DESCRIPTOR_SELF_RELATIVE</span>
+        <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="p">(</span><span class="n">owner_offset</span><span class="p">,</span> <span class="n">group_offset</span><span class="p">,</span> <span class="n">sacl_offset</span><span class="p">,</span> <span class="n">dacl_offset</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">owner_offset</span><span class="p">:</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="n">SID</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">owner_offset</span><span class="p">:])</span>
+        <span class="k">if</span> <span class="n">group_offset</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">SID</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">group_offset</span><span class="p">:])</span>
+        <span class="k">if</span> <span class="n">dacl_offset</span><span class="p">:</span>
+            <span class="n">dacl</span> <span class="o">=</span> <span class="n">ACL</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">dacl_offset</span><span class="p">:])</span>
+        <span class="k">if</span> <span class="n">sacl_offset</span><span class="p">:</span>
+            <span class="n">sacl</span> <span class="o">=</span> <span class="n">ACL</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">sacl_offset</span><span class="p">:])</span>
+
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">dacl</span><span class="p">,</span> <span class="n">sacl</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.20 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2001-2017, Michael Teo http://miketeo.net/.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>
