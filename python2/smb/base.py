@@ -2217,7 +2217,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_attributes, _, alloc_size, file_size = struct.unpack(info_format, query_message.payload.data_bytes[:info_size])
 
-                info = SharedFile(create_time, last_access_time, last_write_time, last_attr_change_time,
+                info = SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time), convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
                                   file_size, alloc_size, file_attributes, unicode(path), unicode(path))
                 callback(info)
             else:
