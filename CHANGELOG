@@ -1,3 +1,8 @@
+pysmb-1.1.21, 9 Sep 2017
+========================
+- Fix bug where timestamp values for SMB1 getAttributes() response are not
+  converted properly from FILETIME to epoch time values.
+
 pysmb-1.1.20, 13 Aug 2017
 =========================
 - Add getSecurity() method to support security descriptors query via SMB2
