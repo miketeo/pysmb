@@ -705,9 +705,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(create_message)
             if create_message.status == 0:
                 p = create_message.payload
+                filename = self._extractLastPathComponent(unicode(path))
                 info = SharedFile(p.create_time, p.lastaccess_time, p.lastwrite_time, p.change_time,
                                   p.file_size, p.allocation_size, p.file_attributes,
-                                  unicode(path), unicode(path))
+                                  filename, filename)
                 closeFid(create_message.tid, p.fid, info = info)
             else:
                 errback(OperationFailure('Failed to get attributes for %s on %s: Unable to open remote file object' % ( path, service_name ), messages_history))
@@ -2216,9 +2217,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 info_size = struct.calcsize(info_format)
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_attributes, _, alloc_size, file_size = struct.unpack(info_format, query_message.payload.data_bytes[:info_size])
+                filename = self._extractLastPathComponent(unicode(path))
 
                 info = SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time), convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
-                                  file_size, alloc_size, file_attributes, unicode(path), unicode(path))
+                                  file_size, alloc_size, file_attributes, filename, filename)
                 callback(info)
             else:
                 errback(OperationFailure('Failed to get attributes for %s on %s: Read failed' % ( path, service_name ), messages_history))
@@ -2661,6 +2663,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         self._sendSMBMessage(m)
         self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, echoCB, errback)
         messages_history.append(m)
+
+    def _extractLastPathComponent(self, path):
+        return path.replace('\\', '/').split('/')[-1]
 
 
 class SharedDevice:
