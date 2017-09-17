@@ -1,3 +1,8 @@
+pysmb-1.1.22, 17 Sep 2017
+========================
+- Fix bug in getAttributes() method which should return only the filename
+  instead of the entire path for the filename property for the return result.
+
 pysmb-1.1.21, 9 Sep 2017
 ========================
 - Fix bug where timestamp values for SMB1 getAttributes() response are not
