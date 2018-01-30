@@ -584,8 +584,11 @@ class SMBConnection(SMB):
                     raise ex
 
         type_, flags, length = struct.unpack('>BBH', data)
-        if flags & 0x01:
-            length = length | 0x10000
+        if type_ == 0x0:
+            length = length + (flags << 16)
+        else:
+            if flags & 0x01:
+                length = length | 0x10000
 
         read_len = length
         while read_len > 0:

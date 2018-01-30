@@ -97,6 +97,13 @@ class SMB(NMBSession):
         self.max_write_size = 0     #: Similar to MaxWriteSize as described in [MS-SMB2] 2.2.4
         self.max_transact_size = 0  #: Similar to MaxTransactSize as described in [MS-SMB2] 2.2.4
         self.session_id = 0         #: Similar to SessionID as described in [MS-SMB2] 2.2.4. This will be set in _updateState_SMB2 method
+        self.smb2_dialect = 0
+
+
+        # SMB 2.1 attributes
+        self.cap_leasing = False
+        self.cap_multi_credit = False
+        self.credits = 0   # how many credits we're allowed to spend per request
 
         self._setupSMB1Methods()
 
@@ -131,6 +138,22 @@ class SMB(NMBSession):
             next_message_offset = 0
             if self.is_using_smb2:
                 next_message_offset = self.smb_message.next_command_offset
+
+                # update how many credits we're allowed to spend on requests
+                self.credits = self.smb_message.credit_response
+
+                # SMB2 CANCEL commands do not consume message IDs
+                if self.smb_message.command is not SMB2_COM_CANCEL:
+                    print "PACKET FROM SERVER, " + str(self.smb_message.command) + " CREDIT CHARGE RECV: " + str(self.smb_message.credit_charge)
+                    if self.smb_message.credit_charge > 0:
+                        # Let's update the sequenceWindow based on the CreditsCharged
+                        # In the SMB 2.0.2 dialect, this field MUST NOT be used and MUST be reserved.
+                        # The sender MUST set this to 0, and the receiver MUST ignore it.
+                        # In all other dialects, this field indicates the number of credits that this request consumes.
+                        print "UPDATING MID TO ADD CREDIT CHARGE FROM SERVER"
+                        print "BEFORE: " + str(self.mid)
+                        self.mid = self.mid + (self.smb_message.credit_charge - 1)
+                        print "AFTER: " + str(self.mid)
 
             if i > 0:
                 if not self.is_using_smb2:
@@ -244,10 +267,23 @@ class SMB(NMBSession):
         if message.isReply:
             if message.command == SMB2_COM_NEGOTIATE:
                 if message.status == 0:
-                    self.has_negotiated = True
-                    self.log.info('SMB2 dialect negotiation successful')
-                    self._updateServerInfo(message.payload)
-                    self._handleNegotiateResponse(message)
+
+                    if self.smb_message.payload.dialect_revision == SMB2_DIALECT_2ALL:
+                        # Dialects from SMB 2.1 must be negotiated in a second negotiate phase
+                        # We send a SMB2 Negotiate Request to accomplish this
+                        self._sendSMBMessage(SMB2Message(self, SMB2NegotiateRequest()))
+                    else:
+                        if self.smb_message.payload.dialect_revision == SMB2_DIALECT_21:
+                            # We negotiated SMB 2.1.
+                            # we must now send credit requests (MUST!)
+                            #self.send_credits_request = True
+                            pass
+
+                        self.has_negotiated = True
+                        self.log.info('SMB2 dialect negotiation successful')
+                        self.dialect = self.smb_message.payload.dialect_revision
+                        self._updateServerInfo(message.payload)
+                        self._handleNegotiateResponse(message)
                 else:
                     raise ProtocolError('Unknown status value (0x%08X) in SMB2_COM_NEGOTIATE' % message.status,
                                         message.raw_data, message)
@@ -294,11 +330,17 @@ class SMB(NMBSession):
         self.max_write_size = payload.max_write_size
         self.use_plaintext_authentication = False   # SMB2 never allows plaintext authentication
 
+        if (self.capabilities & SMB2_GLOBAL_CAP_LEASING) == SMB2_GLOBAL_CAP_LEASING:
+            self.cap_leasing = True
+
+        if (self.capabilities & SMB2_GLOBAL_CAP_LARGE_MTU) == SMB2_GLOBAL_CAP_LARGE_MTU:
+            self.cap_multi_credit = True
+
 
     def _handleNegotiateResponse_SMB2(self, message):
         ntlm_data = ntlm.generateNegotiateMessage()
         blob = securityblob.generateNegotiateSecurityBlob(ntlm_data)
-        self._sendSMBMessage(SMB2Message(SMB2SessionSetupRequest(blob)))
+        self._sendSMBMessage(SMB2Message(self, SMB2SessionSetupRequest(blob)))
 
 
     def _handleSessionChallenge_SMB2(self, message, ntlm_token):
@@ -330,7 +372,7 @@ class SMB(NMBSession):
             self.log.debug('LM challenge response is "%s" (%d bytes)', binascii.hexlify(lm_challenge_response), len(lm_challenge_response))
 
         blob = securityblob.generateAuthSecurityBlob(ntlm_data)
-        self._sendSMBMessage(SMB2Message(SMB2SessionSetupRequest(blob)))
+        self._sendSMBMessage(SMB2Message(self, SMB2SessionSetupRequest(blob)))
 
         if self.security_mode & SMB2_NEGOTIATE_SIGNING_REQUIRED:
             self.log.info('Server requires all SMB messages to be signed')
@@ -361,7 +403,7 @@ class SMB(NMBSession):
         messages_history = [ ]
 
         def connectSrvSvc(tid):
-            m = SMB2Message(SMB2CreateRequest('srvsvc',
+            m = SMB2Message(self, SMB2CreateRequest('srvsvc',
                                               file_attributes = 0,
                                               access_mask = FILE_READ_DATA | FILE_WRITE_DATA | FILE_APPEND_DATA | FILE_READ_EA | FILE_WRITE_EA | READ_CONTROL | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | SYNCHRONIZE,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -393,7 +435,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 2c 1c b7 6c 12 98 40 45 03 00 00 00 00 00 00 00
 01 00 00 00
 """.replace(' ', '').replace('\n', ''))
-                m = SMB2Message(SMB2WriteRequest(create_message.payload.fid, data_bytes, 0))
+                m = SMB2Message(self, SMB2WriteRequest(create_message.payload.fid, data_bytes, 0))
                 m.tid = create_message.tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcBindCB, errback, fid = create_message.payload.fid)
@@ -404,7 +446,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def rpcBindCB(trans_message, **kwargs):
             messages_history.append(trans_message)
             if trans_message.status == 0:
-                m = SMB2Message(SMB2ReadRequest(kwargs['fid'], read_len = 1024, read_offset = 0))
+                m = SMB2Message(self, SMB2ReadRequest(kwargs['fid'], read_len = 1024, read_offset = 0))
                 m.tid = trans_message.tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcReadCB, errback, fid = kwargs['fid'])
@@ -437,7 +479,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 01 00 00 00 01 00 00 00 04 00 02 00 00 00 00 00
 00 00 00 00 ff ff ff ff 08 00 02 00 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-                m = SMB2Message(SMB2IoctlRequest(kwargs['fid'], 0x0011C017, flags = 0x01, max_out_size = 8196, in_data = data_bytes))
+                m = SMB2Message(self, SMB2IoctlRequest(kwargs['fid'], 0x0011C017, flags = 0x01, max_out_size = 8196, in_data = data_bytes))
                 m.tid = read_message.tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, listShareResultsCB, errback, fid = kwargs['fid'])
@@ -493,7 +535,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         def sendReadRequest(tid, fid, data_bytes):
             read_count = min(4280, self.max_read_size)
-            m = SMB2Message(SMB2ReadRequest(fid, 0, read_count))
+            m = SMB2Message(self, SMB2ReadRequest(fid, 0, read_count))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback,
@@ -514,7 +556,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
 
         def closeFid(tid, fid, results = None, error = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, results = results, error = error)
@@ -535,7 +577,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to list shares: Unable to connect to IPC$', messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), path )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), path )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = path)
             messages_history.append(m)
@@ -564,7 +606,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = FILE_READ_DATA | FILE_READ_EA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -586,10 +628,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to list %s on %s: Unable to open directory' % ( path, service_name ), messages_history))
 
         def sendQuery(tid, fid, data_buf):
-            m = SMB2Message(SMB2QueryDirectoryRequest(fid, pattern,
+            if self.smb2_dialect != SMB2_DIALECT_2 and self.cap_multi_credit:
+                output_buf_len = 64 * 1024 * (self.credits - 1)
+            else:
+                output_buf_len = self.max_transact_size
+
+            m = SMB2Message(self, SMB2QueryDirectoryRequest(fid, pattern,
                                                       info_class = 0x03,   # FileBothDirectoryInformation
                                                       flags = 0,
-                                                      output_buf_len = self.max_transact_size))
+                                                      output_buf_len = output_buf_len))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, fid = fid, data_buf = data_buf)
@@ -638,7 +685,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             return ''
 
         def closeFid(tid, fid, results = None, error = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, results = results, error = error)
@@ -659,7 +706,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to list %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -687,7 +734,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = FILE_READ_DATA | FILE_READ_EA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -714,7 +761,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to get attributes for %s on %s: Unable to open remote file object' % ( path, service_name ), messages_history))
 
         def closeFid(tid, fid, info = None, error = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, info = info, error = error)
@@ -735,7 +782,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to get attributes for %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -756,7 +803,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         results = [ ]
 
         def sendCreate(tid):
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = FILE_READ_DATA | FILE_READ_EA | FILE_READ_ATTRIBUTES | READ_CONTROL | SYNCHRONIZE,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -772,7 +819,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
-                m = SMB2Message(SMB2QueryInfoRequest(create_message.payload.fid,
+                m = SMB2Message(self, SMB2QueryInfoRequest(create_message.payload.fid,
                                                      flags = 0,
                                                      additional_info = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
                                                      info_type = SMB2_INFO_SECURITY,
@@ -795,7 +842,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(query_message.tid, kwargs['fid'], error = query_message.status)
 
         def closeFid(tid, fid, result = None, error = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, result = result, error = error)
@@ -816,7 +863,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to get the security descriptor of %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -848,7 +895,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = FILE_READ_DATA | FILE_READ_EA | FILE_READ_ATTRIBUTES | READ_CONTROL | SYNCHRONIZE,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -865,7 +912,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
-                m = SMB2Message(SMB2QueryInfoRequest(create_message.payload.fid,
+                m = SMB2Message(self, SMB2QueryInfoRequest(create_message.payload.fid,
                                                      flags = 0,
                                                      additional_info = 0,
                                                      info_type = SMB2_INFO_FILE,
@@ -899,7 +946,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         def sendRead(tid, fid, offset, remaining_len, read_len, file_attributes):
             read_count = min(self.max_read_size, remaining_len)
-            m = SMB2Message(SMB2ReadRequest(fid, offset, read_count))
+
+            if self.smb2_dialect != SMB2_DIALECT_2 and self.cap_multi_credit:
+                max_read_count = 64 * 1024 * (self.credits -1)
+                read_count = min(read_count, max_read_count)
+
+            m = SMB2Message(self, SMB2ReadRequest(fid, offset, read_count))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback,
@@ -925,7 +977,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(read_message.tid, kwargs['fid'], error = read_message.status)
 
         def closeFid(tid, fid, ret = None, error = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, ret = ret, error = error)
@@ -946,7 +998,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to retrieve %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -979,7 +1031,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = ATTR_ARCHIVE,
                                               access_mask = FILE_READ_DATA | FILE_WRITE_DATA | FILE_APPEND_DATA | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | FILE_READ_EA | FILE_WRITE_EA | READ_CONTROL | SYNCHRONIZE,
                                               share_access = 0,
@@ -1006,11 +1058,14 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def sendWrite(tid, fid, offset):
-            write_count = self.max_write_size
+            if self.smb2_dialect != SMB2_DIALECT_2 and self.cap_multi_credit:
+                write_count = 64 * 1024 * (self.credits -1)
+            else:
+                write_count = self.max_write_size
             data = file_obj.read(write_count)
             data_len = len(data)
             if data_len > 0:
-                m = SMB2Message(SMB2WriteRequest(fid, data, offset))
+                m = SMB2Message(self, SMB2WriteRequest(fid, data, offset))
                 m.tid = tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, writeCB, errback, fid = fid, offset = offset+data_len)
@@ -1027,7 +1082,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to store %s on %s: Write failed' % ( path, service_name ), messages_history))
 
         def closeFid(tid, fid, error = None, offset = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback, fid = fid, offset = offset, error = error)
@@ -1048,7 +1103,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to store %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -1077,7 +1132,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = DELETE | FILE_READ_ATTRIBUTES,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -1104,7 +1159,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to delete %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def sendDelete(tid, fid):
-            m = SMB2Message(SMB2SetInfoRequest(fid,
+            m = SMB2Message(self, SMB2SetInfoRequest(fid,
                                                additional_info = 0,
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 0x0d,  # SMB2_FILE_DISPOSITION_INFO
@@ -1127,7 +1182,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(delete_message.tid, kwargs['fid'], status = delete_message.status)
 
         def closeFid(tid, fid, status = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback, status = status)
@@ -1148,7 +1203,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to delete %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -1177,7 +1232,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
 
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = FILE_WRITE_ATTRIBUTES,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -1199,7 +1254,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to reset attributes of %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def sendReset(tid, fid):
-            m = SMB2Message(SMB2SetInfoRequest(fid,
+            m = SMB2Message(self, SMB2SetInfoRequest(fid,
                                                additional_info = 0,
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 4,  # FileBasicInformation
@@ -1224,7 +1279,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(reset_message.tid, kwargs['fid'], status = reset_message.status)
 
         def closeFid(tid, fid, status = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback, status = status)
@@ -1245,7 +1300,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to reset attributes of %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -1273,7 +1328,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = FILE_READ_DATA | FILE_WRITE_DATA | FILE_READ_EA | FILE_WRITE_EA | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | READ_CONTROL | DELETE | SYNCHRONIZE,
                                               share_access = 0,
@@ -1295,7 +1350,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to create directory %s on %s: Create failed' % ( path, service_name ), messages_history))
 
         def closeFid(tid, fid):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback)
@@ -1313,7 +1368,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to create directory %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -1341,7 +1396,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = DELETE | FILE_READ_ATTRIBUTES,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -1363,7 +1418,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to delete %s on %s: Unable to open directory' % ( path, service_name ), messages_history))
 
         def sendDelete(tid, fid):
-            m = SMB2Message(SMB2SetInfoRequest(fid,
+            m = SMB2Message(self, SMB2SetInfoRequest(fid,
                                                additional_info = 0,
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 0x0d,  # SMB2_FILE_DISPOSITION_INFO
@@ -1381,7 +1436,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(delete_message.tid, kwargs['fid'], status = delete_message.status)
 
         def closeFid(tid, fid, status = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, status = status)
@@ -1402,7 +1457,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to delete %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -1437,7 +1492,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 10 00 04 00 00 00 18 00 00 00 00 00
 51 46 69 64 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(old_path,
+            m = SMB2Message(self, SMB2CreateRequest(old_path,
                                               file_attributes = 0,
                                               access_mask = DELETE | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -1460,7 +1515,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         def sendRename(tid, fid):
             data = '\x00'*16 + struct.pack('<I', len(new_path)*2) + new_path.encode('UTF-16LE')
-            m = SMB2Message(SMB2SetInfoRequest(fid,
+            m = SMB2Message(self, SMB2SetInfoRequest(fid,
                                                additional_info = 0,
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 0x0a,  # SMB2_FILE_RENAME_INFO
@@ -1478,7 +1533,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(rename_message.tid, kwargs['fid'], status = rename_message.status)
 
         def closeFid(tid, fid, status = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, status = status)
@@ -1499,7 +1554,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to rename %s on %s: Unable to connect to shared device' % ( old_path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -1525,7 +1580,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 00 00 00 00 00 00 00 00 10 00 04 00
 00 00 18 00 00 00 00 00 4d 78 41 63 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-            m = SMB2Message(SMB2CreateRequest(path,
+            m = SMB2Message(self, SMB2CreateRequest(path,
                                               file_attributes = 0,
                                               access_mask = FILE_READ_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -1547,7 +1602,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to list snapshots %s on %s: Unable to open file/directory' % ( old_path, service_name ), messages_history))
 
         def sendEnumSnapshots(tid, fid):
-            m = SMB2Message(SMB2IoctlRequest(fid,
+            m = SMB2Message(self, SMB2IoctlRequest(fid,
                                              ctlcode = 0x00144064,  # FSCTL_SRV_ENUMERATE_SNAPSHOTS
                                              flags = 0x0001,
                                              in_data = ''))
@@ -1569,7 +1624,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(kwargs['tid'], kwargs['fid'], status = enum_message.status)
 
         def closeFid(tid, fid, status = None, results = None):
-            m = SMB2Message(SMB2CloseRequest(fid))
+            m = SMB2Message(self, SMB2CloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, status = status, results = results)
@@ -1590,7 +1645,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to list snapshots %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
+            m = SMB2Message(self, SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -1607,7 +1662,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             else:
                 errback(OperationFailure('Echo failed', messages_history))
 
-        m = SMB2Message(SMB2EchoRequest())
+        m = SMB2Message(self, SMB2EchoRequest())
         self._sendSMBMessage(m)
         self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, echoCB, errback)
         messages_history.append(m)
