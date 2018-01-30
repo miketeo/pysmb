@@ -101,9 +101,8 @@ class SMB(NMBSession):
 
 
         # SMB 2.1 attributes
-        self.cap_leasing = False
-        self.cap_multi_credit = False
-        self.credits = 0   # how many credits we're allowed to spend per request
+        self.cap_multi_credit = False  #: Does the connection support multi-credit operations?
+        self.credits = 0               #: how many credits we're allowed to spend per request
 
         self._setupSMB1Methods()
 
@@ -320,9 +319,6 @@ class SMB(NMBSession):
         self.max_read_size = payload.max_read_size
         self.max_write_size = payload.max_write_size
         self.use_plaintext_authentication = False   # SMB2 never allows plaintext authentication
-
-        if (self.capabilities & SMB2_GLOBAL_CAP_LEASING) == SMB2_GLOBAL_CAP_LEASING:
-            self.cap_leasing = True
 
         if (self.capabilities & SMB2_GLOBAL_CAP_LARGE_MTU) == SMB2_GLOBAL_CAP_LARGE_MTU:
             self.cap_multi_credit = True
