@@ -143,7 +143,6 @@ class SMB2Message:
         return headers_data + self.data
 
     def decode(self, buf):
-        print "SMB2 message decode"
         """
         Decodes the SMB message in buf.
         All fields of the SMB2Message object will be reset to default values before decoding.
@@ -644,7 +643,6 @@ class SMB2ReadRequest(Structure):
         # to ( 1 + (Length - 1) / 65536 )
         if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
             message.credit_charge = int(1 + (self.read_len -1) / 65536)
-            print "setting credit charge to " + str(message.credit_charge)
 
 
 class SMB2ReadResponse(Structure):
