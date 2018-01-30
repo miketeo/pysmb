@@ -144,16 +144,12 @@ class SMB(NMBSession):
 
                 # SMB2 CANCEL commands do not consume message IDs
                 if self.smb_message.command is not SMB2_COM_CANCEL:
-                    print "PACKET FROM SERVER, " + str(self.smb_message.command) + " CREDIT CHARGE RECV: " + str(self.smb_message.credit_charge)
                     if self.smb_message.credit_charge > 0:
-                        # Let's update the sequenceWindow based on the CreditsCharged
+                        # Update the message ID based on the credit charge
                         # In the SMB 2.0.2 dialect, this field MUST NOT be used and MUST be reserved.
                         # The sender MUST set this to 0, and the receiver MUST ignore it.
                         # In all other dialects, this field indicates the number of credits that this request consumes.
-                        print "UPDATING MID TO ADD CREDIT CHARGE FROM SERVER"
-                        print "BEFORE: " + str(self.mid)
                         self.mid = self.mid + (self.smb_message.credit_charge - 1)
-                        print "AFTER: " + str(self.mid)
 
             if i > 0:
                 if not self.is_using_smb2:
@@ -273,12 +269,7 @@ class SMB(NMBSession):
                         # We send a SMB2 Negotiate Request to accomplish this
                         self._sendSMBMessage(SMB2Message(self, SMB2NegotiateRequest()))
                     else:
-                        if self.smb_message.payload.dialect_revision == SMB2_DIALECT_21:
-                            # We negotiated SMB 2.1.
-                            # we must now send credit requests (MUST!)
-                            #self.send_credits_request = True
-                            pass
-
+                        self.smb2_dialect = self.smb_message.payload.dialect_revision
                         self.has_negotiated = True
                         self.log.info('SMB2 dialect negotiation successful')
                         self.dialect = self.smb_message.payload.dialect_revision
