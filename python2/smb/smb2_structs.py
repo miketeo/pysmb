@@ -881,6 +881,12 @@ class SMB2QueryInfoRequest(Structure):
                                    self.fid                # FileId
                                   ) + self.input_buf
 
+        # MS-SMB2 3.2.4.17
+        # If Connection.Dialect is not "2.0.2" and if Connection.SupportsMultiCredit is TRUE, the
+        # CreditCharge field in the SMB2 header MUST be set to ( 1 + (OutputBufferLength - 1) / 65536 )
+        if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
+            message.credit_charge = int(1 + ((self.output_buf_len + len(self.input_buf)) -1) / 65536)
+
 
 class SMB2QueryInfoResponse(Structure):
     """
@@ -938,6 +944,12 @@ class SMB2SetInfoRequest(Structure):
                                    self.additional_info,  # AdditionalInformation
                                    self.fid               # FileId
                                   ) + self.data
+
+        # MS-SMB2 3.2.4.17
+        # If Connection.Dialect is not "2.0.2" and if Connection.SupportsMultiCredit is TRUE, the
+        # CreditCharge field in the SMB2 header MUST be set to ( 1 + (OutputBufferLength - 1) / 65536 )
+        if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
+            message.credit_charge = int(1 + (len(self.data) -1) / 65536)
 
 class SMB2SetInfoResponse(Structure):
     """
