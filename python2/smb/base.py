@@ -144,16 +144,17 @@ class SMB(NMBSession):
 
                 # SMB2 CANCEL commands do not consume message IDs
                 if self.smb_message.command is not SMB2_COM_CANCEL:
-                    print "PACKET FROM SERVER, " + str(self.smb_message.command) + " CREDIT CHARGE RECV: " + str(self.smb_message.credit_charge)
+                    self.log.debug('Received SMB2 packet from server - "%s" (command:0x%02X). Credit charge recv: %s',
+                                   SMB_COMMAND_NAMES.get(self.smb_message.command, '<unknown>'), self.smb_message.command, self.smb_message.credit_charge)
                     if self.smb_message.credit_charge > 0:
                         # Let's update the sequenceWindow based on the CreditsCharged
                         # In the SMB 2.0.2 dialect, this field MUST NOT be used and MUST be reserved.
                         # The sender MUST set this to 0, and the receiver MUST ignore it.
                         # In all other dialects, this field indicates the number of credits that this request consumes.
-                        print "UPDATING MID TO ADD CREDIT CHARGE FROM SERVER"
-                        print "BEFORE: " + str(self.mid)
+                        self.log.debug("Updating MID to add credit charge from server...")
+                        self.log.debug("*** Before: " + str(self.mid))
                         self.mid = self.mid + (self.smb_message.credit_charge - 1)
-                        print "AFTER: " + str(self.mid)
+                        self.log.debug("*** After: " + str(self.mid))
 
             if i > 0:
                 if not self.is_using_smb2:
