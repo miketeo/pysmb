@@ -143,7 +143,7 @@ class SMB(NMBSession):
                 self.credits = self.smb_message.credit_response
 
                 # SMB2 CANCEL commands do not consume message IDs
-                if self.smb_message.command is not SMB2_COM_CANCEL:
+                if self.smb_message.command != SMB2_COM_CANCEL:
                     self.log.debug('Received SMB2 packet from server - "%s" (command:0x%02X). Credit charge recv: %s',
                                    SMB_COMMAND_NAMES.get(self.smb_message.command, '<unknown>'), self.smb_message.command, self.smb_message.credit_charge)
                     if self.smb_message.credit_charge > 0:
