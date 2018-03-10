@@ -1,5 +1,5 @@
 
-import os, sys, struct, types, logging, binascii, time
+import os, sys, struct, types, logging, binascii, time, uuid
 from StringIO import StringIO
 from smb_structs import ProtocolError
 from smb_constants import *
@@ -23,8 +23,15 @@ class SMB2Message:
     log = logging.getLogger('SMB.SMB2Message')
     protocol = 2
 
-    def __init__(self, payload = None):
+
+    def __init__(self, conn = None, payload = None):
+        """
+        Initialise a new SMB2 Message.
+        conn - reference to the connection, the SMB class
+        payload - the message payload, if any
+        """
         self.reset()
+        self.conn = conn
         if payload:
             self.payload = payload
             self.payload.initMessage(self)
@@ -60,6 +67,10 @@ class SMB2Message:
         self.pid = 0
         self.tid = 0
 
+        # credit related
+        self.credit_charge = 0
+        self.credit_request = 1
+
         # Not used in this class. Maintained for compatibility with SMBMessage class
         self.flags2 = 0
         self.uid = 0
@@ -69,18 +80,66 @@ class SMB2Message:
     def encode(self):
         """
         Encode this SMB2 message into a series of bytes suitable to be embedded with a NetBIOS session message.
+        AssertionError will be raised if this SMB message has not been initialized with an SMB instance
         AssertionError will be raised if this SMB message has not been initialized with a Payload instance
+
+        The header format is:
+        - Protocol ID
+        - Structure Size
+        - Credit Charge
+        - Status / Channel Sequence
+        - Command
+        - Credit Request / Credit Response
+        - Flags
+        - Next Compound
+        - MessageId
+        - Reserved
+        - TreeId
+        - Session ID
+        - Signature
 
         @return: a string containing the encoded SMB2 message
         """
         assert self.payload
+        assert self.conn
 
         self.pid = os.getpid()
         self.payload.prepare(self)
 
+        # If Connection.Dialect is not "2.0.2" and if Connection.SupportsMultiCredit is TRUE, the
+        # CreditCharge field in the SMB2 header MUST be set to ( 1 + (OutputBufferLength - 1) / 65536 )
+        # This only applies to SMB2ReadRequest, SMB2WriteRequest, SMB2IoctlRequest and SMB2QueryDirectory
+        # See: MS-SMB2 3.2.4.1.5: For all other requests, the client MUST set CreditCharge to 1, even if the 
+        # payload size of a request or the anticipated response is greater than 65536.
+        if self.conn.smb2_dialect != SMB2_DIALECT_2:
+            if self.conn.cap_multi_credit:
+                # self.credit_charge will be set by some commands if necessary (Read/Write/Ioctl/QueryDirectory)
+                # If not set, but dialect is SMB 2.1 or above, we must set it to 1
+                if self.credit_charge is 0:
+                    self.credit_charge = 1
+            else:
+                # If >= SMB 2.1, but server does not support multi credit operations we must set to 1
+                self.credit_charge = 1
+
+        if self.mid > 3:
+            self.credit_request = 127
+
         headers_data = struct.pack(self.HEADER_STRUCT_FORMAT,
-                                   '\xFESMB', self.HEADER_SIZE, 0, self.status, self.command, 0, self.flags) + \
-                       struct.pack(self.SYNC_HEADER_STRUCT_FORMAT, self.next_command_offset, self.mid, self.pid, self.tid, self.session_id, self.signature)
+                                   '\xFESMB',  # Protocol ID
+                                   self.HEADER_SIZE,  # Structure Size
+                                   self.credit_charge,  # Credit Charge
+                                   self.status,  # Status / Channel Sequence
+                                   self.command,  # Command
+                                   self.credit_request,  # Credit Request / Credit Response
+                                   self.flags, # Flags
+                                   ) + \
+                       struct.pack(self.SYNC_HEADER_STRUCT_FORMAT,
+                                    self.next_command_offset, # Next Compound
+                                    self.mid,  # Message ID
+                                    self.pid,  # Process ID
+                                    self.tid,  # Tree ID
+                                    self.session_id,  # Session ID
+                                    self.signature)  # Signature
         return headers_data + self.data
 
     def decode(self, buf):
@@ -106,7 +165,8 @@ class SMB2Message:
         self.reset()
 
         protocol, struct_size, self.credit_charge, self.status, \
-            self.command, self.credit_re, self.flags = struct.unpack(self.HEADER_STRUCT_FORMAT, buf[:self.HEADER_STRUCT_SIZE])
+            self.command, self.credit_response, \
+            self.flags = struct.unpack(self.HEADER_STRUCT_FORMAT, buf[:self.HEADER_STRUCT_SIZE])
 
         if protocol != '\xFESMB':
             raise ProtocolError('Invalid 4-byte SMB2 protocol field', buf)
@@ -187,6 +247,53 @@ class Structure:
 
     def decode(self, message):
         raise NotImplementedError
+
+
+class SMB2NegotiateRequest(Structure):
+    """
+    2.2.3 SMB2 NEGOTIATE Request
+    The SMB2 NEGOTIATE Request packet is used by the client to notify the server what dialects of the SMB 2 Protocol
+    the client understands. This request is composed of an SMB2 header, as specified in section 2.2.1,
+    followed by this request structure:
+
+    SMB2 Negotiate Request Packet structure:
+        StructureSize (2 bytes)
+        DialectCount (2 bytes)
+        SecurityMode (2 bytes)
+        Reserved (2 bytes)
+        Capabilities (4 bytes)
+        ClientGuid (16 bytes)
+        ClientStartTime (8 bytes):
+        ClientStartTime (8 bytes):
+        Dialects (variable): An array of one or more 16-bit integers
+
+    References:
+    ===========
+    - [MS-SMB2]: 2.2.3
+
+    """
+
+
+    STRUCTURE_FORMAT = "<HHHHI16sQHH"
+    STRUCTURE_SIZE = struct.calcsize(STRUCTURE_FORMAT)
+
+    def initMessage(self, message):
+        Structure.initMessage(self, message)
+        message.command = SMB2_COM_NEGOTIATE
+
+    def prepare(self, message):
+        # TODO! Do we need to save the GUID and present it later in other requests?
+        # The SMB docs don't exactly explain what the guid is for
+        message.data = struct.pack(self.STRUCTURE_FORMAT,
+                                   36,           # Structure size. Must be 36 as mandated by [MS-SMB2] 2.2.3
+                                   2,            # DialectCount
+                                   0x01,         # Security mode
+                                   0,            # Reserved
+                                   0x00,         # Capabilities
+                                   uuid.uuid4().bytes, # Client GUID
+                                   0,            # Client start time
+                                   SMB2_DIALECT_2,
+                                   SMB2_DIALECT_21)
 
 
 class SMB2NegotiateResponse(Structure):
@@ -465,6 +572,13 @@ class SMB2WriteRequest(Structure):
                                    0,  # WriteChannelInfoLength
                                    self.flags) + self.data
 
+        # MS-SMB2 3.2.4.7
+        # If a client requests writing to a file, Connection.Dialect is not "2.0.2", and if
+        # Connection.SupportsMultiCredit is TRUE, the CreditCharge field in the SMB2 header MUST be set
+        # to ( 1 + (Length - 1) / 65536 )
+        if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
+            message.credit_charge = int(1 + (len(self.data) -1) / 65536)
+
 
 class SMB2WriteResponse(Structure):
     """
@@ -523,6 +637,13 @@ class SMB2ReadRequest(Structure):
                                    0     # ReadChannelInfoLength
                                   ) + '\0'
 
+        # MS-SMB2 3.2.4.6
+        # If a client requests reading from a file, Connection.Dialect is not "2.0.2", and if
+        # Connection.SupportsMultiCredit is TRUE, the CreditCharge field in the SMB2 header MUST be set
+        # to ( 1 + (Length - 1) / 65536 )
+        if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
+            message.credit_charge = int(1 + (self.read_len -1) / 65536)
+
 
 class SMB2ReadResponse(Structure):
     """
@@ -578,6 +699,11 @@ class SMB2IoctlRequest(Structure):
                                    self.flags,   # Flags
                                    0    # Reserved
                                   ) + self.in_data
+
+        # If Connection.SupportsMultiCredit is TRUE, the CreditCharge field in the SMB2 header
+        # SHOULD be set to (max(InputCount, MaxOutputResponse) - 1) / 65536 + 1
+        if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
+            message.credit_charge = (max(len(self.in_data), self.max_out_size) - 1) / 65536 + 1
 
 
 class SMB2IoctlResponse(Structure):
@@ -687,6 +813,12 @@ class SMB2QueryDirectoryRequest(Structure):
                                    len(self.filename)*2,
                                    self.output_buf_len) + self.filename.encode('UTF-16LE')
 
+        # MS-SMB2 3.2.4.17
+        # If Connection.Dialect is not "2.0.2" and if Connection.SupportsMultiCredit is TRUE, the
+        # CreditCharge field in the SMB2 header MUST be set to ( 1 + (OutputBufferLength - 1) / 65536 )
+        if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
+            message.credit_charge = int(1 + (self.output_buf_len -1) / 65536)
+
 
 class SMB2QueryDirectoryResponse(Structure):
     """
@@ -749,6 +881,12 @@ class SMB2QueryInfoRequest(Structure):
                                    self.fid                # FileId
                                   ) + self.input_buf
 
+        # MS-SMB2 3.2.4.17
+        # If Connection.Dialect is not "2.0.2" and if Connection.SupportsMultiCredit is TRUE, the
+        # CreditCharge field in the SMB2 header MUST be set to ( 1 + (OutputBufferLength - 1) / 65536 )
+        if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
+            message.credit_charge = int(1 + ((self.output_buf_len + len(self.input_buf)) -1) / 65536)
+
 
 class SMB2QueryInfoResponse(Structure):
     """
@@ -806,6 +944,12 @@ class SMB2SetInfoRequest(Structure):
                                    self.additional_info,  # AdditionalInformation
                                    self.fid               # FileId
                                   ) + self.data
+
+        # MS-SMB2 3.2.4.17
+        # If Connection.Dialect is not "2.0.2" and if Connection.SupportsMultiCredit is TRUE, the
+        # CreditCharge field in the SMB2 header MUST be set to ( 1 + (OutputBufferLength - 1) / 65536 )
+        if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
+            message.credit_charge = int(1 + (len(self.data) -1) / 65536)
 
 class SMB2SetInfoResponse(Structure):
     """

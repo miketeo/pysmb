@@ -50,9 +50,12 @@ SMB2_COMMAND_NAMES = {
 }
 
 # Values for dialect_revision field in SMB2NegotiateResponse class
-SMB2_DIALECT_2 = 0x0202
-SMB2_DIALECT_21 = 0x0210
-SMB2_DIALECT_2ALL = 0x02FF
+SMB2_DIALECT_2 = 0x0202  # 2.0.2 - First SMB2 version
+SMB2_DIALECT_21 = 0x0210  # 2.1 - Windows 7
+SMB2_DIALET_30 = 0x0300  # 3.0 - Windows 8
+SMB2_DIALECT_302 = 0x0302  # 3.0.2 - Windows 8.1
+SMB2_DIALECT_311 = 0x0311  # 3.1.1 - Windows 10
+SMB2_DIALECT_2ALL = 0x02FF  # Wildcard (for negotiation only)
 
 # Bit mask for SecurityMode field in SMB2NegotiateResponse class
 SMB2_NEGOTIATE_SIGNING_ENABLED = 0x0001
@@ -65,6 +68,17 @@ SMB2_SHARE_TYPE_PRINTER = 0x03
 
 # Bitmask for Capabilities in SMB2TreeConnectResponse class
 SMB2_SHARE_CAP_DFS = 0x0008
+
+
+# SMB 2.1 / 3 Capabilities flags
+SMB2_GLOBAL_CAP_DFS = 0x01
+SMB2_GLOBAL_CAP_LEASING = 0x02
+SMB2_GLOBAL_CAP_LARGE_MTU = 0x04
+SMB2_GLOBAL_CAP_MULTI_CHANNEL = 0x08
+SMB2_GLOBAL_CAP_PERSISTENT_HANDLES = 0x10
+SMB2_GLOBAL_CAP_DIRECTORY_LEASING = 0x20
+SMB2_GLOBAL_CAP_ENCRYPTION = 0x40
+
 
 # Values for OpLockLevel field in SMB2CreateRequest class
 SMB2_OPLOCK_LEVEL_NONE = 0x00

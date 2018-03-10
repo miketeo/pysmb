@@ -584,8 +584,17 @@ class SMBConnection(SMB):
                     raise ex
 
         type_, flags, length = struct.unpack('>BBH', data)
-        if flags & 0x01:
-            length = length | 0x10000
+        if type_ == 0x0:
+            # This is a Direct TCP packet
+            # The length is specified in the header from byte 8. (0-indexed) 
+            # we read a structure assuming NBT, so to get the real length
+            # combine the length and flag fields together
+            length = length + (flags << 16)
+        else:
+            # This is a NetBIOS over TCP (NBT) packet
+            # The length is specified in the header from byte 16. (0-indexed)
+            if flags & 0x01:
+                length = length | 0x10000
 
         read_len = length
         while read_len > 0:

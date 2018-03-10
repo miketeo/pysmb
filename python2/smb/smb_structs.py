@@ -17,7 +17,7 @@ for i, ( name, dialect ) in enumerate([ ( 'NT_LAN_MANAGER_DIALECT', 'NT LM 0.12'
     globals()[name] = i
 
 DIALECTS2 = [ ]
-for i, ( name, dialect ) in enumerate([ ( 'SMB2_DIALECT', 'SMB 2.002' ) ]):
+for i, ( name, dialect ) in enumerate([ ( 'SMB2_DIALECT', 'SMB 2.002' ), ('SMB2_WILDCARD', 'SMB 2.???') ]):
     DIALECTS2.append(dialect)
     globals()[name] = i + len(DIALECTS)
 
