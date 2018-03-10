@@ -101,8 +101,9 @@ class SMB(NMBSession):
 
 
         # SMB 2.1 attributes
-        self.cap_multi_credit = False  #: Does the connection support multi-credit operations?
-        self.credits = 0               #: how many credits we're allowed to spend per request
+        self.cap_leasing = False
+        self.cap_multi_credit = False
+        self.credits = 0   # how many credits we're allowed to spend per request
 
         self._setupSMB1Methods()
 
@@ -143,12 +144,16 @@ class SMB(NMBSession):
 
                 # SMB2 CANCEL commands do not consume message IDs
                 if self.smb_message.command is not SMB2_COM_CANCEL:
+                    print "PACKET FROM SERVER, " + str(self.smb_message.command) + " CREDIT CHARGE RECV: " + str(self.smb_message.credit_charge)
                     if self.smb_message.credit_charge > 0:
-                        # Update the message ID based on the credit charge
+                        # Let's update the sequenceWindow based on the CreditsCharged
                         # In the SMB 2.0.2 dialect, this field MUST NOT be used and MUST be reserved.
                         # The sender MUST set this to 0, and the receiver MUST ignore it.
                         # In all other dialects, this field indicates the number of credits that this request consumes.
+                        print "UPDATING MID TO ADD CREDIT CHARGE FROM SERVER"
+                        print "BEFORE: " + str(self.mid)
                         self.mid = self.mid + (self.smb_message.credit_charge - 1)
+                        print "AFTER: " + str(self.mid)
 
             if i > 0:
                 if not self.is_using_smb2:
@@ -236,16 +241,6 @@ class SMB(NMBSession):
     # SMB2 Methods Family
     #
 
-    def _calcMaxLen(self, requested_length=None):
-        if requested_length is None:
-            requested_length = self.max_transact_size
-
-        if self.smb2_dialect != SMB2_DIALECT_2 and self.cap_multi_credit:
-            max_length = 64 * 1024 * (self.credits -1)
-            return min(requested_length, max_length)
-        else:
-            return buffer_len
-
     def _sendSMBMessage_SMB2(self, smb_message):
         if smb_message.mid == 0:
             smb_message.mid = self._getNextMID_SMB2()
@@ -278,7 +273,12 @@ class SMB(NMBSession):
                         # We send a SMB2 Negotiate Request to accomplish this
                         self._sendSMBMessage(SMB2Message(self, SMB2NegotiateRequest()))
                     else:
-                        self.smb2_dialect = self.smb_message.payload.dialect_revision
+                        if self.smb_message.payload.dialect_revision == SMB2_DIALECT_21:
+                            # We negotiated SMB 2.1.
+                            # we must now send credit requests (MUST!)
+                            #self.send_credits_request = True
+                            pass
+
                         self.has_negotiated = True
                         self.log.info('SMB2 dialect negotiation successful')
                         self.dialect = self.smb_message.payload.dialect_revision
@@ -329,6 +329,9 @@ class SMB(NMBSession):
         self.max_read_size = payload.max_read_size
         self.max_write_size = payload.max_write_size
         self.use_plaintext_authentication = False   # SMB2 never allows plaintext authentication
+
+        if (self.capabilities & SMB2_GLOBAL_CAP_LEASING) == SMB2_GLOBAL_CAP_LEASING:
+            self.cap_leasing = True
 
         if (self.capabilities & SMB2_GLOBAL_CAP_LARGE_MTU) == SMB2_GLOBAL_CAP_LARGE_MTU:
             self.cap_multi_credit = True
@@ -625,10 +628,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to list %s on %s: Unable to open directory' % ( path, service_name ), messages_history))
 
         def sendQuery(tid, fid, data_buf):
+            if self.smb2_dialect != SMB2_DIALECT_2 and self.cap_multi_credit:
+                output_buf_len = 64 * 1024 * (self.credits - 1)
+            else:
+                output_buf_len = self.max_transact_size
+
             m = SMB2Message(self, SMB2QueryDirectoryRequest(fid, pattern,
                                                       info_class = 0x03,   # FileBothDirectoryInformation
                                                       flags = 0,
-                                                      output_buf_len = self._calcMaxLen()))
+                                                      output_buf_len = output_buf_len))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, fid = fid, data_buf = data_buf)
@@ -817,7 +825,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                      info_type = SMB2_INFO_SECURITY,
                                                      file_info_class = 0, # [MS-SMB2] 2.2.37, 3.2.4.12
                                                      input_buf = '',
-                                                     output_buf_len = self._calcMaxLen()))
+                                                     output_buf_len = self.max_transact_size))
                 m.tid = create_message.tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, fid = create_message.payload.fid)
@@ -937,7 +945,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to list %s on %s: Unable to retrieve information on file' % ( path, service_name ), messages_history))
 
         def sendRead(tid, fid, offset, remaining_len, read_len, file_attributes):
-            read_count = min(self._calcMaxLen(self.max_read_size), remaining_len)
+            read_count = min(self.max_read_size, remaining_len)
+
+            if self.smb2_dialect != SMB2_DIALECT_2 and self.cap_multi_credit:
+                max_read_count = 64 * 1024 * (self.credits -1)
+                read_count = min(read_count, max_read_count)
+
             m = SMB2Message(self, SMB2ReadRequest(fid, offset, read_count))
             m.tid = tid
             self._sendSMBMessage(m)
@@ -1045,7 +1058,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def sendWrite(tid, fid, offset):
-            write_count = self._calcMaxLen(self.max_write_size)
+            if self.smb2_dialect != SMB2_DIALECT_2 and self.cap_multi_credit:
+                write_count = 64 * 1024 * (self.credits -1)
+            else:
+                write_count = self.max_write_size
             data = file_obj.read(write_count)
             data_len = len(data)
             if data_len > 0:
