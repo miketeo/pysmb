@@ -109,7 +109,7 @@ class SMB2Message:
         # If Connection.Dialect is not "2.0.2" and if Connection.SupportsMultiCredit is TRUE, the
         # CreditCharge field in the SMB2 header MUST be set to ( 1 + (OutputBufferLength - 1) / 65536 )
         # This only applies to SMB2ReadRequest, SMB2WriteRequest, SMB2IoctlRequest and SMB2QueryDirectory
-        # See: MS-SMB2 3.2.4.1.5: For all other requests, the client MUST set CreditCharge to 1, even if the 
+        # See: MS-SMB2 3.2.4.1.5: For all other requests, the client MUST set CreditCharge to 1, even if the
         # payload size of a request or the anticipated response is greater than 65536.
         if self.conn.smb2_dialect != SMB2_DIALECT_2:
             if self.conn.cap_multi_credit:
@@ -330,6 +330,7 @@ class SMB2NegotiateResponse(Structure):
             self.server_start_time = convertFILETIMEtoEpoch(self.server_start_time)
             self.system_time = convertFILETIMEtoEpoch(self.system_time)
             self.security_blob = message.raw_data[security_buf_offset:security_buf_offset+security_buf_len]
+            message.conn.smb2_dialect = self.dialect_revision
 
 
 class SMB2SessionSetupRequest(Structure):

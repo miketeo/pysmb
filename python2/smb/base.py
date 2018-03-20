@@ -132,8 +132,9 @@ class SMB(NMBSession):
                 self.is_using_smb2 = True
                 self.mid = 0  # Must reset messageID counter, or else remote SMB2 server will disconnect
                 self._setupSMB2Methods()
-                self.smb_message = self._klassSMBMessage()
+                self.smb_message = self._klassSMBMessage(self)
                 i = self.smb_message.decode(data)
+                self.log.info('SMB2 dialect is 0x%04x', self.smb2_dialect)
 
             next_message_offset = 0
             if self.is_using_smb2:
