@@ -626,7 +626,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     return data_bytes[offset:]
 
                 filename = data_bytes[offset2:offset2+filename_length].decode('UTF-16LE')
-                short_name = short_name.decode('UTF-16LE')
+                short_name = short_name[:short_name_length].decode('UTF-16LE')
                 results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
                                           convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
                                           file_size, alloc_size, file_attributes, short_name, filename))
