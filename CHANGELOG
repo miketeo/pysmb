@@ -1,3 +1,14 @@
+pysmb-1.1.24, 19 July 2018
+========================
+- Improve listPath implementation for SMB1
+- Support for STATUS_PENDING responses across all SMB2 operations.
+
+pysmb-1.1.23, 5 May 2018
+========================
+- Fix bug in listShares() method which fails when the remote server has many shares.
+- Improve echo() method to test and fail if the provided data to echo is not a bytes object.
+- Fix bug in listPath() method where the path to query is not properly terminated.
+
 pysmb-1.1.22, 17 Sep 2017
 ========================
 - Fix bug in getAttributes() method which should return only the filename

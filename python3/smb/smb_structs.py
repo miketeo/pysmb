@@ -144,6 +144,10 @@ class SMBMessage:
         self.payload = None
 
     @property
+    def isAsync(self):
+        return bool(self.flags & SMB2_FLAGS_ASYNC_COMMAND)
+
+    @property
     def isReply(self):
         return bool(self.flags & SMB_FLAGS_REPLY)
 
@@ -1279,7 +1283,7 @@ class ComEchoRequest(Payload):
     - [MS-CIFS]: 2.2.4.39.1
     """
 
-    def __init__(self, echo_data = '', echo_count = 1):
+    def __init__(self, echo_data = b'', echo_count = 1):
         self.echo_count = echo_count
         self.echo_data = echo_data
 

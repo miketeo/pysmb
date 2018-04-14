@@ -9,7 +9,7 @@ conn = None
 def setup_func():
     global conn
     info = getConnectionInfo()
-    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True, is_direct_tcp = True)
     assert conn.connect(info['server_ip'], info['server_port'])
 
 def teardown_func():

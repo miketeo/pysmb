@@ -11,14 +11,14 @@ def setup_func_SMB1():
     global conn
     smb_structs.SUPPORT_SMB2 = False
     info = getConnectionInfo()
-    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True, is_direct_tcp = True)
     assert conn.connect(info['server_ip'], info['server_port'])
 
 def setup_func_SMB2():
     global conn
     smb_structs.SUPPORT_SMB2 = True
     info = getConnectionInfo()
-    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True, is_direct_tcp = True)
     assert conn.connect(info['server_ip'], info['server_port'])
 
 def teardown_func():
@@ -45,6 +45,13 @@ def test_listSubPath_SMB1():
     assert ( u'Test Folder', True ) in filenames
     assert ( u'子文件夹', True ) in filenames
 
+@with_setup(setup_func_SMB1, teardown_func)
+def test_listPathWithManyFiles_SMB1():
+    global conn
+    results = conn.listPath('smbtest', '/RFC Archive/')
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    assert len(filenames)==999
+
 @with_setup(setup_func_SMB2, teardown_func)
 def test_listPath_SMB2():
     global conn
@@ -64,3 +71,10 @@ def test_listSubPath_SMB2():
     assert ( u'Test File.txt', False ) in filenames
     assert ( u'Test Folder', True ) in filenames
     assert ( u'子文件夹', True ) in filenames
+
+@with_setup(setup_func_SMB2, teardown_func)
+def test_listPathWithManyFiles_SMB2():
+    global conn
+    results = conn.listPath('smbtest', '/RFC Archive/')
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    assert len(filenames)==999

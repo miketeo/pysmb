@@ -2,16 +2,10 @@
 Steps to Follow to Run the Unit Tests
 =====================================
 
-1a. Install Nose Testing Framework
+1. Install Nose Testing Framework
 All the unit tests here are designed to be conducted with the nose testing framework.
 You can install the latest nose testing framework by running: easy_install nose
 For more information on nose testing, please visit http://readthedocs.org/docs/nose/en/latest/
-
-1b. Install the Twisted framework
-If you need to test the SMB/NetBIOS protocol implementations for Twisted framework,
-you should install the Twisted framework from http://twistedmatrix.com/
-or by running: easy_install Twisted
-Without the Twisted framework, the Twisted tests will fail.
 
 2. Prepare a Shared Folder "smbtest" on a Remote Server
 To run the unit tests here, besides installing the nose testing framework, you will
@@ -28,5 +22,5 @@ called "connection.ini". Edit this file's connection details to match the shared
 access information.
 
 5. Run the Unit Tests in the python2 folder
-Just run: nosetests -v tests
-or selectively: nosetests -v tests/SMBConnectionTests
+Just run: nosetests3 -v tests
+or selectively: nosetests3 -v tests/SMBConnectionTests

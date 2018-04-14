@@ -13,7 +13,7 @@ def setup_func_SMB1():
     smb_structs.SUPPORT_SMB2 = False
 
     info = getConnectionInfo()
-    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True, is_direct_tcp = True)
     assert conn.connect(info['server_ip'], info['server_port'])
 
 def setup_func_SMB2():
@@ -21,7 +21,7 @@ def setup_func_SMB2():
     smb_structs.SUPPORT_SMB2 = True
 
     info = getConnectionInfo()
-    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True)
+    conn = SMBConnection(info['user'], info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = True, is_direct_tcp = True)
     assert conn.connect(info['server_ip'], info['server_port'])
 
 def teardown_func():

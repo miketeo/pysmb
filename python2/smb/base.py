@@ -67,6 +67,7 @@ class SMB(NMBSession):
         self.use_ntlm_v2 = use_ntlm_v2 #: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1
         self.smb_message = SMBMessage()
         self.is_using_smb2 = False   #: Are we communicating using SMB2 protocol? self.smb_message will be a SMB2Message instance if this flag is True
+        self.async_requests = { }    #: AsyncID mapped to _PendingRequest instance
         self.pending_requests = { }  #: MID mapped to _PendingRequest instance
         self.connected_trees = { }   #: Share name mapped to TID
         self.next_rpc_call_id = 1    #: Next RPC callID value. Not used directly in SMB message. Usually encapsulated in sub-commands under SMB_COM_TRANSACTION or SMB_COM_TRANSACTION2 messages
@@ -310,18 +311,58 @@ class SMB(NMBSession):
                             self._handleSessionChallenge(message, ntlm_token)
                     except ( securityblob.BadSecurityBlobError, securityblob.UnsupportedSecurityProvider ), ex:
                         raise ProtocolError(str(ex), message.raw_data, message)
-                elif message.status == 0xc000006d:  # STATUS_LOGON_FAILURE
+                elif (message.status == 0xc000006d   # STATUS_LOGON_FAILURE
+                    or message.status == 0xc0000064  # STATUS_NO_SUCH_USER
+                    or message.status == 0xc000006a):# STATUS_WRONG_PASSWORD
                     self.has_authenticated = False
                     self.log.info('Authentication (on SMB2) failed. Please check username and password.')
+                    self.onAuthFailed()
+                elif (message.status == 0xc0000193    # STATUS_ACCOUNT_EXPIRED
+                    or message.status == 0xC0000071): # STATUS_PASSWORD_EXPIRED
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Account or password has expired.')
+                    self.onAuthFailed()
+                elif message.status == 0xc0000234: # STATUS_ACCOUNT_LOCKED_OUT
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Account has been locked due to too many invalid logon attempts.')
+                    self.onAuthFailed()
+                elif message.status == 0xc0000072: # STATUS_ACCOUNT_DISABLED
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Account has been disabled.')
+                    self.onAuthFailed()
+                elif (message.status == 0xc000006f    # STATUS_INVALID_LOGON_HOURS
+                    or message.status == 0xc000015b   # STATUS_LOGON_TYPE_NOT_GRANTED
+                    or message.status == 0xc0000070): # STATUS_INVALID_WORKSTATION
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Not allowed.')
+                    self.onAuthFailed()
+                elif message.status == 0xc000018c:  # STATUS_TRUSTED_DOMAIN_FAILURE
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Domain not trusted.')
+                    self.onAuthFailed()
+                elif message.status == 0xc000018d:  # STATUS_TRUSTED_RELATIONSHIP_FAILURE
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Workstation not trusted.')
                     self.onAuthFailed()
                 else:
                     raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status,
                                         message.raw_data, message)
 
-            req = self.pending_requests.pop(message.mid, None)
-            if req:
-                req.callback(message, **req.kwargs)
-                return True
+            if message.isAsync:
+                if message.status == 0x00000103:  # STATUS_PENDING
+                    req = self.pending_requests.pop(message.mid, None)
+                    if req:
+                        self.async_requests[message.async_id] = req
+                else: # All other status including SUCCESS
+                    req = self.async_requests.pop(message.async_id, None)
+                    if req:
+                        req.callback(message, **req.kwargs)
+                        return True
+            else:
+                req = self.pending_requests.pop(message.mid, None)
+                if req:
+                    req.callback(message, **req.kwargs)
+                    return True
 
 
     def _updateServerInfo_SMB2(self, payload):
@@ -367,7 +408,8 @@ class SMB(NMBSession):
                                                      lm_challenge_response,
                                                      session_key,
                                                      self.username,
-                                                     self.domain)
+                                                     self.domain,
+                                                     self.my_name)
 
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))
@@ -416,7 +458,7 @@ class SMB(NMBSession):
 
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectSrvSvcCB, errback)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectSrvSvcCB, errback, tid = tid)
             messages_history.append(m)
 
         def connectSrvSvcCB(create_message, **kwargs):
@@ -438,9 +480,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 01 00 00 00
 """.replace(' ', '').replace('\n', ''))
                 m = SMB2Message(self, SMB2WriteRequest(create_message.payload.fid, data_bytes, 0))
-                m.tid = create_message.tid
+                m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
-                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcBindCB, errback, fid = create_message.payload.fid)
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcBindCB, errback, tid = kwargs['tid'], fid = create_message.payload.fid)
                 messages_history.append(m)
             else:
                 errback(OperationFailure('Failed to list shares: Unable to locate Server Service RPC endpoint', messages_history))
@@ -449,12 +491,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(trans_message)
             if trans_message.status == 0:
                 m = SMB2Message(self, SMB2ReadRequest(kwargs['fid'], read_len = 1024, read_offset = 0))
-                m.tid = trans_message.tid
+                m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
-                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcReadCB, errback, fid = kwargs['fid'])
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcReadCB, errback, tid = kwargs['tid'], fid = kwargs['fid'])
                 messages_history.append(m)
             else:
-                closeFid(trans_message.tid, kwargs['fid'], error = 'Failed to list shares: Unable to read from Server Service RPC endpoint')
+                closeFid(kwargs['tid'], kwargs['fid'], error = 'Failed to list shares: Unable to read from Server Service RPC endpoint')
 
         def rpcReadCB(read_message, **kwargs):
             messages_history.append(read_message)
@@ -482,12 +524,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 00 00 00 00 ff ff ff ff 08 00 02 00 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
                 m = SMB2Message(self, SMB2IoctlRequest(kwargs['fid'], 0x0011C017, flags = 0x01, max_out_size = 8196, in_data = data_bytes))
-                m.tid = read_message.tid
+                m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
-                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, listShareResultsCB, errback, fid = kwargs['fid'])
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, listShareResultsCB, errback, tid = kwargs['tid'], fid = kwargs['fid'])
                 messages_history.append(m)
             else:
-                closeFid(read_message.tid, kwargs['fid'], error = 'Failed to list shares: Unable to bind to Server Service RPC endpoint')
+                closeFid(kwargs['tid'], kwargs['fid'], error = 'Failed to list shares: Unable to bind to Server Service RPC endpoint')
 
         def listShareResultsCB(result_message, **kwargs):
             messages_history.append(result_message)
@@ -496,13 +538,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 data_bytes = result_message.payload.out_data
 
                 if ord(data_bytes[3]) & 0x02 == 0:
-                    sendReadRequest(result_message.tid, kwargs['fid'], data_bytes)
+                    sendReadRequest(kwargs['tid'], kwargs['fid'], data_bytes)
                 else:
-                    decodeResults(result_message.tid, kwargs['fid'], data_bytes)
-            elif result_message.status == 0x0103:   # STATUS_PENDING
-                self.pending_requests[result_message.mid] = _PendingRequest(result_message.mid, expiry_time, listShareResultsCB, errback, fid = kwargs['fid'])
+                    decodeResults(kwargs['tid'], kwargs['fid'], data_bytes)
             else:
-                closeFid(result_message.tid, kwargs['fid'])
+                closeFid(kwargs['tid'], kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
 
         def decodeResults(tid, fid, data_bytes):
@@ -541,20 +581,19 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback,
-                                                           fid = fid, data_bytes = data_bytes)
+                                                           tid = tid, fid = fid, data_bytes = data_bytes)
 
         def readCB(read_message, **kwargs):
             messages_history.append(read_message)
             if read_message.status == 0:
-                data_len = read_message.payload.data_length
                 data_bytes = read_message.payload.data
 
                 if ord(data_bytes[3]) & 0x02 == 0:
-                    sendReadRequest(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+                    sendReadRequest(kwargs['tid'], kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:])
                 else:
-                    decodeResults(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+                    decodeResults(kwargs['tid'], kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:])
             else:
-                closeFid(read_message.tid, kwargs['fid'])
+                closeFid(kwargs['tid'], kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
 
         def closeFid(tid, fid, results = None, error = None):
@@ -619,13 +658,13 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                               create_context_data = create_context_data))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback, tid = tid)
             messages_history.append(m)
 
         def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
-                sendQuery(create_message.tid, create_message.payload.fid, '')
+                sendQuery(kwargs['tid'], create_message.payload.fid, '')
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to open directory' % ( path, service_name ), messages_history))
 
@@ -641,18 +680,18 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                       output_buf_len = output_buf_len))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, fid = fid, data_buf = data_buf)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, tid = tid, fid = fid, data_buf = data_buf)
             messages_history.append(m)
 
         def queryCB(query_message, **kwargs):
             messages_history.append(query_message)
             if query_message.status == 0:
                 data_buf = decodeQueryStruct(kwargs['data_buf'] + query_message.payload.data)
-                sendQuery(query_message.tid, kwargs['fid'], data_buf)
+                sendQuery(kwargs['tid'], kwargs['fid'], data_buf)
             elif query_message.status == 0x80000006L:  # STATUS_NO_MORE_FILES
-                closeFid(query_message.tid, kwargs['fid'], results = results)
+                closeFid(kwargs['tid'], kwargs['fid'], results = results)
             else:
-                closeFid(query_message.tid, kwargs['fid'], error = query_message.status)
+                closeFid(kwargs['tid'], kwargs['fid'], error = query_message.status)
 
         def decodeQueryStruct(data_bytes):
             # SMB_FIND_FILE_BOTH_DIRECTORY_INFO structure. See [MS-CIFS]: 2.2.8.1.7 and [MS-SMB]: 2.2.8.1.1
@@ -675,7 +714,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     return data_bytes[offset:]
 
                 filename = data_bytes[offset2:offset2+filename_length].decode('UTF-16LE')
-                short_name = short_name.decode('UTF-16LE')
+                short_name = short_name[:short_name_length].decode('UTF-16LE')
                 results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
                                           convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
                                           file_size, alloc_size, file_attributes, short_name, filename))
@@ -747,7 +786,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                               create_context_data = create_context_data))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback, tid = tid)
             messages_history.append(m)
 
         def createCB(create_message, **kwargs):
@@ -758,7 +797,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 info = SharedFile(p.create_time, p.lastaccess_time, p.lastwrite_time, p.change_time,
                                   p.file_size, p.allocation_size, p.file_attributes,
                                   filename, filename)
-                closeFid(create_message.tid, p.fid, info = info)
+                closeFid(kwargs['tid'], p.fid, info = info)
             else:
                 errback(OperationFailure('Failed to get attributes for %s on %s: Unable to open remote file object' % ( path, service_name ), messages_history))
 
@@ -815,7 +854,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                               create_disp = FILE_OPEN))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback, tid = tid)
             messages_history.append(m)
 
         def createCB(create_message, **kwargs):
@@ -828,9 +867,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                      file_info_class = 0, # [MS-SMB2] 2.2.37, 3.2.4.12
                                                      input_buf = '',
                                                      output_buf_len = self.max_transact_size))
-                m.tid = create_message.tid
+                m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
-                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, fid = create_message.payload.fid)
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, tid = kwargs['tid'], fid = create_message.payload.fid)
                 messages_history.append(m)
             else:
                 errback(OperationFailure('Failed to get the security descriptor of %s on %s: Unable to open file or directory' % ( path, service_name ), messages_history))
@@ -839,9 +878,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(query_message)
             if query_message.status == 0:
                 security = SecurityDescriptor.from_bytes(query_message.payload.data)
-                closeFid(query_message.tid, kwargs['fid'], result = security)
+                closeFid(kwargs['tid'], kwargs['fid'], result = security)
             else:
-                closeFid(query_message.tid, kwargs['fid'], error = query_message.status)
+                closeFid(kwargs['tid'], kwargs['fid'], error = query_message.status)
 
         def closeFid(tid, fid, result = None, error = None):
             m = SMB2Message(self, SMB2CloseRequest(fid))
@@ -921,13 +960,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                      file_info_class = 0x16,  # FileStreamInformation [MS-FSCC] 2.4
                                                      input_buf = '',
                                                      output_buf_len = 4096))
-                m.tid = create_message.tid
+                m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, infoCB, errback,
-                                                               fid = create_message.payload.fid, file_attributes = create_message.payload.file_attributes)
+                                                               tid = kwargs['tid'],
+                                                               fid = create_message.payload.fid,
+                                                               file_attributes = create_message.payload.file_attributes)
                 messages_history.append(m)
             else:
-                errback(OperationFailure('Failed to list %s on %s: Unable to open file' % ( path, service_name ), messages_history))
+                errback(OperationFailure('Failed to retrieve %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def infoCB(info_message, **kwargs):
             messages_history.append(info_message)
@@ -942,9 +983,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                         remaining_len = file_len
                     if starting_offset + remaining_len > file_len:
                         remaining_len = file_len - starting_offset
-                    sendRead(info_message.tid, kwargs['fid'], starting_offset, remaining_len, 0, kwargs['file_attributes'])
+                    sendRead(kwargs['tid'], kwargs['fid'], starting_offset, remaining_len, 0, kwargs['file_attributes'])
             else:
-                errback(OperationFailure('Failed to list %s on %s: Unable to retrieve information on file' % ( path, service_name ), messages_history))
+                errback(OperationFailure('Failed to retrieve %s on %s: Unable to retrieve information on file' % ( path, service_name ), messages_history))
 
         def sendRead(tid, fid, offset, remaining_len, read_len, file_attributes):
             read_count = min(self.max_read_size, remaining_len)
@@ -957,7 +998,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback,
-                                                           fid = fid, offset = offset,
+                                                           tid = tid, fid = fid, offset = offset,
                                                            remaining_len = remaining_len,
                                                            read_len = read_len,
                                                            file_attributes = file_attributes)
@@ -971,12 +1012,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 remaining_len = kwargs['remaining_len'] - data_len
 
                 if remaining_len > 0:
-                    sendRead(read_message.tid, kwargs['fid'], kwargs['offset'] + data_len, remaining_len, kwargs['read_len'] + data_len, kwargs['file_attributes'])
+                    sendRead(kwargs['tid'], kwargs['fid'], kwargs['offset'] + data_len, remaining_len, kwargs['read_len'] + data_len, kwargs['file_attributes'])
                 else:
-                    closeFid(read_message.tid, kwargs['fid'], ret = ( file_obj, kwargs['file_attributes'], kwargs['read_len'] + data_len ))
+                    closeFid(kwargs['tid'], kwargs['fid'], ret = ( file_obj, kwargs['file_attributes'], kwargs['read_len'] + data_len ))
             else:
                 messages_history.append(read_message)
-                closeFid(read_message.tid, kwargs['fid'], error = read_message.status)
+                closeFid(kwargs['tid'], kwargs['fid'], error = read_message.status)
 
         def closeFid(tid, fid, ret = None, error = None):
             m = SMB2Message(self, SMB2CloseRequest(fid))
@@ -1052,10 +1093,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(create_message)
             if create_message.status == 0:
                 sendWrite(create_message.tid, create_message.payload.fid, starting_offset)
-            elif create_message.status == 0x0103:  # STATUS_PENDING
-                self.pending_requests[create_message.mid] = _PendingRequest(create_message.mid, expiry_time,
-                                                                          createCB, errback,
-                                                                            tid=kwargs['tid'])
             else:
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
@@ -1070,17 +1107,17 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m = SMB2Message(self, SMB2WriteRequest(fid, data, offset))
                 m.tid = tid
                 self._sendSMBMessage(m)
-                self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, writeCB, errback, fid = fid, offset = offset+data_len)
+                self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, writeCB, errback, tid = tid, fid = fid, offset = offset+data_len)
             else:
                 closeFid(tid, fid, offset = offset)
 
         def writeCB(write_message, **kwargs):
             # To avoid crazy memory usage when saving large files, we do not save every write_message in messages_history.
             if write_message.status == 0:
-                sendWrite(write_message.tid, kwargs['fid'], kwargs['offset'])
+                sendWrite(kwargs['tid'], kwargs['fid'], kwargs['offset'])
             else:
                 messages_history.append(write_message)
-                closeFid(write_message.tid, kwargs['fid'])
+                closeFid(kwargs['tid'], kwargs['fid'])
                 errback(OperationFailure('Failed to store %s on %s: Write failed' % ( path, service_name ), messages_history))
 
         def closeFid(tid, fid, error = None, offset = None):
@@ -1153,10 +1190,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(open_message)
             if open_message.status == 0:
                 sendDelete(open_message.tid, open_message.payload.fid)
-            elif open_message.status == 0x0103:  # STATUS_PENDING
-                self.pending_requests[open_message.mid] = _PendingRequest(open_message.mid, expiry_time,
-                                                                          createCB, errback,
-                                                                          tid=kwargs['tid'])
             else:
                 errback(OperationFailure('Failed to delete %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
@@ -1166,22 +1199,18 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 0x0d,  # SMB2_FILE_DISPOSITION_INFO
                                                data = '\x01'))
-            '''
-                Resources:
-                https://msdn.microsoft.com/en-us/library/cc246560.aspx
-                https://msdn.microsoft.com/en-us/library/cc232098.aspx
-            '''
+            # [MS-SMB2]: 2.2.39, [MS-FSCC]: 2.4.11
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback, fid = fid)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback, tid = tid, fid = fid)
             messages_history.append(m)
 
         def deleteCB(delete_message, **kwargs):
             messages_history.append(delete_message)
             if delete_message.status == 0:
-                closeFid(delete_message.tid, kwargs['fid'], status = 0)
+                closeFid(kwargs['tid'], kwargs['fid'], status = 0)
             else:
-                closeFid(delete_message.tid, kwargs['fid'], status = delete_message.status)
+                closeFid(kwargs['tid'], kwargs['fid'], status = delete_message.status)
 
         def closeFid(tid, fid, status = None):
             m = SMB2Message(self, SMB2CloseRequest(fid))
@@ -1251,7 +1280,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def createCB(open_message, **kwargs):
             messages_history.append(open_message)
             if open_message.status == 0:
-                sendReset(open_message.tid, open_message.payload.fid)
+                sendReset(kwargs['tid'], open_message.payload.fid)
             else:
                 errback(OperationFailure('Failed to reset attributes of %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
@@ -1261,24 +1290,18 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 4,  # FileBasicInformation
                                                data = struct.pack('qqqqii',0,0,0,0,0x80,0))) # FILE_ATTRIBUTE_NORMAL
-            '''
-                Resources:
-                https://msdn.microsoft.com/en-us/library/cc246560.aspx
-                https://msdn.microsoft.com/en-us/library/cc232064.aspx
-                https://msdn.microsoft.com/en-us/library/cc232094.aspx
-                https://msdn.microsoft.com/en-us/library/cc232110.aspx
-            '''
+            # [MS-SMB2]: 2.2.39, [MS-FSCC]: 2.4, [MS-FSCC]: 2.4.7, [MS-FSCC]: 2.6
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, resetCB, errback, fid = fid)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, resetCB, errback, tid = tid, fid = fid)
             messages_history.append(m)
 
         def resetCB(reset_message, **kwargs):
             messages_history.append(reset_message)
             if reset_message.status == 0:
-                closeFid(reset_message.tid, kwargs['fid'], status = 0)
+                closeFid(kwargs['tid'], kwargs['fid'], status = 0)
             else:
-                closeFid(reset_message.tid, kwargs['fid'], status = reset_message.status)
+                closeFid(kwargs['tid'], kwargs['fid'], status = reset_message.status)
 
         def closeFid(tid, fid, status = None):
             m = SMB2Message(self, SMB2CloseRequest(fid))
@@ -1341,13 +1364,13 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                               create_context_data = create_context_data))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
             messages_history.append(m)
 
         def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
-                closeFid(create_message.tid, create_message.payload.fid)
+                closeFid(kwargs['tid'], create_message.payload.fid)
             else:
                 errback(OperationFailure('Failed to create directory %s on %s: Create failed' % ( path, service_name ), messages_history))
 
@@ -1415,7 +1438,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def createCB(open_message, **kwargs):
             messages_history.append(open_message)
             if open_message.status == 0:
-                sendDelete(open_message.tid, open_message.payload.fid)
+                sendDelete(kwargs['tid'], open_message.payload.fid)
             else:
                 errback(OperationFailure('Failed to delete %s on %s: Unable to open directory' % ( path, service_name ), messages_history))
 
@@ -1427,15 +1450,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                data = '\x01'))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback, fid = fid)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback, tid = tid, fid = fid)
             messages_history.append(m)
 
         def deleteCB(delete_message, **kwargs):
             messages_history.append(delete_message)
             if delete_message.status == 0:
-                closeFid(delete_message.tid, kwargs['fid'], status = 0)
+                closeFid(kwargs['tid'], kwargs['fid'], status = 0)
             else:
-                closeFid(delete_message.tid, kwargs['fid'], status = delete_message.status)
+                closeFid(kwargs['tid'], kwargs['fid'], status = delete_message.status)
 
         def closeFid(tid, fid, status = None):
             m = SMB2Message(self, SMB2CloseRequest(fid))
@@ -1511,7 +1534,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
-                sendRename(create_message.tid, create_message.payload.fid)
+                sendRename(kwargs['tid'], create_message.payload.fid)
             else:
                 errback(OperationFailure('Failed to rename %s on %s: Unable to open file/directory' % ( old_path, service_name ), messages_history))
 
@@ -1524,15 +1547,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                data = data))
             m.tid = tid
             self._sendSMBMessage(m)
-            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, renameCB, errback, fid = fid)
+            self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, renameCB, errback, tid = tid, fid = fid)
             messages_history.append(m)
 
         def renameCB(rename_message, **kwargs):
             messages_history.append(rename_message)
             if rename_message.status == 0:
-                closeFid(rename_message.tid, kwargs['fid'], status = 0)
+                closeFid(kwargs['tid'], kwargs['fid'], status = 0)
             else:
-                closeFid(rename_message.tid, kwargs['fid'], status = rename_message.status)
+                closeFid(kwargs['tid'], kwargs['fid'], status = rename_message.status)
 
         def closeFid(tid, fid, status = None):
             m = SMB2Message(self, SMB2CloseRequest(fid))
@@ -1599,7 +1622,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
-                sendEnumSnapshots(create_message.tid, create_message.payload.fid)
+                sendEnumSnapshots(kwargs['tid'], create_message.payload.fid)
             else:
                 errback(OperationFailure('Failed to list snapshots %s on %s: Unable to open file/directory' % ( old_path, service_name ), messages_history))
 
@@ -1740,9 +1763,38 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                 self._handleSessionChallenge(message, ntlm_token)
                         except ( securityblob.BadSecurityBlobError, securityblob.UnsupportedSecurityProvider ), ex:
                             raise ProtocolError(str(ex), message.raw_data, message)
-                    elif message.status.internal_value == 0xc000006d:  # STATUS_LOGON_FAILURE
+                    elif (message.status.internal_value == 0xc000006d    # STATUS_LOGON_FAILURE
+                        or message.status.internal_value == 0xc0000064   # STATUS_NO_SUCH_USER
+                        or message.status.internal_value == 0xc000006a): # STATUS_WRONG_PASSWORD
                         self.has_authenticated = False
-                        self.log.info('Authentication (with extended security) failed. Please check username and password. You may need to enable/disable NTLMv2 authentication.')
+                        self.log.info('Authentication (with extended security) failed. Please check username and password.')
+                        self.onAuthFailed()
+                    elif (message.status.internal_value == 0xc0000193    # STATUS_ACCOUNT_EXPIRED
+                        or message.status.internal_value == 0xC0000071): # STATUS_PASSWORD_EXPIRED
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Account or password has expired.')
+                        self.onAuthFailed()
+                    elif message.status.internal_value == 0xc0000234: # STATUS_ACCOUNT_LOCKED_OUT
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Account has been locked due to too many invalid logon attempts.')
+                        self.onAuthFailed()
+                    elif message.status.internal_value == 0xc0000072: # STATUS_ACCOUNT_DISABLED
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Account has been disabled.')
+                        self.onAuthFailed()
+                    elif (message.status.internal_value == 0xc000006f    # STATUS_INVALID_LOGON_HOURS
+                        or message.status.internal_value == 0xc000015b   # STATUS_LOGON_TYPE_NOT_GRANTED
+                        or message.status.internal_value == 0xc0000070): # STATUS_INVALID_WORKSTATION
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Not allowed.')
+                        self.onAuthFailed()
+                    elif message.status.internal_value == 0xc000018c:  # STATUS_TRUSTED_DOMAIN_FAILURE
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Domain not trusted.')
+                        self.onAuthFailed()
+                    elif message.status.internal_value == 0xc000018d:  # STATUS_TRUSTED_RELATIONSHIP_FAILURE
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Workstation not trusted.')
                         self.onAuthFailed()
                     else:
                         raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status.internal_value,
@@ -1809,7 +1861,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                      lm_challenge_response,
                                                      session_key,
                                                      self.username,
-                                                     self.domain)
+                                                     self.domain,
+                                                     self.my_name)
 
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))
@@ -2003,13 +2056,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def readCB(read_message, **kwargs):
             messages_history.append(read_message)
             if not read_message.status.hasError:
-                data_len = read_message.payload.data_length
                 data_bytes = read_message.payload.data
 
                 if ord(data_bytes[3]) & 0x02 == 0:
-                    sendReadRequest(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+                    sendReadRequest(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:])
                 else:
-                    decodeResults(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:data_len-24])
+                    decodeResults(read_message.tid, kwargs['fid'], kwargs['data_bytes'] + data_bytes[24:])
             else:
                 closeFid(read_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
@@ -2056,7 +2108,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if support_dfs:
                 params_bytes += ("\\" + self.remote_name + "\\" + service_name + path + pattern + '\0').encode('UTF-16LE')
             else:
-                params_bytes += (path + pattern).encode('UTF-16LE')
+                params_bytes += (path + pattern + '\0').encode('UTF-16LE')
 
             m = SMBMessage(ComTransaction2Request(max_params_count = 10,
                                                   max_data_count = 16644,
@@ -2134,11 +2186,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 elif end_of_search:
                     callback(results)
                 else:
-                    sendFindNext(find_message.tid, sid, last_name_offset, kwargs.get('support_dfs', False))
+                    sendFindNext(find_message.tid, sid, 0, results[-1].filename, kwargs.get('support_dfs', False))
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
 
-        def sendFindNext(tid, sid, resume_key, support_dfs=False):
+        def sendFindNext(tid, sid, resume_key, resume_file, support_dfs=False):
             setup_bytes = struct.pack('<H', 0x0002)  # TRANS2_FIND_NEXT2 sub-command. See [MS-CIFS]: 2.2.6.3.1
             params_bytes = \
                 struct.pack('<HHHIH',
@@ -2146,11 +2198,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                             100,        # SearchCount
                             0x0104,     # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
                             resume_key, # ResumeKey
-                            0x000a)     # Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS | SMB_FIND_RETURN_RESUME_KEYS
-            if support_dfs:
-                params_bytes += ("\\" + self.remote_name + "\\" + service_name + path + pattern + '\0').encode('UTF-16LE')
-            else:
-                params_bytes += (path + pattern).encode('UTF-16LE')
+                            0x0006)     # Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS
+            params_bytes += (resume_file+'\0').encode('UTF-16LE')
 
             m = SMBMessage(ComTransaction2Request(max_params_count = 10,
                                                   max_data_count = 16644,
@@ -2196,7 +2245,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 elif end_of_search:
                     callback(results)
                 else:
-                    sendFindNext(find_message.tid, kwargs['sid'], last_name_offset, kwargs.get('support_dfs', False))
+                    sendFindNext(find_message.tid, kwargs['sid'], 0, results[-1].filename, kwargs.get('support_dfs', False))
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
 
@@ -2709,6 +2758,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
     def _echo_SMB1(self, data, callback, errback, timeout = 30):
         messages_history = [ ]
 
+        if not isinstance(data, type(b'')):
+            raise TypeError('Echo data must be %s not %s' % (type(b'').__name__, type(data).__name__))
+
         def echoCB(echo_message, **kwargs):
             messages_history.append(echo_message)
             if not echo_message.status.hasError:
@@ -2728,6 +2780,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 class SharedDevice:
     """
     Contains information about a single shared device on the remote server.
+
+    The following attributes are available:
+
+    * name : An unicode string containing the name of the shared device
+    * comments : An unicode string containing the user description of the shared device
     """
 
     # The following constants are taken from [MS-SRVS]: 2.2.2.4
@@ -2783,6 +2840,18 @@ class SharedFile:
     If you encounter *SharedFile* instance where its short_name attribute is empty but the filename attribute contains a short name which does not correspond
     to any files/folders on your remote shared device, it could be that the original filename on the file/folder entry on the shared device contains
     one of these prohibited characters: "\/[]:+|<>=;?,* (see [MS-CIFS]: 2.2.1.1.1 for more details).
+
+    The following attributes are available:
+
+    * create_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of creation of this file resource on the remote server
+    * last_access_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last access of this file resource on the remote server
+    * last_write_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last modification of this file resource on the remote server
+    * last_attr_change_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server
+    * file_size : File size in number of bytes
+    * alloc_size : Total number of bytes allocated to store this file
+    * file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3
+    * short_name : Unicode string containing the short name of this file (usually in 8.3 notation)
+    * filename : Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
     """
 
     def __init__(self, create_time, last_access_time, last_write_time, last_attr_change_time, file_size, alloc_size, file_attributes, short_name, filename):

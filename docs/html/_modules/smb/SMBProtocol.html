@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>smb.SMBProtocol &mdash; pysmb 1.1.22 documentation</title>
+    <title>smb.SMBProtocol &mdash; pysmb 1.1.23 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.22',
+        VERSION:     '1.1.23',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.22 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.1.23 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.22 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.23 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -434,7 +434,7 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Send an echo command containing *data* to the remote SMB/CIFS server. The remote SMB/CIFS will reply with the same *data*.</span>
 
-<span class="sd">        :param string data: Data to send to the remote server.</span>
+<span class="sd">        :param bytes data: Data to send to the remote server. Must be a bytes object.</span>
 <span class="sd">        :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance&#39;s *errback* method.</span>
 <span class="sd">        :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with the *data* parameter.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -481,7 +481,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.22 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.23 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
