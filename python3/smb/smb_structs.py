@@ -1279,7 +1279,7 @@ class ComEchoRequest(Payload):
     - [MS-CIFS]: 2.2.4.39.1
     """
 
-    def __init__(self, echo_data = '', echo_count = 1):
+    def __init__(self, echo_data = b'', echo_count = 1):
         self.echo_count = echo_count
         self.echo_data = echo_data
 
