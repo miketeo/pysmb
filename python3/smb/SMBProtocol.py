@@ -369,7 +369,7 @@ class SMBProtocolFactory(ClientFactory):
         """
         Send an echo command containing *data* to the remote SMB/CIFS server. The remote SMB/CIFS will reply with the same *data*.
 
-        :param string data: Data to send to the remote server.
+        :param bytes data: Data to send to the remote server. Must be a bytes object.
         :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance's *errback* method.
         :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with the *data* parameter.
         """

@@ -415,7 +415,7 @@ class SMBConnection(SMB):
         It supports the use of wildcards in file names, allowing for unlocking of multiple files/folders in a single request.
         This function is very helpful when deleting files/folders that are read-only.
         Note: this function is currently only implemented for SMB2! Technically, it sets the FILE_ATTRIBUTE_NORMAL flag, therefore clearing all other flags. (See https://msdn.microsoft.com/en-us/library/cc232110.aspx for further information)
-        
+
         :param string/unicode service_name: Contains the name of the shared folder.
         :param string/unicode path_file_pattern: The pathname of the file(s) to be deleted, relative to the service_name.
                                                  Wildcards may be used in the filename component of the path.
@@ -527,7 +527,7 @@ class SMBConnection(SMB):
         """
         Send an echo command containing *data* to the remote SMB/CIFS server. The remote SMB/CIFS will reply with the same *data*.
 
-        :param string data: Data to send to the remote server.
+        :param bytes data: Data to send to the remote server. Must be a bytes object.
         :return: The *data* parameter
         """
         if not self.sock:
