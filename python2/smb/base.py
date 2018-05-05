@@ -2650,6 +2650,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
     def _echo_SMB1(self, data, callback, errback, timeout = 30):
         messages_history = [ ]
 
+        if not isinstance(data, type(b'')):
+            raise TypeError('Echo data must be %s not %s' % (type(b'').__name__, type(data).__name__))
+
         def echoCB(echo_message, **kwargs):
             messages_history.append(echo_message)
             if not echo_message.status.hasError:
