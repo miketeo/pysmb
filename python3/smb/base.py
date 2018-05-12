@@ -346,7 +346,8 @@ class SMB(NMBSession):
                                                      lm_challenge_response,
                                                      session_key,
                                                      self.username,
-                                                     self.domain)
+                                                     self.domain,
+                                                     self.my_name)
 
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))
@@ -1805,7 +1806,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                      lm_challenge_response,
                                                      session_key,
                                                      self.username,
-                                                     self.domain)
+                                                     self.domain,
+                                                     self.my_name)
 
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))
