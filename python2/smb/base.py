@@ -272,9 +272,30 @@ class SMB(NMBSession):
                             self._handleSessionChallenge(message, ntlm_token)
                     except ( securityblob.BadSecurityBlobError, securityblob.UnsupportedSecurityProvider ), ex:
                         raise ProtocolError(str(ex), message.raw_data, message)
-                elif message.status == 0xc000006d:  # STATUS_LOGON_FAILURE
+                elif (message.status == 0xc000006d   # STATUS_LOGON_FAILURE
+                    or message.status == 0xc0000064  # STATUS_NO_SUCH_USER
+                    or message.status == 0xc000006a):# STATUS_WRONG_PASSWORD
                     self.has_authenticated = False
                     self.log.info('Authentication (on SMB2) failed. Please check username and password.')
+                    self.onAuthFailed()
+                elif (message.status == 0xc0000193    # STATUS_ACCOUNT_EXPIRED
+                    or message.status == 0xC0000071): # STATUS_PASSWORD_EXPIRED
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Account or password has expired.')
+                    self.onAuthFailed()
+                elif message.status == 0xc0000234: # STATUS_ACCOUNT_LOCKED_OUT
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Account has been locked due to too many invalid logon attempts.')
+                    self.onAuthFailed()
+                elif message.status == 0xc0000072: # STATUS_ACCOUNT_DISABLED
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Account has been disabled.')
+                    self.onAuthFailed()
+                elif (message.status == 0xc000006f    # STATUS_INVALID_LOGON_HOURS
+                    or message.status == 0xc000015b   # STATUS_LOGON_TYPE_NOT_GRANTED
+                    or message.status == 0xc0000070): # STATUS_INVALID_WORKSTATION
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Not allowed.')
                     self.onAuthFailed()
                 else:
                     raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status,
@@ -1682,9 +1703,30 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                 self._handleSessionChallenge(message, ntlm_token)
                         except ( securityblob.BadSecurityBlobError, securityblob.UnsupportedSecurityProvider ), ex:
                             raise ProtocolError(str(ex), message.raw_data, message)
-                    elif message.status.internal_value == 0xc000006d:  # STATUS_LOGON_FAILURE
+                    elif (message.status.internal_value == 0xc000006d    # STATUS_LOGON_FAILURE
+                        or message.status.internal_value == 0xc0000064   # STATUS_NO_SUCH_USER
+                        or message.status.internal_value == 0xc000006a): # STATUS_WRONG_PASSWORD
                         self.has_authenticated = False
-                        self.log.info('Authentication (with extended security) failed. Please check username and password. You may need to enable/disable NTLMv2 authentication.')
+                        self.log.info('Authentication (with extended security) failed. Please check username and password.')
+                        self.onAuthFailed()
+                    elif (message.status.internal_value == 0xc0000193    # STATUS_ACCOUNT_EXPIRED
+                        or message.status.internal_value == 0xC0000071): # STATUS_PASSWORD_EXPIRED
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Account or password has expired.')
+                        self.onAuthFailed()
+                    elif message.status.internal_value == 0xc0000234: # STATUS_ACCOUNT_LOCKED_OUT
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Account has been locked due to too many invalid logon attempts.')
+                        self.onAuthFailed()
+                    elif message.status.internal_value == 0xc0000072: # STATUS_ACCOUNT_DISABLED
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Account has been disabled.')
+                        self.onAuthFailed()
+                    elif (message.status.internal_value == 0xc000006f    # STATUS_INVALID_LOGON_HOURS
+                        or message.status.internal_value == 0xc000015b   # STATUS_LOGON_TYPE_NOT_GRANTED
+                        or message.status.internal_value == 0xc0000070): # STATUS_INVALID_WORKSTATION
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Not allowed.')
                         self.onAuthFailed()
                     else:
                         raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status.internal_value,
