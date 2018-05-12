@@ -297,6 +297,14 @@ class SMB(NMBSession):
                     self.has_authenticated = False
                     self.log.info('Authentication (on SMB2) failed. Not allowed.')
                     self.onAuthFailed()
+                elif message.status == 0xc000018c:  # STATUS_TRUSTED_DOMAIN_FAILURE
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Domain not trusted.')
+                    self.onAuthFailed()
+                elif message.status == 0xc000018d:  # STATUS_TRUSTED_RELATIONSHIP_FAILURE
+                    self.has_authenticated = False
+                    self.log.info('Authentication (on SMB2) failed. Workstation not trusted.')
+                    self.onAuthFailed()
                 else:
                     raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status,
                                         message.raw_data, message)
@@ -1727,6 +1735,14 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                         or message.status.internal_value == 0xc0000070): # STATUS_INVALID_WORKSTATION
                         self.has_authenticated = False
                         self.log.info('Authentication (with extended security) failed. Not allowed.')
+                        self.onAuthFailed()
+                    elif message.status.internal_value == 0xc000018c:  # STATUS_TRUSTED_DOMAIN_FAILURE
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Domain not trusted.')
+                        self.onAuthFailed()
+                    elif message.status.internal_value == 0xc000018d:  # STATUS_TRUSTED_RELATIONSHIP_FAILURE
+                        self.has_authenticated = False
+                        self.log.info('Authentication (with extended security) failed. Workstation not trusted.')
                         self.onAuthFailed()
                     else:
                         raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status.internal_value,
