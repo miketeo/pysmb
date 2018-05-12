@@ -45,6 +45,13 @@ def test_listSubPath_SMB1():
     assert ( 'Test Folder', True ) in filenames
     assert ( '子文件夹', True ) in filenames
 
+@with_setup(setup_func_SMB1, teardown_func)
+def test_listPathWithManyFiles_SMB1():
+    global conn
+    results = conn.listPath('smbtest', '/RFC Archive/')
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    assert len(list(filenames))==999
+
 @with_setup(setup_func_SMB2, teardown_func)
 def test_listPath_SMB2():
     global conn
@@ -64,3 +71,10 @@ def test_listSubPath_SMB2():
     assert ( 'Test File.txt', False ) in filenames
     assert ( 'Test Folder', True ) in filenames
     assert ( '子文件夹', True ) in filenames
+
+@with_setup(setup_func_SMB2, teardown_func)
+def test_listPathWithManyFiles_SMB2():
+    global conn
+    results = conn.listPath('smbtest', '/RFC Archive/')
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    assert len(list(filenames))==999
