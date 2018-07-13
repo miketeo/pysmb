@@ -144,6 +144,10 @@ class SMBMessage:
         self.payload = None
 
     @property
+    def isAsync(self):
+        return bool(self.flags & SMB2_FLAGS_ASYNC_COMMAND)
+
+    @property
     def isReply(self):
         return bool(self.flags & SMB_FLAGS_REPLY)
 

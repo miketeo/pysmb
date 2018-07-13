@@ -61,6 +61,7 @@ class SMB(NMBSession):
         self.use_ntlm_v2 = use_ntlm_v2 #: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1
         self.smb_message = SMBMessage()
         self.is_using_smb2 = False   #: Are we communicating using SMB2 protocol? self.smb_message will be a SMB2Message instance if this flag is True
+        self.async_requests = { }    #: AsyncID mapped to _PendingRequest instance
         self.pending_requests = { }  #: MID mapped to _PendingRequest instance
         self.connected_trees = { }   #: Share name mapped to TID
         self.next_rpc_call_id = 1    #: Next RPC callID value. Not used directly in SMB message. Usually encapsulated in sub-commands under SMB_COM_TRANSACTION or SMB_COM_TRANSACTION2 messages
@@ -303,10 +304,21 @@ class SMB(NMBSession):
                     raise ProtocolError('Unknown status value (0x%08X) in SMB_COM_SESSION_SETUP_ANDX (with extended security)' % message.status,
                                         message.raw_data, message)
 
-            req = self.pending_requests.pop(message.mid, None)
-            if req:
-                req.callback(message, **req.kwargs)
-                return True
+            if message.isAsync:
+                if message.status == 0x00000103:  # STATUS_PENDING
+                    req = self.pending_requests.pop(message.mid, None)
+                    if req:
+                        self.async_requests[message.async_id] = req
+                else: # All other status including SUCCESS
+                    req = self.async_requests.pop(message.async_id, None)
+                    if req:
+                        req.callback(message, **req.kwargs)
+                        return True
+            else:
+                req = self.pending_requests.pop(message.mid, None)
+                if req:
+                    req.callback(message, **req.kwargs)
+                    return True
 
 
     def _updateServerInfo_SMB2(self, payload):
