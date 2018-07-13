@@ -919,7 +919,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                                fid = create_message.payload.fid, file_attributes = create_message.payload.file_attributes)
                 messages_history.append(m)
             else:
-                errback(OperationFailure('Failed to list %s on %s: Unable to open file' % ( path, service_name ), messages_history))
+                errback(OperationFailure('Failed to retrieve %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def infoCB(info_message, **kwargs):
             messages_history.append(info_message)
@@ -936,7 +936,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                         remaining_len = file_len - starting_offset
                     sendRead(info_message.tid, kwargs['fid'], starting_offset, remaining_len, 0, kwargs['file_attributes'])
             else:
-                errback(OperationFailure('Failed to list %s on %s: Unable to retrieve information on file' % ( path, service_name ), messages_history))
+                errback(OperationFailure('Failed to retrieve %s on %s: Unable to retrieve information on file' % ( path, service_name ), messages_history))
 
         def sendRead(tid, fid, offset, remaining_len, read_len, file_attributes):
             read_count = min(self.max_read_size, remaining_len)
