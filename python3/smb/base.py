@@ -2719,6 +2719,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 class SharedDevice:
     """
     Contains information about a single shared device on the remote server.
+
+    The following attributes are available:
+
+    * name : An unicode string containing the name of the shared device
+    * comments : An unicode string containing the user description of the shared device
     """
 
     # The following constants are taken from [MS-SRVS]: 2.2.2.4
@@ -2774,6 +2779,18 @@ class SharedFile:
     If you encounter *SharedFile* instance where its short_name attribute is empty but the filename attribute contains a short name which does not correspond
     to any files/folders on your remote shared device, it could be that the original filename on the file/folder entry on the shared device contains
     one of these prohibited characters: "\/[]:+|<>=;?,* (see [MS-CIFS]: 2.2.1.1.1 for more details).
+
+    The following attributes are available:
+
+    * create_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of creation of this file resource on the remote server
+    * last_access_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last access of this file resource on the remote server
+    * last_write_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last modification of this file resource on the remote server
+    * last_attr_change_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server
+    * file_size : File size in number of bytes
+    * alloc_size : Total number of bytes allocated to store this file
+    * file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3
+    * short_name : Unicode string containing the short name of this file (usually in 8.3 notation)
+    * filename : Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
     """
 
     def __init__(self, create_time, last_access_time, last_write_time, last_attr_change_time, file_size, alloc_size, file_attributes, short_name, filename):
