@@ -2129,11 +2129,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 elif end_of_search:
                     callback(results)
                 else:
-                    sendFindNext(find_message.tid, sid, last_name_offset, kwargs.get('support_dfs', False))
+                    sendFindNext(find_message.tid, sid, 0, results[-1].filename, kwargs.get('support_dfs', False))
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
 
-        def sendFindNext(tid, sid, resume_key, support_dfs=False):
+        def sendFindNext(tid, sid, resume_key, resume_file, support_dfs=False):
             setup_bytes = struct.pack('<H', 0x0002)  # TRANS2_FIND_NEXT2 sub-command. See [MS-CIFS]: 2.2.6.3.1
             params_bytes = \
                 struct.pack('<HHHIH',
@@ -2141,11 +2141,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                             100,        # SearchCount
                             0x0104,     # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
                             resume_key, # ResumeKey
-                            0x000a)     # Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS | SMB_FIND_RETURN_RESUME_KEYS
-            if support_dfs:
-                params_bytes += ("\\" + self.remote_name + "\\" + service_name + path + pattern + '\0').encode('UTF-16LE')
-            else:
-                params_bytes += (path + pattern).encode('UTF-16LE')
+                            0x0006)     # Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS
+            params_bytes += (resume_file+'\0').encode('UTF-16LE')
 
             m = SMBMessage(ComTransaction2Request(max_params_count = 10,
                                                   max_data_count = 16644,
@@ -2191,7 +2188,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 elif end_of_search:
                     callback(results)
                 else:
-                    sendFindNext(find_message.tid, kwargs['sid'], last_name_offset, kwargs.get('support_dfs', False))
+                    sendFindNext(find_message.tid, kwargs['sid'], 0, results[-1].filename, kwargs.get('support_dfs', False))
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
 
