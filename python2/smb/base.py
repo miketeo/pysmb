@@ -860,13 +860,18 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def createCB(create_message, **kwargs):
             messages_history.append(create_message)
             if create_message.status == 0:
+                if self.smb2_dialect != SMB2_DIALECT_2 and self.cap_multi_credit:
+                    output_buf_len = 64 * 1024 * (self.credits - 1)
+                else:
+                    output_buf_len = self.max_transact_size
+
                 m = SMB2Message(self, SMB2QueryInfoRequest(create_message.payload.fid,
                                                      flags = 0,
                                                      additional_info = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
                                                      info_type = SMB2_INFO_SECURITY,
                                                      file_info_class = 0, # [MS-SMB2] 2.2.37, 3.2.4.12
                                                      input_buf = '',
-                                                     output_buf_len = self.max_transact_size))
+                                                     output_buf_len = output_buf_len))
                 m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, tid = kwargs['tid'], fid = create_message.payload.fid)
