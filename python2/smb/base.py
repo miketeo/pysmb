@@ -65,7 +65,7 @@ class SMB(NMBSession):
         self.sign_options = sign_options
         self.is_direct_tcp = is_direct_tcp
         self.use_ntlm_v2 = use_ntlm_v2 #: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1
-        self.smb_message = SMBMessage()
+        self.smb_message = SMBMessage(self)
         self.is_using_smb2 = False   #: Are we communicating using SMB2 protocol? self.smb_message will be a SMB2Message instance if this flag is True
         self.async_requests = { }    #: AsyncID mapped to _PendingRequest instance
         self.pending_requests = { }  #: MID mapped to _PendingRequest instance
@@ -119,7 +119,7 @@ class SMB(NMBSession):
     #
 
     def onNMBSessionOK(self):
-        self._sendSMBMessage(SMBMessage(ComNegotiateRequest()))
+        self._sendSMBMessage(SMBMessage(self, ComNegotiateRequest()))
 
     def onNMBSessionFailed(self):
         pass
@@ -169,7 +169,7 @@ class SMB(NMBSession):
                                    self.smb_message.command, self.smb_message.flags)
                 if self._updateState(self.smb_message):
                     # We need to create a new instance instead of calling reset() because the instance could be captured in the message history.
-                    self.smb_message = self._klassSMBMessage()
+                    self.smb_message = self._klassSMBMessage(self)
 
             if next_message_offset > 0:
                 data = data[next_message_offset:]
@@ -1874,7 +1874,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self.log.debug('LM challenge response is "%s" (%d bytes)', binascii.hexlify(lm_challenge_response), len(lm_challenge_response))
 
         blob = securityblob.generateAuthSecurityBlob(ntlm_data)
-        self._sendSMBMessage(SMBMessage(ComSessionSetupAndxRequest__WithSecurityExtension(0, blob)))
+        self._sendSMBMessage(SMBMessage(self, ComSessionSetupAndxRequest__WithSecurityExtension(0, blob)))
 
         if self.security_mode & NEGOTIATE_SECURITY_SIGNATURES_REQUIRE:
             self.log.info('Server requires all SMB messages to be signed')
@@ -1903,13 +1903,13 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         if message.hasExtendedSecurity or message.payload.supportsExtendedSecurity:
             ntlm_data = ntlm.generateNegotiateMessage()
             blob = securityblob.generateNegotiateSecurityBlob(ntlm_data)
-            self._sendSMBMessage(SMBMessage(ComSessionSetupAndxRequest__WithSecurityExtension(message.payload.session_key, blob)))
+            self._sendSMBMessage(SMBMessage(self, ComSessionSetupAndxRequest__WithSecurityExtension(message.payload.session_key, blob)))
         else:
             nt_password, _, _ = ntlm.generateChallengeResponseV1(self.password, message.payload.challenge, False)
             self.log.info('Performing NTLMv1 authentication (without extended security) with challenge "%s" and hashed password of "%s"',
                           binascii.hexlify(message.payload.challenge),
                           binascii.hexlify(nt_password))
-            self._sendSMBMessage(SMBMessage(ComSessionSetupAndxRequest__NoSecurityExtension(message.payload.session_key,
+            self._sendSMBMessage(SMBMessage(self, ComSessionSetupAndxRequest__NoSecurityExtension(message.payload.session_key,
                                                                                            self.username,
                                                                                            nt_password,
                                                                                            True,
@@ -1924,7 +1924,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         messages_history = [ ]
 
         def connectSrvSvc(tid):
-            m = SMBMessage(ComNTCreateAndxRequest('\\srvsvc',
+            m = SMBMessage(self, ComNTCreateAndxRequest('\\srvsvc',
                                                   flags = NT_CREATE_REQUEST_EXTENDED_RESPONSE,
                                                   access_mask = READ_CONTROL | FILE_WRITE_ATTRIBUTES | FILE_READ_ATTRIBUTES | FILE_WRITE_EA | FILE_READ_EA | FILE_APPEND_DATA | FILE_WRITE_DATA | FILE_READ_DATA,
                                                   share_access = FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -1953,7 +1953,7 @@ b8 10 b8 10 00 00 00 00 01 00 00 00 00 00 01 00
 c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 03 00 00 00 04 5d 88 8a eb 1c c9 11 9f e8 08 00
 2b 10 48 60 02 00 00 00""".replace(' ', '').replace('\n', ''))
-                m = SMBMessage(ComTransactionRequest(max_params_count = 0,
+                m = SMBMessage(self, ComTransactionRequest(max_params_count = 0,
                                                      max_data_count = 4280,
                                                      max_setup_count = 0,
                                                      data_bytes = data_bytes,
@@ -1991,7 +1991,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 01 00 00 00 01 00 00 00 04 00 02 00 00 00 00 00
 00 00 00 00 ff ff ff ff 08 00 02 00 00 00 00 00
 """.replace(' ', '').replace('\n', ''))
-                m = SMBMessage(ComTransactionRequest(max_params_count = 0,
+                m = SMBMessage(self, ComTransactionRequest(max_params_count = 0,
                                                      max_data_count = 4280,
                                                      max_setup_count = 0,
                                                      data_bytes = data_bytes,
@@ -2050,7 +2050,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         def sendReadRequest(tid, fid, data_bytes):
             read_count = min(4280, self.max_raw_size - 2)
-            m = SMBMessage(ComReadAndxRequest(fid = fid,
+            m = SMBMessage(self, ComReadAndxRequest(fid = fid,
                                               offset = 0,
                                               max_return_bytes_count = read_count,
                                               min_return_bytes_count = read_count))
@@ -2072,7 +2072,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to list shares: Unable to retrieve shared device list', messages_history))
 
         def closeFid(tid, fid):
-            m = SMBMessage(ComCloseRequest(fid))
+            m = SMBMessage(self, ComCloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             messages_history.append(m)
@@ -2085,7 +2085,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             else:
                 errback(OperationFailure('Failed to list shares: Unable to connect to IPC$', messages_history))
 
-        m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), path ), SERVICE_ANY, ''))
+        m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), path ), SERVICE_ANY, ''))
         self._sendSMBMessage(m)
         self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = path)
         messages_history.append(m)
@@ -2115,7 +2115,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             else:
                 params_bytes += (path + pattern + '\0').encode('UTF-16LE')
 
-            m = SMBMessage(ComTransaction2Request(max_params_count = 10,
+            m = SMBMessage(self, ComTransaction2Request(max_params_count = 10,
                                                   max_data_count = 16644,
                                                   max_setup_count = 0,
                                                   params_bytes = params_bytes,
@@ -2206,7 +2206,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                             0x0006)     # Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS
             params_bytes += (resume_file+'\0').encode('UTF-16LE')
 
-            m = SMBMessage(ComTransaction2Request(max_params_count = 10,
+            m = SMBMessage(self, ComTransaction2Request(max_params_count = 10,
                                                   max_data_count = 16644,
                                                   max_setup_count = 0,
                                                   params_bytes = params_bytes,
@@ -2259,7 +2259,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             params_bytes = struct.pack('<H', 3)      # Max referral level 3
             params_bytes += ("\\" + self.remote_name + "\\" + service_name).encode('UTF-16LE')
 
-            m = SMBMessage(ComTransaction2Request(max_params_count = 10,
+            m = SMBMessage(self, ComTransaction2Request(max_params_count = 10,
                                                   max_data_count = 16644,
                                                   max_setup_count = 0,
                                                   params_bytes = params_bytes,
@@ -2284,7 +2284,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to list %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2311,7 +2311,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                             0x0000) # Reserved
             params_bytes += (path + '\0').encode('UTF-16LE')
 
-            m = SMBMessage(ComTransaction2Request(max_params_count = 2,
+            m = SMBMessage(self, ComTransaction2Request(max_params_count = 2,
                                                   max_data_count = 65535,
                                                   max_setup_count = 0,
                                                   params_bytes = params_bytes,
@@ -2345,7 +2345,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to get attributes for %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2366,7 +2366,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         messages_history = [ ]
 
         def sendOpen(tid):
-            m = SMBMessage(ComOpenAndxRequest(filename = path,
+            m = SMBMessage(self, ComOpenAndxRequest(filename = path,
                                               access_mode = 0x0040,  # Sharing mode: Deny nothing to others
                                               open_mode = 0x0001,    # Failed if file does not exist
                                               search_attributes = SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM,
@@ -2389,7 +2389,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         def sendRead(tid, fid, offset, file_attributes, read_len, remaining_len):
             read_count = self.max_raw_size - 2
-            m = SMBMessage(ComReadAndxRequest(fid = fid,
+            m = SMBMessage(self, ComReadAndxRequest(fid = fid,
                                               offset = offset,
                                               max_return_bytes_count = read_count,
                                               min_return_bytes_count = min(0xFFFF, read_count)))
@@ -2428,7 +2428,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to retrieve %s on %s: Read failed' % ( path, service_name ), messages_history))
 
         def closeFid(tid, fid):
-            m = SMBMessage(ComCloseRequest(fid))
+            m = SMBMessage(self, ComCloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             messages_history.append(m)
@@ -2442,7 +2442,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to retrieve %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2460,7 +2460,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         messages_history = [ ]
 
         def sendOpen(tid):
-            m = SMBMessage(ComOpenAndxRequest(filename = path,
+            m = SMBMessage(self, ComOpenAndxRequest(filename = path,
                                               access_mode = 0x0041,  # Sharing mode: Deny nothing to others + Open for writing
                                               open_mode = 0x0012 if truncate else 0x0011,    # Create file if file does not exist. Overwrite or append depending on truncate parameter.
                                               search_attributes = SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM,
@@ -2483,7 +2483,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             data_bytes = file_obj.read(write_count)
             data_len = len(data_bytes)
             if data_len > 0:
-                m = SMBMessage(ComWriteAndxRequest(fid = fid, offset = offset, data_bytes = data_bytes))
+                m = SMBMessage(self, ComWriteAndxRequest(fid = fid, offset = offset, data_bytes = data_bytes))
                 m.tid = tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, writeCB, errback, fid = fid, offset = offset+data_len)
@@ -2501,7 +2501,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to store %s on %s: Write failed' % ( path, service_name ), messages_history))
 
         def closeFid(tid, fid):
-            m = SMBMessage(ComCloseRequest(fid))
+            m = SMBMessage(self, ComCloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             messages_history.append(m)
@@ -2515,7 +2515,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to store %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2530,7 +2530,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         messages_history = [ ]
 
         def sendDelete(tid):
-            m = SMBMessage(ComDeleteRequest(filename_pattern = path,
+            m = SMBMessage(self, ComDeleteRequest(filename_pattern = path,
                                             search_attributes = SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM))
             m.tid = tid
             self._sendSMBMessage(m)
@@ -2553,7 +2553,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to delete %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2571,7 +2571,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         messages_history = [ ]
 
         def sendCreate(tid):
-            m = SMBMessage(ComCreateDirectoryRequest(path))
+            m = SMBMessage(self, ComCreateDirectoryRequest(path))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback)
@@ -2593,7 +2593,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to create directory %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2608,7 +2608,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         messages_history = [ ]
 
         def sendDelete(tid):
-            m = SMBMessage(ComDeleteDirectoryRequest(path))
+            m = SMBMessage(self, ComDeleteDirectoryRequest(path))
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback)
@@ -2630,7 +2630,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to delete %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2646,7 +2646,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         messages_history = [ ]
 
         def sendRename(tid):
-            m = SMBMessage(ComRenameRequest(old_path = old_path,
+            m = SMBMessage(self, ComRenameRequest(old_path = old_path,
                                             new_path = new_path,
                                             search_attributes = SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM))
             m.tid = tid
@@ -2670,7 +2670,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to rename %s on %s: Unable to connect to shared device' % ( old_path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2689,7 +2689,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         results = [ ]
 
         def sendOpen(tid):
-            m = SMBMessage(ComOpenAndxRequest(filename = path,
+            m = SMBMessage(self, ComOpenAndxRequest(filename = path,
                                               access_mode = 0x0040,  # Sharing mode: Deny nothing to others
                                               open_mode = 0x0001,    # Failed if file does not exist
                                               search_attributes = 0,
@@ -2714,7 +2714,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                       fid,         # FID
                                       0x01,        # IsFctl
                                       0)           # IsFlags
-            m = SMBMessage(ComNTTransactRequest(function = 0x0002,  # NT_TRANSACT_IOCTL. [MS-CIFS]: 2.2.7.2.1
+            m = SMBMessage(self, ComNTTransactRequest(function = 0x0002,  # NT_TRANSACT_IOCTL. [MS-CIFS]: 2.2.7.2.1
                                                 max_params_count = 0,
                                                 max_data_count = 0xFFFF,
                                                 max_setup_count = 0,
@@ -2739,7 +2739,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to list snapshots %s on %s: Unable to list snapshots on path' % ( path, service_name ), messages_history))
 
         def closeFid(tid, fid):
-            m = SMBMessage(ComCloseRequest(fid))
+            m = SMBMessage(self, ComCloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
             messages_history.append(m)
@@ -2753,7 +2753,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     errback(OperationFailure('Failed to list snapshots %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
-            m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
+            m = SMBMessage(self, ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
@@ -2773,7 +2773,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             else:
                 errback(OperationFailure('Echo failed', messages_history))
 
-        m = SMBMessage(ComEchoRequest(echo_data = data))
+        m = SMBMessage(self, ComEchoRequest(echo_data = data))
         self._sendSMBMessage(m)
         self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, echoCB, errback)
         messages_history.append(m)

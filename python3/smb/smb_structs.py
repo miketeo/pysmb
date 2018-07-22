@@ -111,8 +111,9 @@ class SMBMessage:
     log = logging.getLogger('SMB.SMBMessage')
     protocol = 1
 
-    def __init__(self, payload = None):
+    def __init__(self, conn, payload = None):
         self.reset()
+        self.conn = conn
         if payload:
             self.payload = payload
             self.payload.initMessage(self)

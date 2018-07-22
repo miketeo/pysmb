@@ -330,7 +330,8 @@ class SMB2NegotiateResponse(Structure):
             self.server_start_time = convertFILETIMEtoEpoch(self.server_start_time)
             self.system_time = convertFILETIMEtoEpoch(self.system_time)
             self.security_blob = message.raw_data[security_buf_offset:security_buf_offset+security_buf_len]
-
+            message.conn.smb2_dialect = self.dialect_revision
+            
 
 class SMB2SessionSetupRequest(Structure):
     """
