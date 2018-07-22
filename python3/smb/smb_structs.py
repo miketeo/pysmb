@@ -13,6 +13,9 @@ SUPPORT_SMB2 = True
 # Set to True if you want to enable SMB2.1 and above protocol.
 SUPPORT_SMB2x = True
 
+# Supported dialects
+NT_LAN_MANAGER_DIALECT = 0  # 'NT LM 0.12' is always the first element in the dialect list and must always be included (MS-SMB 2.2.4.5.1)
+
 # Return the list of support SMB dialects based on the SUPPORT_x constants
 def init_dialects_list():
     dialects = [ b'NT LM 0.12' ]
