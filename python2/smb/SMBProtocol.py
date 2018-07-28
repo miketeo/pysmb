@@ -188,7 +188,7 @@ class SMBProtocolFactory(ClientFactory):
         Note that the default search parameter will query for all read-only (SMB_FILE_ATTRIBUTE_READONLY), hidden (SMB_FILE_ATTRIBUTE_HIDDEN),
         system (SMB_FILE_ATTRIBUTE_SYSTEM), archive (SMB_FILE_ATTRIBUTE_ARCHIVE), normal (SMB_FILE_ATTRIBUTE_INCL_NORMAL) files
         and directories (SMB_FILE_ATTRIBUTE_DIRECTORY).
-        If you do need to include "normal" files in the result, do not use bitwise-OR the SMB_FILE_ATTRIBUTE_INCL_NORMAL.
+        If you do need to include "normal" files in the result, define your own search parameter without the SMB_FILE_ATTRIBUTE_INCL_NORMAL constant.
         SMB_FILE_ATTRIBUTE_NORMAL should be used by itself and not be used with other bit constants.
 
         :param string/unicode service_name: the name of the shared folder for the *path*
