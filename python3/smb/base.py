@@ -2802,7 +2802,7 @@ class SharedFile:
     * last_attr_change_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server
     * file_size : File size in number of bytes
     * alloc_size : Total number of bytes allocated to store this file
-    * file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3
+    * file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.
     * short_name : Unicode string containing the short name of this file (usually in 8.3 notation)
     * filename : Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
     """
@@ -2814,7 +2814,7 @@ class SharedFile:
         self.last_attr_change_time = last_attr_change_time  #: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server
         self.file_size = file_size   #: File size in number of bytes
         self.alloc_size = alloc_size #: Total number of bytes allocated to store this file
-        self.file_attributes = file_attributes #: A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3
+        self.file_attributes = file_attributes #: A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.
         self.short_name = short_name #: Unicode string containing the short name of this file (usually in 8.3 notation)
         self.filename = filename     #: Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
 
@@ -2827,6 +2827,16 @@ class SharedFile:
     def isReadOnly(self):
         """A convenient property to return True if this file resource is read-only on the remote server"""
         return bool(self.file_attributes & ATTR_READONLY)
+
+    @property
+    def isNormal(self):
+        """
+        A convenient property to return True if this is a normal file.
+
+        Note that pysmb defines a normal file as a file entry that is not read-only, not hidden, not system, not archive and not a directory.
+        It ignores other attributes like compression, indexed, sparse, temporary and encryption.
+        """
+        return (self.file_attributes==ATTR_NORMAL) or ((self.file_attributes & 0xff)==0)
 
     def __unicode__(self):
         return 'Shared file: %s (FileSize:%d bytes, isDirectory:%s)' % ( self.filename, self.file_size, self.isDirectory )
