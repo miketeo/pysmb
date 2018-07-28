@@ -115,3 +115,43 @@ def test_listPathFilterForFiles_SMB2():
     assert len(list(filenames)) > 0
     for f, isDirectory in filenames:
         assert not isDirectory
+
+@with_setup(setup_func_SMB1, teardown_func)
+def test_listPathFilterPattern_SMB1():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name', pattern = 'Test*')
+    filenames = list(map(lambda r: ( r.filename, r.isDirectory ), results))
+    assert len(filenames) == 2
+    assert ( u'Test File.txt', False ) in filenames
+    assert ( u'Test Folder', True ) in filenames
+    assert ( u'子文件夹', True ) not in filenames
+
+@with_setup(setup_func_SMB2, teardown_func)
+def test_listPathFilterPattern_SMB2():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name', pattern = 'Test*')
+    filenames = list(map(lambda r: ( r.filename, r.isDirectory ), results))
+    assert len(filenames) == 2
+    assert ( u'Test File.txt', False ) in filenames
+    assert ( u'Test Folder', True ) in filenames
+    assert ( u'子文件夹', True ) not in filenames
+
+@with_setup(setup_func_SMB1, teardown_func)
+def test_listPathFilterUnicodePattern_SMB1():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name', pattern = u'*件夹')
+    filenames = list(map(lambda r: ( r.filename, r.isDirectory ), results))
+    assert len(filenames) == 1
+    assert ( u'Test File.txt', False ) not in filenames
+    assert ( u'Test Folder', True ) not in filenames
+    assert ( u'子文件夹', True ) in filenames
+
+@with_setup(setup_func_SMB2, teardown_func)
+def test_listPathFilterUnicodePattern_SMB2():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name', pattern = u'*件夹')
+    filenames = list(map(lambda r: ( r.filename, r.isDirectory ), results))
+    assert len(filenames) == 1
+    assert ( u'Test File.txt', False ) not in filenames
+    assert ( u'Test Folder', True ) not in filenames
+    assert ( u'子文件夹', True ) in filenames
