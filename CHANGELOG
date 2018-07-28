@@ -1,3 +1,15 @@
+pysmb-1.1.25, 28 July 2018
+========================
+- Fix buggy support for search parameter in listPath() method. Add
+  SMB_FILE_ATTRIBUTE_INCL_NORMAL bit constant to include 'normal' files with
+  other file types in the returned result. From now on, pysmb defines a 'normal' file
+  as a file entry that is not read-only, not hidden, not system, not archive and
+  not a directory; it ignores other attributes like compression, indexed, sparse,
+  temporary and encryption. listPath() method will now include 'normal' files
+  using the default search parameter.
+- Add isNormal property to SharedFile class to support test if the file is a
+  'normal' file (according to pysmb definition of 'normal' file).
+
 pysmb-1.1.24, 19 July 2018
 ========================
 - Improve listPath implementation for SMB1

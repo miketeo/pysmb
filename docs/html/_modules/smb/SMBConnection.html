@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>smb.SMBConnection &mdash; pysmb 1.1.23 documentation</title>
+    <title>smb.SMBConnection &mdash; pysmb 1.1.25 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.23',
+        VERSION:     '1.1.25',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.23 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.1.25 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.23 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.25 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -219,15 +219,23 @@
         <span class="k">return</span> <span class="n">results</span></div>
 
 <div class="viewcode-block" id="SMBConnection.listPath"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.listPath">[docs]</a>    <span class="k">def</span> <span class="nf">listPath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span>
-                 <span class="n">search</span> <span class="o">=</span> <span class="n">SMB_FILE_ATTRIBUTE_READONLY</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_HIDDEN</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_SYSTEM</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_DIRECTORY</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_ARCHIVE</span><span class="p">,</span>
+                 <span class="n">search</span> <span class="o">=</span> <span class="n">SMB_FILE_ATTRIBUTE_READONLY</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_HIDDEN</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_SYSTEM</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_DIRECTORY</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_ARCHIVE</span> <span class="o">|</span> <span class="n">SMB_FILE_ATTRIBUTE_INCL_NORMAL</span><span class="p">,</span>
                  <span class="n">pattern</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve a directory listing of files/folders at *path*</span>
 
+<span class="sd">        For simplicity, pysmb defines a &quot;normal&quot; file as a file entry that is not read-only, not hidden, not system, not archive and not a directory.</span>
+<span class="sd">        It ignores other attributes like compression, indexed, sparse, temporary and encryption.</span>
+
+<span class="sd">        Note that the default search parameter will query for all read-only (SMB_FILE_ATTRIBUTE_READONLY), hidden (SMB_FILE_ATTRIBUTE_HIDDEN),</span>
+<span class="sd">        system (SMB_FILE_ATTRIBUTE_SYSTEM), archive (SMB_FILE_ATTRIBUTE_ARCHIVE), normal (SMB_FILE_ATTRIBUTE_INCL_NORMAL) files</span>
+<span class="sd">        and directories (SMB_FILE_ATTRIBUTE_DIRECTORY).</span>
+<span class="sd">        If you do need to include &quot;normal&quot; files in the result, define your own search parameter without the SMB_FILE_ATTRIBUTE_INCL_NORMAL constant.</span>
+<span class="sd">        SMB_FILE_ATTRIBUTE_NORMAL should be used by itself and not be used with other bit constants.</span>
+
 <span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
 <span class="sd">        :param string/unicode path: path relative to the *service_name* where we are interested to learn about its files/sub-folders.</span>
 <span class="sd">        :param integer search: integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py).</span>
-<span class="sd">                               The default *search* value will query for all read-only, hidden, system, archive files and directories.</span>
 <span class="sd">        :param string/unicode pattern: the filter to apply to the results before returning to the client.</span>
 <span class="sd">        :return: A list of :doc:`smb.base.SharedFile&lt;smb_SharedFile&gt;` instances.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -693,12 +701,12 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.23 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.25 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2001-2017, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2018, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>

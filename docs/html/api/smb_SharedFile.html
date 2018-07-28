@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>SharedFile Class &mdash; pysmb 1.1.23 documentation</title>
+    <title>SharedFile Class &mdash; pysmb 1.1.25 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.23',
+        VERSION:     '1.1.25',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.23 documentation" href="../index.html" />
+    <link rel="top" title="pysmb 1.1.25 documentation" href="../index.html" />
     <link rel="next" title="SMB Exceptions" href="smb_exceptions.html" />
     <link rel="prev" title="SharedDevice Class" href="smb_SharedDevice.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.23 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.25 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -101,7 +101,7 @@ one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2
 <li>last_attr_change_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server</li>
 <li>file_size : File size in number of bytes</li>
 <li>alloc_size : Total number of bytes allocated to store this file</li>
-<li>file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3</li>
+<li>file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.</li>
 <li>short_name : Unicode string containing the short name of this file (usually in 8.3 notation)</li>
 <li>filename : Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.</li>
 </ul>
@@ -120,7 +120,7 @@ one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2
 <dl class="attribute">
 <dt id="smb.base.SharedFile.file_attributes">
 <code class="descname">file_attributes</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.file_attributes" title="Permalink to this definition">¶</a></dt>
-<dd><p>A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3</p>
+<dd><p>A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -139,6 +139,14 @@ one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2
 <dt id="smb.base.SharedFile.isDirectory">
 <code class="descname">isDirectory</code><a class="headerlink" href="#smb.base.SharedFile.isDirectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenient property to return True if this file resource is a directory on the remote server</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.base.SharedFile.isNormal">
+<code class="descname">isNormal</code><a class="headerlink" href="#smb.base.SharedFile.isNormal" title="Permalink to this definition">¶</a></dt>
+<dd><p>A convenient property to return True if this is a normal file.</p>
+<p>Note that pysmb defines a normal file as a file entry that is not read-only, not hidden, not system, not archive and not a directory.
+It ignores other attributes like compression, indexed, sparse, temporary and encryption.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -196,11 +204,11 @@ one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2
         <li class="right" >
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.23 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.25 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2001-2017, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2018, Michael Teo http://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
