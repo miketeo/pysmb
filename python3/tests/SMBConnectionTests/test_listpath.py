@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from smb.SMBConnection import SMBConnection
+from smb.smb_constants import *
 from .util import getConnectionInfo
 from nose.tools import with_setup
 from smb import smb_structs
@@ -78,3 +79,39 @@ def test_listPathWithManyFiles_SMB2():
     results = conn.listPath('smbtest', '/RFC Archive/')
     filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
     assert len(list(filenames))==999
+
+@with_setup(setup_func_SMB1, teardown_func)
+def test_listPathFilterForDirectory_SMB1():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name', search = SMB_FILE_ATTRIBUTE_DIRECTORY)
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    assert len(list(filenames)) > 0
+    for f, isDirectory in filenames:
+        assert isDirectory
+
+@with_setup(setup_func_SMB2, teardown_func)
+def test_listPathFilterForDirectory_SMB2():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name', search = SMB_FILE_ATTRIBUTE_DIRECTORY)
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    assert len(list(filenames)) > 0
+    for f, isDirectory in filenames:
+        assert isDirectory
+
+@with_setup(setup_func_SMB1, teardown_func)
+def test_listPathFilterForFiles_SMB1():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name', search = SMB_FILE_ATTRIBUTE_READONLY | SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM | SMB_FILE_ATTRIBUTE_ARCHIVE | SMB_FILE_ATTRIBUTE_INCL_NORMAL)
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    assert len(list(filenames)) > 0
+    for f, isDirectory in filenames:
+        assert not isDirectory
+
+@with_setup(setup_func_SMB2, teardown_func)
+def test_listPathFilterForFiles_SMB2():
+    global conn
+    results = conn.listPath('smbtest', '/Test Folder with Long Name', search = SMB_FILE_ATTRIBUTE_READONLY | SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM | SMB_FILE_ATTRIBUTE_ARCHIVE | SMB_FILE_ATTRIBUTE_INCL_NORMAL)
+    filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
+    assert len(list(filenames)) > 0
+    for f, isDirectory in filenames:
+        assert not isDirectory
