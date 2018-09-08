@@ -86,7 +86,7 @@ SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO_STRUCT = (
      #   UCHAR         Reserved;
     '2B'
      #   WCHAR         ShortName[12];
-    '24s'
+    '12H'
      #   USHORT        Reserved2;
     'H'
      #   LARGE_INTEGER FileID;
