@@ -35,6 +35,8 @@ def _convert_to_unicode(string):
         string = unicode(string, "utf-8")
     return string
 
+FILE_BOTH_DIRECTORY_INFORMATION = 0x03
+FILE_ID_BOTH_DIRECTORY_INFORMATION = 0x25
 SMB_FIND_FILE_BOTH_DIRECTORY_INFO = 0x0104
 SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO = 0x0106
 
@@ -686,7 +688,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         def sendQuery(tid, fid, data_buf):
             m = SMB2Message(SMB2QueryDirectoryRequest(fid, pattern,
-                                                      info_class = 0x03,   # FileBothDirectoryInformation
+                                                      info_class = FILE_ID_BOTH_DIRECTORY_INFORMATION,
                                                       flags = 0,
                                                       output_buf_len = self.max_transact_size))
             m.tid = tid
