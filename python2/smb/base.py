@@ -35,6 +35,66 @@ def _convert_to_unicode(string):
         string = unicode(string, "utf-8")
     return string
 
+SMB_FIND_FILE_BOTH_DIRECTORY_INFO = 0x0104
+SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO = 0x0106
+
+# https://msdn.microsoft.com/en-us/library/ee441880.aspx
+# SMB_FIND_FILE_BOTH_DIRECTORY_INFO structure. See [MS-CIFS]: 2.2.8.1.7 and [MS-SMB]: 2.2.8.1.1
+SMB_FIND_FILE_BOTH_DIRECTORY_INFO_STRUCT = (
+    '<'
+    #    ULONG         NextEntryOffset;
+    #    ULONG         FileIndex;
+    'II'
+    #    FILETIME      CreationTime;
+    #    FILETIME      LastAccessTime;
+    #    FILETIME      LastWriteTime;
+    #    FILETIME      LastChangeTime;
+    #    LARGE_INTEGER EndOfFile;
+    #    LARGE_INTEGER AllocationSize;
+    'QQQQQQ'
+    #    SMB_EXT_FILE_ATTR      ExtFileAttributes;
+    #    ULONG         FileNameLength;
+    #    ULONG         EaSize;
+    'III'
+    #    UCHAR         ShortNameLength;
+    #    UCHAR         Reserved;
+    'BB'
+    #    WCHAR         ShortName[12];
+    '24s'
+    #   SMB_STRING    FileName;
+    # ignored
+)
+
+# [MS-SMB]: 2.2.8.1.3
+SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO_STRUCT = (
+    '<'
+     #   ULONG         NextEntryOffset;
+     #   ULONG         FileIndex;
+    '2I'
+     #   FILETIME      CreationTime;
+     #   FILETIME      LastAccessTime;
+     #   FILETIME      LastWriteTime;
+     #   FILETIME      LastChangeTime;
+     #   LARGE_INTEGER EndOfFile;
+     #   LARGE_INTEGER AllocationSize;
+    '6Q'
+     #   SMB_EXT_FILE_ATTR     ExtFileAttributes;
+     #   ULONG         FileNameLength;
+     #   ULONG         EaSize;
+    '3I'
+     #   UCHAR         ShortNameLength;
+     #   UCHAR         Reserved;
+    '2B'
+     #   WCHAR         ShortName[12];
+    '24s'
+     #   USHORT        Reserved2;
+    'H'
+     #   LARGE_INTEGER FileID;
+    'Q'
+     #   SMB_STRING    FileName;
+     # ignored
+)
+
 
 class SMB(NMBSession):
     """
@@ -645,8 +705,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(kwargs['tid'], kwargs['fid'], error = query_message.status)
 
         def decodeQueryStruct(data_bytes):
-            # SMB_FIND_FILE_BOTH_DIRECTORY_INFO structure. See [MS-CIFS]: 2.2.8.1.7 and [MS-SMB]: 2.2.8.1.1
-            info_format = '<IIQQQQQQIIIBB24s'
+            info_format = SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO_STRUCT
+
             info_size = struct.calcsize(info_format)
 
             data_length = len(data_bytes)
@@ -658,7 +718,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 next_offset, _, \
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_size, alloc_size, file_attributes, filename_length, ea_size, \
-                short_name_length, _, short_name = struct.unpack(info_format, data_bytes[offset:offset+info_size])
+                short_name_length, _, short_name, _, file_id = struct.unpack(info_format, data_bytes[offset:offset+info_size])
 
                 offset2 = offset + info_size
                 if offset2 + filename_length > data_length:
@@ -675,7 +735,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if accept_result:
                     results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
                                               convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
-                                              file_size, alloc_size, file_attributes, short_name, filename))
+                                              file_size, alloc_size, file_attributes, short_name, filename, file_id))
 
                 if next_offset:
                     offset += next_offset
@@ -2053,7 +2113,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                             search & 0xFFFF, # SearchAttributes (need to restrict the values due to introduction of SMB_FILE_ATTRIBUTE_INCL_NORMAL)
                             100,    # SearchCount
                             0x0006, # Flags: SMB_FIND_CLOSE_AT_EOS | SMB_FIND_RETURN_RESUME_KEYS
-                            0x0104, # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
+                            SMB_FIND_FILE_BOTH_DIRECTORY_INFO, # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
                             0x0000) # SearchStorageType (seems to be ignored by Windows)
             if support_dfs:
                 params_bytes += ("\\" + self.remote_name + "\\" + service_name + path + pattern + '\0').encode('UTF-16LE')
@@ -2073,8 +2133,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
 
         def decodeFindStruct(data_bytes):
-            # SMB_FIND_FILE_BOTH_DIRECTORY_INFO structure. See [MS-CIFS]: 2.2.8.1.7 and [MS-SMB]: 2.2.8.1.1
-            info_format = '<IIQQQQQQIIIBB24s'
+            info_format = SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO_STRUCT
             info_size = struct.calcsize(info_format)
 
             data_length = len(data_bytes)
@@ -2086,7 +2145,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 next_offset, _, \
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_size, alloc_size, file_attributes, filename_length, ea_size, \
-                short_name_length, _, short_name = struct.unpack(info_format, data_bytes[offset:offset+info_size])
+                short_name_length, _, short_name, _, file_id = struct.unpack(info_format, data_bytes[offset:offset+info_size])
 
                 offset2 = offset + info_size
                 if offset2 + filename_length > data_length:
@@ -2103,7 +2162,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if accept_result:
                     results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
                                               convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
-                                              file_size, alloc_size, file_attributes, short_name, filename))
+                                              file_size, alloc_size, file_attributes, short_name, filename, file_id))
 
                 if next_offset:
                     offset += next_offset
@@ -2153,7 +2212,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 struct.pack('<HHHIH',
                             sid,        # SID
                             100,        # SearchCount
-                            0x0104,     # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
+                            SMB_FIND_FILE_BOTH_DIRECTORY_INFO,     # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
                             resume_key, # ResumeKey
                             0x0006)     # Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS
             params_bytes += (resume_file+'\0').encode('UTF-16LE')
@@ -2811,7 +2870,7 @@ class SharedFile:
     * filename : Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
     """
 
-    def __init__(self, create_time, last_access_time, last_write_time, last_attr_change_time, file_size, alloc_size, file_attributes, short_name, filename):
+    def __init__(self, create_time, last_access_time, last_write_time, last_attr_change_time, file_size, alloc_size, file_attributes, short_name, filename, file_id=None):
         self.create_time = create_time  #: Float value in number of seconds since 1970-01-01 00:00:00 to the time of creation of this file resource on the remote server
         self.last_access_time = last_access_time  #: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last access of this file resource on the remote server
         self.last_write_time = last_write_time    #: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last modification of this file resource on the remote server
@@ -2821,6 +2880,7 @@ class SharedFile:
         self.file_attributes = file_attributes #: A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.
         self.short_name = short_name #: Unicode string containing the short name of this file (usually in 8.3 notation)
         self.filename = filename     #: Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
+        self.file_id = file_id
 
     @property
     def isDirectory(self):
