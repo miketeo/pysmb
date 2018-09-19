@@ -2115,7 +2115,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                             search & 0xFFFF, # SearchAttributes (need to restrict the values due to introduction of SMB_FILE_ATTRIBUTE_INCL_NORMAL)
                             100,    # SearchCount
                             0x0006, # Flags: SMB_FIND_CLOSE_AT_EOS | SMB_FIND_RETURN_RESUME_KEYS
-                            SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO, # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
+                            SMB_FIND_FILE_BOTH_DIRECTORY_INFO, # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
                             0x0000) # SearchStorageType (seems to be ignored by Windows)
             if support_dfs:
                 params_bytes += ("\\" + self.remote_name + "\\" + service_name + path + pattern + '\0').encode('UTF-16LE')
@@ -2135,7 +2135,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(m)
 
         def decodeFindStruct(data_bytes):
-            info_format = SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO_STRUCT
+            info_format = SMB_FIND_FILE_BOTH_DIRECTORY_INFO_STRUCT
             info_size = struct.calcsize(info_format)
 
             data_length = len(data_bytes)
@@ -2147,7 +2147,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 next_offset, _, \
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_size, alloc_size, file_attributes, filename_length, ea_size, \
-                short_name_length, _, short_name, _, file_id = struct.unpack(info_format, data_bytes[offset:offset+info_size])
+                short_name_length, _, short_name = struct.unpack(info_format, data_bytes[offset:offset+info_size])
 
                 offset2 = offset + info_size
                 if offset2 + filename_length > data_length:
@@ -2164,7 +2164,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if accept_result:
                     results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
                                               convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
-                                              file_size, alloc_size, file_attributes, short_name, filename, file_id))
+                                              file_size, alloc_size, file_attributes, short_name, filename))
 
                 if next_offset:
                     offset += next_offset
@@ -2214,7 +2214,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 struct.pack('<HHHIH',
                             sid,        # SID
                             100,        # SearchCount
-                            SMB_FIND_FILE_ID_BOTH_DIRECTORY_INFO,     # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
+                            SMB_FIND_FILE_BOTH_DIRECTORY_INFO,     # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
                             resume_key, # ResumeKey
                             0x0006)     # Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS
             params_bytes += (resume_file+'\0').encode('UTF-16LE')
