@@ -79,8 +79,6 @@ def test_listPathWithManyFiles_SMB2():
     results = conn.listPath('smbtest', '/RFC Archive/')
     filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
     assert len(list(filenames))==999
-<<<<<<< HEAD
-=======
 
 @with_setup(setup_func_SMB1, teardown_func)
 def test_listPathFilterForDirectory_SMB1():
@@ -158,4 +156,3 @@ def test_listPathFilterUnicodePattern_SMB2():
     assert ( u'Test File.txt', False ) not in filenames
     assert ( u'Test Folder', True ) not in filenames
     assert ( u'子文件夹', True ) in filenames
->>>>>>> master
