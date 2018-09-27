@@ -8,11 +8,7 @@ pkgdir = { '': 'python%s' % sys.version_info[0] }
 
 setup(
     name = "pysmb",
-<<<<<<< HEAD
-    version = "1.1.24",
-=======
-    version = "1.1.25",
->>>>>>> master
+    version = "1.2.0",
     author = "Michael Teo",
     author_email = "miketeo@miketeo.net",
     license = "zlib/libpng",
