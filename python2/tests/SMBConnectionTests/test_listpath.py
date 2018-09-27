@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from smb.SMBConnection import SMBConnection
-<<<<<<< HEAD
-from smb.smb2_constants import SMB2_DIALECT_2
-=======
 from smb.smb_constants import *
->>>>>>> master
+from smb.smb2_constants import SMB2_DIALECT_2
 from util import getConnectionInfo
 from nose.tools import with_setup
 from smb import smb_structs
@@ -115,8 +112,6 @@ def test_listPathWithManyFiles_SMB2():
     results = conn.listPath('smbtest', '/RFC Archive/')
     filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
     assert len(filenames)==999
-<<<<<<< HEAD
-=======
 
 @with_setup(setup_func_SMB1, teardown_func)
 def test_listPathFilterForDirectory_SMB1():
@@ -193,4 +188,3 @@ def test_listPathFilterUnicodePattern_SMB2():
     assert ( u'Test File.txt', False ) not in filenames
     assert ( u'Test Folder', True ) not in filenames
     assert ( u'子文件夹', True ) in filenames
->>>>>>> master
