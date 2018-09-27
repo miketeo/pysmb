@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from smb.SMBConnection import SMBConnection
-<<<<<<< HEAD
-from smb.smb2_constants import SMB2_DIALECT_2
-=======
 from smb.smb_constants import *
->>>>>>> master
+from smb.smb2_constants import SMB2_DIALECT_2
 from .util import getConnectionInfo
 from nose.tools import with_setup
 from smb import smb_structs
@@ -111,19 +108,6 @@ def test_listSubPath_SMB2x():
     global conn
     assert conn.smb2_dialect != SMB2_DIALECT_2
     results = conn.listPath('smbtest', '/Test Folder with Long Name/')
-<<<<<<< HEAD
-    filenames = list(map(lambda r: ( r.filename, r.isDirectory ), results))
-    assert ( u'Test File.txt', False ) in filenames
-    assert ( u'Test Folder', True ) in filenames
-    assert ( u'子文件夹', True ) in filenames
-
-@with_setup(setup_func_SMB2, teardown_func)
-def test_listPathWithManyFiles_SMB2():
-    global conn
-    results = conn.listPath('smbtest', '/RFC Archive/')
-    filenames = list(map(lambda r: ( r.filename, r.isDirectory ), results))
-    assert len(filenames)==999
-=======
     filenames = [( r.filename, r.isDirectory ) for r in results]
     assert ( 'Test File.txt', False ) in filenames
     assert ( 'Test Folder', True ) in filenames
@@ -211,4 +195,3 @@ def test_listPathFilterUnicodePattern_SMB2():
     assert ( u'Test File.txt', False ) not in filenames
     assert ( u'Test Folder', True ) not in filenames
     assert ( u'子文件夹', True ) in filenames
->>>>>>> master
