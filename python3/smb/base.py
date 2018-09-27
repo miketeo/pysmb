@@ -708,9 +708,16 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
                 filename = data_bytes[offset2:offset2+filename_length].decode('UTF-16LE')
                 short_name = short_name[:short_name_length].decode('UTF-16LE')
-                results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
-                                          convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
-                                          file_size, alloc_size, file_attributes, short_name, filename))
+
+                accept_result = False
+                if (file_attributes & 0xff) in ( 0x00, ATTR_NORMAL ): # Only the first 8-bits are compared. We ignore other bits like temp, compressed, encryption, sparse, indexed, etc
+                    accept_result = (search == SMB_FILE_ATTRIBUTE_NORMAL) or (search & SMB_FILE_ATTRIBUTE_INCL_NORMAL)
+                else:
+                    accept_result = (file_attributes & search) > 0
+                if accept_result:
+                    results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
+                                              convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
+                                              file_size, alloc_size, file_attributes, short_name, filename))
 
                 if next_offset:
                     offset += next_offset
@@ -2100,11 +2107,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             setup_bytes = struct.pack('<H', 0x0001)  # TRANS2_FIND_FIRST2 sub-command. See [MS-CIFS]: 2.2.6.2.1
             params_bytes = \
                 struct.pack('<HHHHI',
-                            search, # SearchAttributes
+                            search & 0xFFFF, # SearchAttributes (need to restrict the values due to introduction of SMB_FILE_ATTRIBUTE_INCL_NORMAL)
                             100,    # SearchCount
                             0x0006, # Flags: SMB_FIND_CLOSE_AT_EOS | SMB_FIND_RETURN_RESUME_KEYS
                             0x0104, # InfoLevel: SMB_FIND_FILE_BOTH_DIRECTORY_INFO
-                            0x0000) # SearchStorageType
+                            0x0000) # SearchStorageType (seems to be ignored by Windows)
             if support_dfs:
                 params_bytes += ("\\" + self.remote_name + "\\" + service_name + path + pattern + '\0').encode('UTF-16LE')
             else:
@@ -2144,9 +2151,16 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
                 filename = data_bytes[offset2:offset2+filename_length].decode('UTF-16LE')
                 short_name = short_name.decode('UTF-16LE')
-                results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
-                                          convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
-                                          file_size, alloc_size, file_attributes, short_name, filename))
+
+                accept_result = False
+                if (file_attributes & 0xff) in ( 0x00, ATTR_NORMAL ): # Only the first 8-bits are compared. We ignore other bits like temp, compressed, encryption, sparse, indexed, etc
+                    accept_result = (search == SMB_FILE_ATTRIBUTE_NORMAL) or (search & SMB_FILE_ATTRIBUTE_INCL_NORMAL)
+                else:
+                    accept_result = (file_attributes & search) > 0
+                if accept_result:
+                    results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
+                                              convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
+                                              file_size, alloc_size, file_attributes, short_name, filename))
 
                 if next_offset:
                     offset += next_offset
@@ -2849,7 +2863,7 @@ class SharedFile:
     * last_attr_change_time : Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server
     * file_size : File size in number of bytes
     * alloc_size : Total number of bytes allocated to store this file
-    * file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3
+    * file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.
     * short_name : Unicode string containing the short name of this file (usually in 8.3 notation)
     * filename : Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
     """
@@ -2861,7 +2875,7 @@ class SharedFile:
         self.last_attr_change_time = last_attr_change_time  #: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server
         self.file_size = file_size   #: File size in number of bytes
         self.alloc_size = alloc_size #: Total number of bytes allocated to store this file
-        self.file_attributes = file_attributes #: A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3
+        self.file_attributes = file_attributes #: A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.
         self.short_name = short_name #: Unicode string containing the short name of this file (usually in 8.3 notation)
         self.filename = filename     #: Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
 
@@ -2874,6 +2888,16 @@ class SharedFile:
     def isReadOnly(self):
         """A convenient property to return True if this file resource is read-only on the remote server"""
         return bool(self.file_attributes & ATTR_READONLY)
+
+    @property
+    def isNormal(self):
+        """
+        A convenient property to return True if this is a normal file.
+
+        Note that pysmb defines a normal file as a file entry that is not read-only, not hidden, not system, not archive and not a directory.
+        It ignores other attributes like compression, indexed, sparse, temporary and encryption.
+        """
+        return (self.file_attributes==ATTR_NORMAL) or ((self.file_attributes & 0xff)==0)
 
     def __unicode__(self):
         return 'Shared file: %s (FileSize:%d bytes, isDirectory:%s)' % ( self.filename, self.file_size, self.isDirectory )

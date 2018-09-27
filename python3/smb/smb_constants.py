@@ -226,9 +226,13 @@ SMB_FILE_ATTRIBUTE_NORMAL = 0x00
 SMB_FILE_ATTRIBUTE_READONLY = 0x01
 SMB_FILE_ATTRIBUTE_HIDDEN = 0x02
 SMB_FILE_ATTRIBUTE_SYSTEM = 0x04
-SMB_FILE_ATTRIBUTE_VOLUME = 0x08
+SMB_FILE_ATTRIBUTE_VOLUME = 0x08  # Unsupported for listPath() operations
 SMB_FILE_ATTRIBUTE_DIRECTORY = 0x10
 SMB_FILE_ATTRIBUTE_ARCHIVE = 0x20
+# SMB_FILE_ATTRIBUTE_INCL_NORMAL is a special placeholder to include normal files
+# with other search attributes for listPath() operations. It is not defined in the MS-CIFS specs.
+SMB_FILE_ATTRIBUTE_INCL_NORMAL = 0x10000
+# Do not use the following values for listPath() operations as they are not supported for SMB2
 SMB_SEARCH_ATTRIBUTE_READONLY = 0x0100
 SMB_SEARCH_ATTRIBUTE_HIDDEN = 0x0200
 SMB_SEARCH_ATTRIBUTE_SYSTEM = 0x0400

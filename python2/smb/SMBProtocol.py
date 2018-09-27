@@ -177,15 +177,23 @@ class SMBProtocolFactory(ClientFactory):
         return d
 
     def listPath(self, service_name, path,
-                 search = SMB_FILE_ATTRIBUTE_READONLY | SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM | SMB_FILE_ATTRIBUTE_DIRECTORY | SMB_FILE_ATTRIBUTE_ARCHIVE,
+                 search = SMB_FILE_ATTRIBUTE_READONLY | SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM | SMB_FILE_ATTRIBUTE_DIRECTORY | SMB_FILE_ATTRIBUTE_ARCHIVE | SMB_FILE_ATTRIBUTE_INCL_NORMAL,
                  pattern = '*', timeout = 30):
         """
         Retrieve a directory listing of files/folders at *path*
 
+        For simplicity, pysmb defines a "normal" file as a file entry that is not read-only, not hidden, not system, not archive and not a directory.
+        It ignores other attributes like compression, indexed, sparse, temporary and encryption.
+
+        Note that the default search parameter will query for all read-only (SMB_FILE_ATTRIBUTE_READONLY), hidden (SMB_FILE_ATTRIBUTE_HIDDEN),
+        system (SMB_FILE_ATTRIBUTE_SYSTEM), archive (SMB_FILE_ATTRIBUTE_ARCHIVE), normal (SMB_FILE_ATTRIBUTE_INCL_NORMAL) files
+        and directories (SMB_FILE_ATTRIBUTE_DIRECTORY).
+        If you do not need to include "normal" files in the result, define your own search parameter without the SMB_FILE_ATTRIBUTE_INCL_NORMAL constant.
+        SMB_FILE_ATTRIBUTE_NORMAL should be used by itself and not be used with other bit constants.
+
         :param string/unicode service_name: the name of the shared folder for the *path*
         :param string/unicode path: path relative to the *service_name* where we are interested to learn about its files/sub-folders.
         :param integer search: integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py).
-                               The default *search* value will query for all read-only, hidden, system, archive files and directories.
         :param string/unicode pattern: the filter to apply to the results before returning to the client.
         :param integer/float timeout: Number of seconds that pysmb will wait before raising *SMBTimeout* via the returned *Deferred* instance's *errback* method.
         :return: A *twisted.internet.defer.Deferred* instance. The callback function will be called with a list of :doc:`smb.base.SharedFile<smb_SharedFile>` instances.
