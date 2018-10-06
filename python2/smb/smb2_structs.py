@@ -704,7 +704,7 @@ class SMB2IoctlRequest(Structure):
         # If Connection.SupportsMultiCredit is TRUE, the CreditCharge field in the SMB2 header
         # SHOULD be set to (max(InputCount, MaxOutputResponse) - 1) / 65536 + 1
         if message.conn.smb2_dialect != SMB2_DIALECT_2 and message.conn.cap_multi_credit:
-            message.credit_charge = (max(len(self.in_data), self.max_out_size) - 1) / 65536 + 1
+            message.credit_charge = int((max(len(self.in_data), self.max_out_size) - 1) / 65536 + 1)
 
 
 class SMB2IoctlResponse(Structure):
