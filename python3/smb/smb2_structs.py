@@ -331,7 +331,7 @@ class SMB2NegotiateResponse(Structure):
             self.system_time = convertFILETIMEtoEpoch(self.system_time)
             self.security_blob = message.raw_data[security_buf_offset:security_buf_offset+security_buf_len]
             message.conn.smb2_dialect = self.dialect_revision
-            
+
 
 class SMB2SessionSetupRequest(Structure):
     """
@@ -377,6 +377,14 @@ class SMB2SessionSetupResponse(Structure):
 
     STRUCTURE_FORMAT = "<HHHH"
     STRUCTURE_SIZE = struct.calcsize(STRUCTURE_FORMAT)
+
+    @property
+    def isGuestSession(self):
+        return (self.session_flags & 0x0001) > 0   # SMB2_SESSION_FLAG_IS_GUEST
+
+    @property
+    def isAnonymousSession(self):
+        return (self.session_flags & 0x0002) > 0   # SMB2_SESSION_FLAG_IS_NULL
 
     def decode(self, message):
         assert message.command == SMB2_COM_SESSION_SETUP
