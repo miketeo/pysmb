@@ -16,7 +16,14 @@ class SMBConnection(SMB):
     #: SMB messages will only be signed when remote server requires signing.
     SIGN_WHEN_REQUIRED = 2
 
-    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False):
+    #: Use the list of supported protocols configured in smb_structs.py
+    SMB_SUPPORT_DEFAULTS = None
+    #: Bitmask to support SMB2 protocol
+    SMB_SUPPORT_SMB2 = 0x02
+    #: Bitmask to support SMB 2.1 and above protocol
+    SMB_SUPPORT_SMB2x = 0x04
+
+    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False, smb_support_mask = SMB_SUPPORT_DEFAULTS):
         """
         Create a new SMBConnection instance.
 
@@ -44,8 +51,10 @@ class SMBConnection(SMB):
                                  If *SIGN_NEVER* (value=0), SMB messages will never be signed regardless of remote server's configurations; access errors will occur if the remote server requires signing.
         :param boolean is_direct_tcp: Controls whether the NetBIOS over TCP/IP (is_direct_tcp=False) or the newer Direct hosting of SMB over TCP/IP (is_direct_tcp=True) will be used for the communication.
                                       The default parameter is False which will use NetBIOS over TCP/IP for wider compatibility (TCP port: 139).
+        :param smb_support_mask: Overrides the default list of supported SMB protocols that will be negotiated with the remote server.
+                                 It is a bitmask of SMB_SUPPORT_xxx constants. The default value is to use the default list that is configured in smb_structs.py
         """
-        SMB.__init__(self, username, password, my_name, remote_name, domain, use_ntlm_v2, sign_options, is_direct_tcp)
+        SMB.__init__(self, username, password, my_name, remote_name, domain, use_ntlm_v2, sign_options, is_direct_tcp, smb_support_mask)
         self.sock = None
         self.auth_result = None
         self.is_busy = False

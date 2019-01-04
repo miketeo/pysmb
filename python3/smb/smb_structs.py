@@ -16,12 +16,12 @@ SUPPORT_SMB2x = True
 # Supported dialects
 NT_LAN_MANAGER_DIALECT = 0  # 'NT LM 0.12' is always the first element in the dialect list and must always be included (MS-SMB 2.2.4.5.1)
 
-# Return the list of support SMB dialects based on the SUPPORT_x constants
-def init_dialects_list():
+# Return the list of support SMB dialects based on the given parameters and SUPPORT_x constants
+def init_dialects_list(support_SMB2, support_SMB2x):
     dialects = [ b'NT LM 0.12' ]
-    if SUPPORT_SMB2:
+    if support_SMB2 or (support_SMB2 is None and SUPPORT_SMB2):
         dialects.append(b'SMB 2.002')
-    if SUPPORT_SMB2x:
+    if support_SMB2x or (support_SMB2x is None and SUPPORT_SMB2x):
         dialects.append(b'SMB 2.???')
     return dialects
 
@@ -291,6 +291,9 @@ class ComNegotiateRequest(Payload):
     - [MS-SMB]: 2.2.4.5.1
     """
 
+    def __init__(self, support_SMB2, support_SMB2x):
+        self.dialects = init_dialects_list(support_SMB2, support_SMB2x)
+
     def initMessage(self, message):
         Payload.initMessage(self, message)
         message.command = SMB_COM_NEGOTIATE
@@ -298,7 +301,7 @@ class ComNegotiateRequest(Payload):
     def prepare(self, message):
         assert message.payload == self
         message.parameters_data = b''
-        message.data = b''.join(map(lambda s: b'\x02'+s+b'\x00', init_dialects_list()))
+        message.data = b''.join(map(lambda s: b'\x02'+s+b'\x00', self.dialects))
 
 
 class ComNegotiateResponse(Payload):

@@ -51,13 +51,18 @@ class SMB(NMBSession):
     SIGN_WHEN_SUPPORTED = 1
     SIGN_WHEN_REQUIRED = 2
 
-    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False):
+    SMB_SUPPORT_DEFAULTS = None
+    SMB_SUPPORT_SMB2 = 0x02
+    SMB_SUPPORT_SMB2x = 0x04
+
+    def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False, smb_support_mask = SMB_SUPPORT_DEFAULTS):
         NMBSession.__init__(self, my_name, remote_name, is_direct_tcp = is_direct_tcp)
         self.username = username
         self.password = password
         self.domain = domain
         self.sign_options = sign_options
         self.is_direct_tcp = is_direct_tcp
+        self.smb_support_mask = smb_support_mask
         self.use_ntlm_v2 = use_ntlm_v2 #: Similar to LMAuthenticationPolicy and NTAuthenticationPolicy as described in [MS-CIFS] 3.2.1.1
         self.smb_message = SMBMessage(self)
         self.is_using_smb2 = False   #: Are we communicating using SMB2 protocol? self.smb_message will be a SMB2Message instance if this flag is True
@@ -113,7 +118,14 @@ class SMB(NMBSession):
     #
 
     def onNMBSessionOK(self):
-        self._sendSMBMessage(SMBMessage(self, ComNegotiateRequest()))
+        support_SMB2, support_SMB2x = None, None
+        if self.smb_support_mask is not None:
+            if self.smb_support_mask & self.SMB_SUPPORT_SMB2:
+                support_SMB2 = True
+            if self.smb_support_mask & self.SMB_SUPPORT_SMB2x:
+                support_SMB2x = True
+
+        self._sendSMBMessage(SMBMessage(self, ComNegotiateRequest(support_SMB2, support_SMB2x)))
 
     def onNMBSessionFailed(self):
         pass
