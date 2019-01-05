@@ -1,3 +1,9 @@
+pysmb-1.1.26, 5 Jan 2018
+========================
+- Prevents OperationError from being raised when listPath() operation does not
+  return any matching file results.
+- SMBConnection is now a context manager #122.
+
 pysmb-1.1.25, 28 July 2018
 ========================
 - Fix buggy support for search parameter in listPath() method. Add
