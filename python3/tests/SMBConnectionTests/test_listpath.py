@@ -195,3 +195,15 @@ def test_listPathFilterUnicodePattern_SMB2():
     assert ( u'Test File.txt', False ) not in filenames
     assert ( u'Test Folder', True ) not in filenames
     assert ( u'子文件夹', True ) in filenames
+
+@with_setup(setup_func_SMB1, teardown_func)
+def test_listPathFilterEmptyList_SMB1():
+    global conn
+    results = conn.listPath('smbtest', '/RFC Archive', pattern = '*.abc')
+    filenames = list(map(lambda r: ( r.filename, r.isDirectory ), results))
+
+@with_setup(setup_func_SMB2, teardown_func)
+def test_listPathFilterEmptyList_SMB2():
+    global conn
+    results = conn.listPath('smbtest', '/RFC Archive', pattern = '*.abc')
+    filenames = list(map(lambda r: ( r.filename, r.isDirectory ), results))
