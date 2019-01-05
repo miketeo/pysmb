@@ -1,4 +1,4 @@
-pysmb-1.1.26, 5 Jan 2018
+pysmb-1.1.26, 5 Jan 2019
 ========================
 - Prevents OperationError from being raised when listPath() operation does not
   return any matching file results.
