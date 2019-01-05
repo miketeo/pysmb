@@ -749,7 +749,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if kwargs['results'] is not None:
                 callback(kwargs['results'])
             elif kwargs['error'] is not None:
-                errback(OperationFailure('Failed to list %s on %s: Query failed with errorcode 0x%08x' % ( path, service_name, kwargs['error'] ), messages_history))
+                if kwargs['error'] == 0xC000000F:  # [MS-ERREF]: STATUS_NO_SUCH_FILE
+                    # Remote server returns STATUS_NO_SUCH_FILE error so we assume that the search returns no matching files
+                    callback([ ])
+                else:
+                    errback(OperationFailure('Failed to list %s on %s: Query failed with errorcode 0x%08x' % ( path, service_name, kwargs['error'] ), messages_history))
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
@@ -2215,7 +2219,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 else:
                     sendFindNext(find_message.tid, sid, 0, results[-1].filename, kwargs.get('support_dfs', False))
             else:
-                errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
+                if find_message.status.internal_value == 0xC000000F:  # [MS-ERREF]: STATUS_NO_SUCH_FILE
+                    # Remote server returns STATUS_NO_SUCH_FILE error so we assume that the search returns no matching files
+                    callback([ ])
+                else:
+                    errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
 
         def sendFindNext(tid, sid, resume_key, resume_file, support_dfs):
             setup_bytes = struct.pack('<H', 0x0002)  # TRANS2_FIND_NEXT2 sub-command. See [MS-CIFS]: 2.2.6.3.1
