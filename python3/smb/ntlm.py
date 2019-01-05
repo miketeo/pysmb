@@ -161,13 +161,13 @@ def generateChallengeResponseV2(password, user, server_challenge, server_info, d
     d = MD4()
     d.update(password.encode('UTF-16LE'))
     ntlm_hash = d.digest()   # The NT password hash
-    response_key = hmac.new(ntlm_hash, (user.upper() + domain).encode('UTF-16LE')).digest()  # The NTLMv2 password hash. In [MS-NLMP], this is the result of NTOWFv2 and LMOWFv2 functions
+    response_key = hmac.new(ntlm_hash, (user.upper() + domain).encode('UTF-16LE'), 'md5').digest()  # The NTLMv2 password hash. In [MS-NLMP], this is the result of NTOWFv2 and LMOWFv2 functions
     temp = b'\x01\x01' + b'\0'*6 + client_timestamp + client_challenge + b'\0'*4 + server_info
-    ntproofstr = hmac.new(response_key, server_challenge + temp).digest()
+    ntproofstr = hmac.new(response_key, server_challenge + temp, 'md5').digest()
 
     nt_challenge_response = ntproofstr + temp
-    lm_challenge_response = hmac.new(response_key, server_challenge + client_challenge).digest() + client_challenge
-    session_key = hmac.new(response_key, ntproofstr).digest()
+    lm_challenge_response = hmac.new(response_key, server_challenge + client_challenge, 'md5').digest() + client_challenge
+    session_key = hmac.new(response_key, ntproofstr, 'md5').digest()
 
     return nt_challenge_response, lm_challenge_response, session_key
 
