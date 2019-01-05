@@ -72,6 +72,15 @@ class SMBConnection(SMB):
             total_sent = total_sent + sent
 
     #
+    # Support for "with" context
+    #
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    #
     # Misc Properties
     #
 
@@ -594,7 +603,7 @@ class SMBConnection(SMB):
         type_, flags, length = struct.unpack('>BBH', data)
         if type_ == 0x0:
             # This is a Direct TCP packet
-            # The length is specified in the header from byte 8. (0-indexed) 
+            # The length is specified in the header from byte 8. (0-indexed)
             # we read a structure assuming NBT, so to get the real length
             # combine the length and flag fields together
             length = length + (flags << 16)
