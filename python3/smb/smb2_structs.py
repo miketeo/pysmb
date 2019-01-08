@@ -270,6 +270,14 @@ class SMB2SessionSetupResponse(Structure):
     STRUCTURE_FORMAT = "<HHHH"
     STRUCTURE_SIZE = struct.calcsize(STRUCTURE_FORMAT)
 
+    @property
+    def isGuestSession(self):
+        return (self.session_flags & 0x0001) > 0   # SMB2_SESSION_FLAG_IS_GUEST
+
+    @property
+    def isAnonymousSession(self):
+        return (self.session_flags & 0x0002) > 0 # SMB2_SESSION_FLAG_IS_NULL
+
     def decode(self, message):
         assert message.command == SMB2_COM_SESSION_SETUP
 

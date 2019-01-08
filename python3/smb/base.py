@@ -254,6 +254,19 @@ class SMB(NMBSession):
                         if result == securityblob.RESULT_ACCEPT_COMPLETED:
                             self.has_authenticated = True
                             self.log.info('Authentication (on SMB2) successful!')
+
+                            # [MS-SMB2]: 3.2.5.3.1
+                            # If the security subsystem indicates that the session was established by an anonymous user,
+                            # Session.SigningRequired MUST be set to FALSE.
+                            # If the SMB2_SESSION_FLAG_IS_GUEST bit is set in the SessionFlags field of the
+                            # SMB2 SESSION_SETUP Response and if Session.SigningRequired is TRUE, this indicates a SESSION_SETUP
+                            # failure and the connection MUST be terminated. If the SMB2_SESSION_FLAG_IS_GUEST bit is set in the SessionFlags
+                            # field of the SMB2 SESSION_SETUP Response and if RequireMessageSigning is FALSE, Session.SigningRequired
+                            # MUST be set to FALSE.
+                            if message.payload.isGuestSession or message.payload.isAnonymousSession:
+                                self.is_signing_active = False
+                                self.log.info('Signing disabled because session is guest/anonymous')
+
                             self.onAuthOK()
                         else:
                             raise ProtocolError('SMB2_COM_SESSION_SETUP status is 0 but security blob negResult value is %d' % result, message.raw_data, message)
