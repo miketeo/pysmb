@@ -72,6 +72,15 @@ class SMBConnection(SMB):
             total_sent = total_sent + sent
 
     #
+    # Support for "with" context
+    #
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+        
+    #
     # Misc Properties
     #
 
