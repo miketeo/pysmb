@@ -1,3 +1,7 @@
+pysmb-1.1.27, 9 Jan 2019
+========================
+- Remove support for SMB-2.1 dialect as it seems to have issues with Windows 2008 R2
+
 pysmb-1.1.26, 5 Jan 2019
 ========================
 - Prevents OperationError from being raised when listPath() operation does not
