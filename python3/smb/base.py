@@ -54,7 +54,7 @@ class SMB(NMBSession):
     def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False):
         NMBSession.__init__(self, my_name, remote_name, is_direct_tcp = is_direct_tcp)
         self.username = username
-        self.password = password
+        self._password = password
         self.domain = domain
         self.sign_options = sign_options
         self.is_direct_tcp = is_direct_tcp
@@ -100,6 +100,11 @@ class SMB(NMBSession):
                       (self.use_ntlm_v2 and 'v2') or 'v1',
                       (SUPPORT_EXTENDED_SECURITY and 'with') or 'without')
 
+    @property
+    def password(self):
+        if callable(self._password):
+            return self._password()
+        return self._password
 
     #
     # NMBSession Methods

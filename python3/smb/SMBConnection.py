@@ -21,6 +21,7 @@ class SMBConnection(SMB):
         Create a new SMBConnection instance.
 
         *username* and *password* are the user credentials required to authenticate the underlying SMB connection with the remote server.
+        *password* can be a string or a callable returning a string.
         File operations can only be proceeded after the connection has been authenticated successfully.
 
         Note that you need to call *connect* method to actually establish the SMB connection to the remote server and perform authentication.
