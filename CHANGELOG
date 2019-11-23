@@ -1,3 +1,8 @@
+pysmb-1.1.28, 23 Nov 2019
+========================
+- SharedFile instances returned from the listPath() method now has a new
+  file_id attribute which represents the file reference number given by the SMB server.
+
 pysmb-1.1.27, 9 Jan 2019
 ========================
 - Remove support for SMB-2.1 dialect as it seems to have issues with Windows 2008 R2
