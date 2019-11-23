@@ -30,6 +30,20 @@ def test_NTLMv1_auth_SMB1():
     assert not conn3.connect(info['server_ip'], info['server_port'])
 
 @with_setup(teardown = teardown_func)
+def test_NTLMv1_auth_SMB1_callable_password():
+    global conn, conn2, conn3
+    smb_structs.SUPPORT_SMB2 = False
+    info = getConnectionInfo()
+    conn = SMBConnection(info['user'], lambda: info['password'], info['client_name'], info['server_name'], use_ntlm_v2 = False, is_direct_tcp = True)
+    assert conn.connect(info['server_ip'], info['server_port'])
+
+    conn2 = SMBConnection(info['user'], lambda: 'wrongPass', info['client_name'], info['server_name'], use_ntlm_v2 = False, is_direct_tcp = True)
+    assert not conn2.connect(info['server_ip'], info['server_port'])
+
+    conn3 = SMBConnection('INVALIDUSER', lambda: 'wrongPass', info['client_name'], info['server_name'], use_ntlm_v2 = False, is_direct_tcp = True)
+    assert not conn3.connect(info['server_ip'], info['server_port'])
+
+@with_setup(teardown = teardown_func)
 def test_NTLMv2_auth_SMB1():
     global conn, conn2, conn3
     smb_structs.SUPPORT_SMB2 = False

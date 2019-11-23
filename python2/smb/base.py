@@ -60,7 +60,7 @@ class SMB(NMBSession):
     def __init__(self, username, password, my_name, remote_name, domain = '', use_ntlm_v2 = True, sign_options = SIGN_WHEN_REQUIRED, is_direct_tcp = False):
         NMBSession.__init__(self, my_name, remote_name, is_direct_tcp = is_direct_tcp)
         self.username = _convert_to_unicode(username)
-        self.password = _convert_to_unicode(password)
+        self._password = password
         self.domain = _convert_to_unicode(domain)
         self.sign_options = sign_options
         self.is_direct_tcp = is_direct_tcp
@@ -106,6 +106,10 @@ class SMB(NMBSession):
                       (self.use_ntlm_v2 and 'v2') or 'v1',
                       (SUPPORT_EXTENDED_SECURITY and 'with') or 'without')
 
+    @property
+    def password(self):
+        password = self._password() if callable(self._password) else self._password
+        return _convert_to_unicode(password)
 
     #
     # NMBSession Methods
@@ -639,7 +643,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         def sendQuery(tid, fid, data_buf):
             m = SMB2Message(SMB2QueryDirectoryRequest(fid, pattern,
-                                                      info_class = 0x03,   # FileBothDirectoryInformation
+                                                      info_class = 0x25,   # FileIdBothDirectoryInformation
                                                       flags = 0,
                                                       output_buf_len = self.max_transact_size))
             m.tid = tid
@@ -658,8 +662,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 closeFid(kwargs['tid'], kwargs['fid'], error = query_message.status)
 
         def decodeQueryStruct(data_bytes):
-            # SMB_FIND_FILE_BOTH_DIRECTORY_INFO structure. See [MS-CIFS]: 2.2.8.1.7 and [MS-SMB]: 2.2.8.1.1
-            info_format = '<IIQQQQQQIIIBB24s'
+            # FileIdBothDirectoryInformation structure. See [MS-SMB]: 2.2.8.1.3 and [MS-FSCC]: 2.4.17
+            info_format = '<IIQQQQQQIIIBB24sHQ'
             info_size = struct.calcsize(info_format)
 
             data_length = len(data_bytes)
@@ -671,7 +675,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 next_offset, _, \
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_size, alloc_size, file_attributes, filename_length, ea_size, \
-                short_name_length, _, short_name = struct.unpack(info_format, data_bytes[offset:offset+info_size])
+                short_name_length, _, short_name, _, file_id = struct.unpack(info_format, data_bytes[offset:offset+info_size])
 
                 offset2 = offset + info_size
                 if offset2 + filename_length > data_length:
@@ -688,7 +692,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if accept_result:
                     results.append(SharedFile(convertFILETIMEtoEpoch(create_time), convertFILETIMEtoEpoch(last_access_time),
                                               convertFILETIMEtoEpoch(last_write_time), convertFILETIMEtoEpoch(last_attr_change_time),
-                                              file_size, alloc_size, file_attributes, short_name, filename))
+                                              file_size, alloc_size, file_attributes, short_name, filename, file_id))
 
                 if next_offset:
                     offset += next_offset
@@ -2830,9 +2834,10 @@ class SharedFile:
     * file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.
     * short_name : Unicode string containing the short name of this file (usually in 8.3 notation)
     * filename : Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
+    * file_id : Long value representing the file reference number for the file. If the remote system does not support this field, this field will be None or 0. See [MS-FSCC]: 2.4.17
     """
 
-    def __init__(self, create_time, last_access_time, last_write_time, last_attr_change_time, file_size, alloc_size, file_attributes, short_name, filename):
+    def __init__(self, create_time, last_access_time, last_write_time, last_attr_change_time, file_size, alloc_size, file_attributes, short_name, filename, file_id=None):
         self.create_time = create_time  #: Float value in number of seconds since 1970-01-01 00:00:00 to the time of creation of this file resource on the remote server
         self.last_access_time = last_access_time  #: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last access of this file resource on the remote server
         self.last_write_time = last_write_time    #: Float value in number of seconds since 1970-01-01 00:00:00 to the time of last modification of this file resource on the remote server
@@ -2842,6 +2847,7 @@ class SharedFile:
         self.file_attributes = file_attributes #: A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.
         self.short_name = short_name #: Unicode string containing the short name of this file (usually in 8.3 notation)
         self.filename = filename     #: Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.
+        self.file_id = file_id       #: Long value representing the file reference number for the file. If the remote system does not support this field, this field will be None or 0. See [MS-FSCC]: 2.4.17
 
     @property
     def isDirectory(self):
