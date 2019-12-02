@@ -156,21 +156,25 @@ class NBNS:
         opcode = (code >> 11) & 0x0F
         flags = (code >> 4) & 0x7F
         rcode = code & 0x0F
-        numnames = data[self.HEADER_STRUCT_SIZE + 44]
 
-        if numnames > 0:
-            ret = [ ]
-            offset = self.HEADER_STRUCT_SIZE + 45
+        try:
+            numnames = data[self.HEADER_STRUCT_SIZE + 44]
 
-            for i in range(0, numnames):
-                mynme = data[offset:offset + 15]
-                mynme = mynme.strip()
-                ret.append(( str(mynme, 'ascii'), data[offset+15] ))
-                offset += 18
+            if numnames > 0:
+                ret = [ ]
+                offset = self.HEADER_STRUCT_SIZE + 45
 
-            return trn_id, ret
-        else:
-            return trn_id, None
+                for i in range(0, numnames):
+                    mynme = data[offset:offset + 15]
+                    mynme = mynme.strip()
+                    ret.append(( str(mynme, 'ascii'), data[offset+15] ))
+                    offset += 18
+
+                return trn_id, ret
+        except IndexError:
+            pass
+            
+        return trn_id, None
 
     #
     # Contributed by Jason Anderson
