@@ -1,3 +1,8 @@
+pysmb-1.1.29, 16 May 2020
+=========================
+- Fix unhandled exception for short NBNS queries #149
+- Fix wildcard file deletion with servers on SMB2 protocol #33
+
 pysmb-1.1.28, 23 Nov 2019
 ========================
 - SharedFile instances returned from the listPath() method now has a new
