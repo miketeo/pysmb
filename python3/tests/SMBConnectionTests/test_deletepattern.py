@@ -78,8 +78,15 @@ def test_delete_SMB2():
     for filename in [ 'aaTest.txt', 'aaBest.txt', 'aaTest.bin', 'aaBest.bin', 'random.txt' ]:
         conn.storeFile('smbtest', path+"/"+filename, BytesIO(b"0123456789"))
 
+    for p in [ 'aaTest.Folder', 'aaTest.Folder/xyz', 'bbTest.Folder' ]:
+        conn.createDirectory('smbtest', path+"/"+p)
+        for filename in [ 'aaTest.txt', 'aaBest.txt', 'aaTest.bin', 'aaBest.bin', 'random.txt' ]:
+            conn.storeFile('smbtest', path+"/"+p+"/"+filename, BytesIO(b"0123456789"))
+
     results = conn.listPath('smbtest', path)
     filenames = list(map(lambda r: r.filename, results))
+    assert 'aaTest.Folder' in filenames
+    assert 'bbTest.Folder' in filenames
     assert 'aaTest.txt' in filenames
     assert 'aaBest.txt' in filenames
     assert 'aaTest.bin' in filenames
@@ -90,6 +97,8 @@ def test_delete_SMB2():
 
     results = conn.listPath('smbtest', path)
     filenames = list(map(lambda r: r.filename, results))
+    assert 'aaTest.Folder' in filenames
+    assert 'bbTest.Folder' in filenames
     assert 'aaTest.txt' not in filenames
     assert 'aaBest.txt' not in filenames
     assert 'aaTest.bin' in filenames
@@ -100,6 +109,8 @@ def test_delete_SMB2():
 
     results = conn.listPath('smbtest', path)
     filenames = list(map(lambda r: r.filename, results))
+    assert 'aaTest.Folder' not in filenames
+    assert 'bbTest.Folder' in filenames
     assert 'aaTest.bin' not in filenames
     assert 'aaBest.bin' in filenames
     assert 'random.txt' in filenames
