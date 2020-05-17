@@ -399,9 +399,11 @@ class SMBConnection(SMB):
 
         return results[0]
 
-    def deleteFiles(self, service_name, path_file_pattern, timeout = 30):
+    def deleteFiles(self, service_name, path_file_pattern, delete_matching_folders = False, timeout = 30):
         """
         Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.
+
+        If delete_matching_folders is True, immediate sub-folders that match the path_file_pattern will be deleted recursively.
 
         :param string/unicode service_name: Contains the name of the shared folder.
         :param string/unicode path_file_pattern: The pathname of the file(s) to be deleted, relative to the service_name.
@@ -421,7 +423,7 @@ class SMBConnection(SMB):
 
         self.is_busy = True
         try:
-            self._deleteFiles(service_name, path_file_pattern, cb, eb, timeout = timeout)
+            self._deleteFiles(service_name, path_file_pattern, delete_matching_folders, cb, eb, timeout = timeout)
             while self.is_busy:
                 self._pollForNetBIOSPacket(timeout)
         finally:
