@@ -653,6 +653,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if query_message.status == 0:
                 data_buf = decodeQueryStruct(kwargs['data_buf'] + query_message.payload.data)
                 sendQuery(kwargs['tid'], kwargs['fid'], data_buf)
+            elif query_message.status == 0xC000000F: # [MS-ERREF]: STATUS_NO_SUCH_FILE
+                # If there are no matching files, we just treat as success instead of failing
+                closeFid(kwargs['tid'], kwargs['fid'], results = results)
             elif query_message.status == 0x80000006:  # STATUS_NO_MORE_FILES
                 closeFid(kwargs['tid'], kwargs['fid'], results = results)
             else:
@@ -1123,7 +1126,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             raise NotReadyError('SMB connection not authenticated')
 
         expiry_time = time.time() + timeout
-        pattern = '*'
+        pattern = None
         path = path_file_pattern.replace('/', '\\')
         if path.startswith('\\'):
             path = path[1:]
@@ -1136,13 +1139,22 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 pattern = path_components[-1]
         messages_history, files_queue = [ ], [ ]
 
+        if pattern is None:
+            path_components = path.split('\\')
+            if len(path_components) > 1:
+                files_queue.append(( '\\'.join(path_components[:-1]), path_components[-1] ))
+            else:
+                files_queue.append(( '', path ))
+
         def deleteCB(path):
             if files_queue:
                 p, filename = files_queue.pop(0)
                 if filename:
-                    self._deleteFiles_SMB2__del(service_name, self.connected_trees[service_name], p + '\\' + filename, deleteCB, errback, timeout)
+                    if p:
+                        filename = p + '\\' + filename
+                    self._deleteFiles_SMB2__del(service_name, self.connected_trees[service_name], filename, deleteCB, errback, timeout)
                 else:
-                    self._deleteDirectory_SMB2(service_name, p, deleteCB, errback, timeout = 30)
+                    self._deleteDirectory_SMB2(service_name, p, deleteCB, errback, timeout)
             else:
                 callback(path_file_pattern)
 
@@ -1155,7 +1167,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 messages_history.append(connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
-                    self._deleteFiles_SMB2__list(service_name, path, pattern, delete_matching_folders, listCB, errback, timeout)
+                    if files_queue:
+                        deleteCB(None)
+                    else:
+                        self._deleteFiles_SMB2__list(service_name, path, pattern, delete_matching_folders, listCB, errback, timeout)
                 else:
                     errback(OperationFailure('Failed to delete %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
@@ -1164,7 +1179,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
         else:
-            self._deleteFiles_SMB2__list(service_name, path, pattern, delete_matching_folders, listCB, errback, timeout)
+            if files_queue:
+                deleteCB(None)
+            else:
+                self._deleteFiles_SMB2__list(service_name, path, pattern, delete_matching_folders, listCB, errback, timeout)
 
     def _deleteFiles_SMB2__list(self, service_name, path, pattern, delete_matching_folders, callback, errback, timeout = 30):
         folder_queue = [ ]
@@ -1228,6 +1246,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 sendDelete(open_message.tid, open_message.payload.fid)
             elif open_message.status == 0xc0000034:  # STATUS_OBJECT_NAME_NOT_FOUND
                 callback(path)
+            elif open_message.status == 0xC00000BA:  # [MS-ERREF]: STATUS_FILE_IS_A_DIRECTORY
+                errback(OperationFailure('Failed to delete %s on %s: Cannot delete a folder. Please use deleteDirectory() method or append "/*" to your path if you wish to delete all files in the folder.' % ( path, service_name ), messages_history))
             else:
                 errback(OperationFailure('Failed to delete %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
@@ -2559,7 +2579,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             raise NotReadyError('SMB connection not authenticated')
 
         expiry_time = time.time() + timeout
-        pattern = '*'
+        pattern = None
         path = path_file_pattern.replace('/', '\\')
         if path.startswith('\\'):
             path = path[1:]
@@ -2572,11 +2592,20 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 pattern = path_components[-1]
         messages_history, files_queue = [ ], [ ]
 
+        if pattern is None:
+            path_components = path.split('\\')
+            if len(path_components) > 1:
+                files_queue.append(( '\\'.join(path_components[:-1]), path_components[-1] ))
+            else:
+                files_queue.append(( '', path ))
+
         def deleteCB(path):
             if files_queue:
                 p, filename = files_queue.pop(0)
                 if filename:
-                    self._deleteFiles_SMB1__del(service_name, self.connected_trees[service_name], p + '\\' + filename, deleteCB, errback, timeout)
+                    if p:
+                        filename = p + '\\' + filename
+                    self._deleteFiles_SMB1__del(service_name, self.connected_trees[service_name], filename, deleteCB, errback, timeout)
                 else:
                     self._deleteDirectory_SMB1(service_name, p, deleteCB, errback, timeout = 30)
             else:
@@ -2591,7 +2620,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 messages_history.append(connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
-                    self._deleteFiles_SMB1__list(service_name, path, pattern, delete_matching_folders, listCB, errback, timeout)
+                    if files_queue:
+                        deleteCB(None)
+                    else:
+                        self._deleteFiles_SMB1__list(service_name, path, pattern, delete_matching_folders, listCB, errback, timeout)
                 else:
                     errback(OperationFailure('Failed to delete %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
@@ -2600,7 +2632,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
             messages_history.append(m)
         else:
-            self._deleteFiles_SMB1__list(service_name, path, pattern, delete_matching_folders, listCB, errback, timeout)
+            if files_queue:
+                deleteCB(None)
+            else:
+                self._deleteFiles_SMB1__list(service_name, path, pattern, delete_matching_folders, listCB, errback, timeout)
 
     def _deleteFiles_SMB1__list(self, service_name, path, pattern, delete_matching_folders, callback, errback, timeout = 30):
         folder_queue = [ ]
@@ -2650,7 +2685,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 # If there are no matching files, we just treat as success instead of failing
                 callback(path_file_pattern)
             elif delete_message.status.internal_value == 0xC00000BA: # [MS-ERREF]: STATUS_FILE_IS_A_DIRECTORY
-                errback(OperationFailure('Failed to delete %s on %s: Cannot delete a folder. You may try appending "/*" to your path parameter, or specify delete_matching_folders in your function call.' % ( path, service_name ), messages_history))
+                errback(OperationFailure('Failed to delete %s on %s: Cannot delete a folder. Please use deleteDirectory() method or append "/*" to your path if you wish to delete all files in the folder.' % ( path, service_name ), messages_history))
             elif delete_message.status.internal_value == 0xC0000034: # [MS-ERREF]: STATUS_OBJECT_NAME_INVALID
                 errback(OperationFailure('Failed to delete %s on %s: Path not found' % ( path, service_name ), messages_history))
             else:
