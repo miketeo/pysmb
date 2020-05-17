@@ -1177,7 +1177,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     folder_queue.append(current_path[0]+'\\'+f.filename)
                 else:
                     files.append(( current_path[0], f.filename ))
-            if current_path[0]!=path or len(files)==0:
+            if current_path[0]!=path:
                 files.append(( current_path[0], None ))
 
             if files:
