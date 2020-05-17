@@ -303,10 +303,12 @@ class SMBProtocolFactory(ClientFactory):
         self.instance._storeFile(service_name, path, file_obj, d.callback, d.errback, timeout = timeout)
         return d
 
-    def deleteFiles(self, service_name, path_file_pattern, timeout = 30):
+    def deleteFiles(self, service_name, path_file_pattern, delete_matching_folders = False, timeout = 30):
         """
         Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.
 
+        If delete_matching_folders is True, immediate sub-folders that match the path_file_pattern will be deleted recursively.
+        
         :param string/unicode service_name: Contains the name of the shared folder.
         :param string/unicode path_file_pattern: The pathname of the file(s) to be deleted, relative to the service_name.
                                                  Wildcards may be used in th filename component of the path.
@@ -318,7 +320,7 @@ class SMBProtocolFactory(ClientFactory):
             raise NotConnectedError('Not connected to server')
 
         d = defer.Deferred()
-        self.instance._deleteFiles(service_name, path_file_pattern, d.callback, d.errback, timeout = timeout)
+        self.instance._deleteFiles(service_name, path_file_pattern, delete_matching_folders, d.callback, d.errback, timeout = timeout)
         return d
 
     def createDirectory(self, service_name, path):
