@@ -1,6 +1,11 @@
+pysmb-1.2.1, 17 May 2020
+========================
+- Fix bug in deleteFiles() method which can fail for certain search patterns.
+
 pysmb-1.2.0, 17 May 2020
 =========================
-- Improve deleteFiles() API to support deletion of child folders that match the search pattern.
+- Add new parameter, delete_matching_folders, to deleteFiles() method to
+  support deletion of child folders that match the search pattern.
 
 pysmb-1.1.29, 16 May 2020
 =========================

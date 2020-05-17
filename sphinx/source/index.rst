@@ -8,9 +8,9 @@ Welcome to pysmb's documentation!
 
 pysmb is a pure Python implementation of the client-side SMB/CIFS protocol (SMB1 and SMB2) which is the underlying protocol
 that facilitates file sharing and printing between Windows machines, as well as with Linux machines via the Samba server application.
-pysmb is developed in Python 2.4.6, Python 2.7.1 and Python 3.2.3 and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.
+pysmb is developed in Python 2.7.x and Python 3.5.x and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.
 
-The latest version of pysmb is always available at the pysmb project page at `miketeo.net <http://miketeo.net/wp/index.php/projects/pysmb>`_.
+The latest version of pysmb is always available at the pysmb project page at `miketeo.net <http://miketeo.net/projects/pysmb>`_.
 
 License
 -------
@@ -90,6 +90,8 @@ As an application developer who is looking to use pysmb to implement file transf
 As a software developer who is looking to modify pysmb so that you can integrate it to other network frameworks:
  * Read :doc:`extending`
 
+If you are upgrading from older pysmb versions:
+ * Read :doc:`upgrading`
 
 
 Indices and tables
@@ -101,6 +103,7 @@ Indices and tables
 
     api/*
     extending
+    upgrading
 
 * :ref:`genindex`
 * :ref:`search`
