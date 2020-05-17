@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>smb.SMBConnection &mdash; pysmb 1.1.25 documentation</title>
+    <title>smb.SMBConnection &mdash; pysmb 1.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.25',
+        VERSION:     '1.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.25 documentation" href="../../index.html" />
+    <link rel="top" title="pysmb 1.2.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.25 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.0 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>
@@ -87,6 +87,7 @@
 <span class="sd">        Create a new SMBConnection instance.</span>
 
 <span class="sd">        *username* and *password* are the user credentials required to authenticate the underlying SMB connection with the remote server.</span>
+<span class="sd">        *password* can be a string or a callable returning a string.</span>
 <span class="sd">        File operations can only be proceeded after the connection has been authenticated successfully.</span>
 
 <span class="sd">        Note that you need to call *connect* method to actually establish the SMB connection to the remote server and perform authentication.</span>
@@ -136,6 +137,15 @@
             <span class="k">if</span> <span class="n">sent</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">NotConnectedError</span><span class="p">(</span><span class="s1">&#39;Server disconnected&#39;</span><span class="p">)</span>
             <span class="n">total_sent</span> <span class="o">=</span> <span class="n">total_sent</span> <span class="o">+</span> <span class="n">sent</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Support for &quot;with&quot; context</span>
+    <span class="c1">#</span>
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="c1">#</span>
     <span class="c1"># Misc Properties</span>
@@ -230,7 +240,7 @@
 <span class="sd">        Note that the default search parameter will query for all read-only (SMB_FILE_ATTRIBUTE_READONLY), hidden (SMB_FILE_ATTRIBUTE_HIDDEN),</span>
 <span class="sd">        system (SMB_FILE_ATTRIBUTE_SYSTEM), archive (SMB_FILE_ATTRIBUTE_ARCHIVE), normal (SMB_FILE_ATTRIBUTE_INCL_NORMAL) files</span>
 <span class="sd">        and directories (SMB_FILE_ATTRIBUTE_DIRECTORY).</span>
-<span class="sd">        If you do need to include &quot;normal&quot; files in the result, define your own search parameter without the SMB_FILE_ATTRIBUTE_INCL_NORMAL constant.</span>
+<span class="sd">        If you do not need to include &quot;normal&quot; files in the result, define your own search parameter without the SMB_FILE_ATTRIBUTE_INCL_NORMAL constant.</span>
 <span class="sd">        SMB_FILE_ATTRIBUTE_NORMAL should be used by itself and not be used with other bit constants.</span>
 
 <span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
@@ -455,9 +465,11 @@
 
         <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="SMBConnection.deleteFiles"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.deleteFiles">[docs]</a>    <span class="k">def</span> <span class="nf">deleteFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path_file_pattern</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBConnection.deleteFiles"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.deleteFiles">[docs]</a>    <span class="k">def</span> <span class="nf">deleteFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path_file_pattern</span><span class="p">,</span> <span class="n">delete_matching_folders</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.</span>
+
+<span class="sd">        If delete_matching_folders is True, immediate sub-folders that match the path_file_pattern will be deleted recursively.</span>
 
 <span class="sd">        :param string/unicode service_name: Contains the name of the shared folder.</span>
 <span class="sd">        :param string/unicode path_file_pattern: The pathname of the file(s) to be deleted, relative to the service_name.</span>
@@ -477,7 +489,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_deleteFiles</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path_file_pattern</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">eb</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_deleteFiles</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path_file_pattern</span><span class="p">,</span> <span class="n">delete_matching_folders</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">eb</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
             <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_pollForNetBIOSPacket</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
@@ -701,12 +713,12 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.1.25 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.0 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2001-2018, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2020, Michael Teo https://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>

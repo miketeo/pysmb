@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>SharedFile Class &mdash; pysmb 1.1.25 documentation</title>
+    <title>SharedFile Class &mdash; pysmb 1.2.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.25',
+        VERSION:     '1.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.1.25 documentation" href="../index.html" />
+    <link rel="top" title="pysmb 1.2.0 documentation" href="../index.html" />
     <link rel="next" title="SMB Exceptions" href="smb_exceptions.html" />
     <link rel="prev" title="SharedDevice Class" href="smb_SharedDevice.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.25 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -86,7 +86,7 @@
 <h1>SharedFile Class<a class="headerlink" href="#sharedfile-class" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="smb.base.SharedFile">
-<em class="property">class </em><code class="descclassname">smb.base.</code><code class="descname">SharedFile</code><span class="sig-paren">(</span><em>create_time</em>, <em>last_access_time</em>, <em>last_write_time</em>, <em>last_attr_change_time</em>, <em>file_size</em>, <em>alloc_size</em>, <em>file_attributes</em>, <em>short_name</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/base.html#SharedFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedFile" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">smb.base.</code><code class="descname">SharedFile</code><span class="sig-paren">(</span><em>create_time</em>, <em>last_access_time</em>, <em>last_write_time</em>, <em>last_attr_change_time</em>, <em>file_size</em>, <em>alloc_size</em>, <em>file_attributes</em>, <em>short_name</em>, <em>filename</em>, <em>file_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/base.html#SharedFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contain information about a file/folder entry that is shared on the shared device.</p>
 <p>As an application developer, you should not need to instantiate a <em>SharedFile</em> instance directly in your application.
 These <em>SharedFile</em> instances are usually returned via a call to <em>listPath</em> method in <a class="reference internal" href="smb_SMBProtocolFactory.html"><em>smb.SMBProtocol.SMBProtocolFactory</em></a>.</p>
@@ -104,6 +104,7 @@ one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2
 <li>file_attributes : A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.</li>
 <li>short_name : Unicode string containing the short name of this file (usually in 8.3 notation)</li>
 <li>filename : Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.</li>
+<li>file_id : Long value representing the file reference number for the file. If the remote system does not support this field, this field will be None or 0. See [MS-FSCC]: 2.4.17</li>
 </ul>
 <dl class="attribute">
 <dt id="smb.base.SharedFile.alloc_size">
@@ -121,6 +122,12 @@ one of these prohibited characters: &#8220;/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2
 <dt id="smb.base.SharedFile.file_attributes">
 <code class="descname">file_attributes</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.file_attributes" title="Permalink to this definition">¶</a></dt>
 <dd><p>A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="smb.base.SharedFile.file_id">
+<code class="descname">file_id</code><em class="property"> = None</em><a class="headerlink" href="#smb.base.SharedFile.file_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Long value representing the file reference number for the file. If the remote system does not support this field, this field will be None or 0. See [MS-FSCC]: 2.4.17</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -204,11 +211,11 @@ It ignores other attributes like compression, indexed, sparse, temporary and enc
         <li class="right" >
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.1.25 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2001-2018, Michael Teo http://miketeo.net/.
+        &copy; Copyright 2001-2020, Michael Teo https://miketeo.net/.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
