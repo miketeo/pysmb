@@ -633,6 +633,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(create_message)
             if create_message.status == 0:
                 sendQuery(kwargs['tid'], create_message.payload.fid, b'')
+            elif create_message.status == 0xC0000034L: # [MS-ERREF]: STATUS_OBJECT_NAME_INVALID
+                errback(OperationFailure('Failed to list %s on %s: Path not found' % ( path, service_name ), messages_history))
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to open directory' % ( path, service_name ), messages_history))
 
@@ -2570,8 +2572,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(delete_message)
             if not delete_message.status.hasError:
                 callback(path_file_pattern)
+            elif delete_message.status.internal_value == 0xC000000FL: # [MS-ERREF]: STATUS_NO_SUCH_FILE
+                # If there are no matching files, we just treat as success instead of failing
+                callback(path_file_pattern)
+            elif delete_message.status.internal_value == 0xC00000BAL: # [MS-ERREF]: STATUS_FILE_IS_A_DIRECTORY
+                errback(OperationFailure('Failed to delete %s on %s: Cannot delete a folder. You may try appending "/*" or "*" to your path parameter.' % ( path, service_name ), messages_history))
+            elif delete_message.status.internal_value == 0xC0000034L: # [MS-ERREF]: STATUS_OBJECT_NAME_INVALID
+                errback(OperationFailure('Failed to delete %s on %s: Path not found' % ( path, service_name ), messages_history))
             else:
-                errback(OperationFailure('Failed to store %s on %s: Delete failed' % ( path, service_name ), messages_history))
+                errback(OperationFailure('Failed to delete %s on %s: Delete failed' % ( path, service_name ), messages_history))
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
@@ -2657,7 +2666,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     self.connected_trees[service_name] = connect_message.tid
                     sendDelete(connect_message.tid)
                 else:
-                    errback(OperationFailure('Failed to delete %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
+                    errback(OperationFailure('Failed to delete directory %s on %s: Unable to connect to shared device' % ( path, service_name ), messages_history))
 
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
