@@ -1,4 +1,3 @@
-
 import os, sys, socket, urllib.request, urllib.error, urllib.parse, mimetypes, email, tempfile
 from urllib.parse import (unwrap, unquote, splittype, splithost, quote,
      splitport, splittag, splitattr, splituser, splitpasswd, splitvalue)
@@ -26,11 +25,14 @@ class SMBHandler(urllib.request.BaseHandler):
             port = int(port)
 
         # username/password handling
+
         user, host = splituser(host)
+        
         if user:
             user, passwd = splitpasswd(user)
         else:
             passwd = None
+        
         host = unquote(host)
         user = user or ''
 
@@ -41,12 +43,16 @@ class SMBHandler(urllib.request.BaseHandler):
         passwd = passwd or ''
         myname = MACHINE_NAME or self.generateClientMachineName()
 
-        n = NetBIOS()
-        names = n.queryIPForName(host)
-        if names:
-            server_name = names[0]
-        else:
-            raise urllib.error.URLError('SMB error: Hostname does not reply back with its machine name')
+        server_name,host = host.split(',') if ',' in host else [None,host]
+
+        if server_name is None:
+            n = NetBIOS()
+
+            names = n.queryIPForName(host)
+            if names:
+                server_name = names[0]
+            else:
+                raise urllib.error.URLError('SMB error: Hostname does not reply back with its machine name')
 
         path, attrs = splitattr(req.selector)
         if path.startswith('/'):
