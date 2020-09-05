@@ -1,3 +1,9 @@
+pysmb-1.2.2, 5 Sep 2020
+=======================
+- Improve SMB URL handlers to support specifying server's machine name and IP
+  address. (#162)
+- Improvements to documentation on SMB URLs (#160)
+
 pysmb-1.2.1, 17 May 2020
 ========================
 - Fix bug in deleteFiles() method which can fail for certain search patterns.
