@@ -44,12 +44,15 @@ class SMBHandler(urllib2.BaseHandler):
         passwd = passwd or ''
         myname = MACHINE_NAME or self.generateClientMachineName()
 
-        n = NetBIOS()
-        names = n.queryIPForName(host)
-        if names:
-            server_name = names[0]
-        else:
-            raise urllib2.URLError('SMB error: Hostname does not reply back with its machine name')
+        server_name,host = host.split(',') if ',' in host else [None,host]
+
+        if server_name is None:
+            n = NetBIOS()
+            names = n.queryIPForName(host)
+            if names:
+                server_name = names[0]
+            else:
+                raise urllib2.URLError('SMB error: Hostname does not reply back with its machine name')
 
         path, attrs = splitattr(req.get_selector())
         if path.startswith('/'):
