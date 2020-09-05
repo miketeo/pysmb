@@ -6,8 +6,12 @@ The SMBHandler class provides support for "smb://" URLs in the `urllib2 <http://
 
 Notes
 -----
-* Note that you need to pass in a valid hostname or IP address for the host component of the URL.
-  Do not use the Windows/NetBIOS machine name for the host component.
+* The host component of the URL must be one of the following:
+
+  * A fully-qualified hostname that can be resolved by your local DNS service. Example: myserver.test.com
+  * An IP address. Example: 192.168.1.1
+  * A comma-separated string "<NBName>,<IP>" where *<NBName>* is the Windows/NetBIOS machine name for remote SMB service, and *<IP>* is the service's IP address. Example: MYSERVER,192.168.1.1
+
 * The first component of the path in the URL points to the name of the shared folder.
   Subsequent path components will point to the directory/folder of the file.
 * You can retrieve and upload files, but you cannot delete files/folders or create folders.

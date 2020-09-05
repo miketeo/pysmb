@@ -97,8 +97,12 @@
 <div class="section" id="notes">
 <h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Note that you need to pass in a valid hostname or IP address for the host component of the URL.
-Do not use the Windows/NetBIOS machine name for the host component.</li>
+<li>The host component of the URL must be one of the following:<ul>
+<li>A fully-qualified hostname that can be resolved by your local DNS service. Example: myserver.test.com</li>
+<li>An IP address. Example: 192.168.1.1</li>
+<li>A comma-separated string &#8220;&lt;NBName&gt;,&lt;IP&gt;&#8221; where <em>&lt;NBName&gt;</em> is the Windows/NetBIOS machine name for remote SMB service, and <em>&lt;IP&gt;</em> is the service&#8217;s IP address. Example: MYSERVER,192.168.1.1</li>
+</ul>
+</li>
 <li>The first component of the path in the URL points to the name of the shared folder.
 Subsequent path components will point to the directory/folder of the file.</li>
 <li>You can retrieve and upload files, but you cannot delete files/folders or create folders.
