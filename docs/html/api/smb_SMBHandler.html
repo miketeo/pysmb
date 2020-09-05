@@ -107,7 +107,7 @@ In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> wil
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>The following code snippet illustrates file retrieval.:</p>
+<p>The following code snippet illustrates file retrieval with Python 2.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">urllib2</span>
 <span class="kn">from</span> <span class="nn">smb.SMBHandler</span> <span class="kn">import</span> <span class="n">SMBHandler</span>
@@ -125,13 +125,43 @@ In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> wil
 <span class="n">fh2</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>The following code snippet illustrates file upload. You need to provide a file-like object for the <em>data</em> parameter in the <em>open()</em> method:</p>
+<p>The following code snippet illustrates file upload with Python 2. You need to provide a file-like object for the <em>data</em> parameter in the <em>open()</em> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">urllib2</span>
 <span class="kn">from</span> <span class="nn">smb.SMBHandler</span> <span class="kn">import</span> <span class="n">SMBHandler</span>
 
 <span class="n">file_fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;local_file.dat&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
 
 <span class="n">director</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">build_opener</span><span class="p">(</span><span class="n">SMBHandler</span><span class="p">)</span>
+<span class="n">fh</span> <span class="o">=</span> <span class="n">director</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;smb://myuserID:mypassword@192.168.1.1/sharedfolder/upload_file.dat&#39;</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">file_fh</span><span class="p">)</span>
+
+<span class="c1"># Reading from fh will only return an empty string</span>
+<span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The following code snippet illustrates file retrieval with Python 3.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">from</span> <span class="nn">smb.SMBHandler</span> <span class="kn">import</span> <span class="n">SMBHandler</span>
+
+<span class="n">director</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">build_opener</span><span class="p">(</span><span class="n">SMBHandler</span><span class="p">)</span>
+<span class="n">fh</span> <span class="o">=</span> <span class="n">director</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;smb://myuserID:mypassword@192.168.1.1/sharedfolder/rfc1001.txt&#39;</span><span class="p">)</span>
+
+<span class="c1"># Process fh like a file-like object and then close it.</span>
+<span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1"># For paths/files with unicode characters, simply pass in the URL as an unicode string</span>
+<span class="n">fh2</span> <span class="o">=</span> <span class="n">director</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">u&#39;smb://myuserID:mypassword@192.168.1.1/sharedfolder/测试文件夹/垃圾文件.dat&#39;</span><span class="p">)</span>
+
+<span class="c1"># Process fh2 like a file-like object and then close it.</span>
+<span class="n">fh2</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The following code snippet illustrates file upload with Python 3. You need to provide a file-like object for the <em>data</em> parameter in the <em>open()</em> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">from</span> <span class="nn">smb.SMBHandler</span> <span class="kn">import</span> <span class="n">SMBHandler</span>
+
+<span class="n">file_fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;local_file.dat&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+
+<span class="n">director</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">build_opener</span><span class="p">(</span><span class="n">SMBHandler</span><span class="p">)</span>
 <span class="n">fh</span> <span class="o">=</span> <span class="n">director</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;smb://myuserID:mypassword@192.168.1.1/sharedfolder/upload_file.dat&#39;</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">file_fh</span><span class="p">)</span>
 
 <span class="c1"># Reading from fh will only return an empty string</span>
