@@ -9,6 +9,10 @@ from .security_descriptors import SecurityDescriptor
 from nmb.base import NMBSession
 from .utils import convertFILETIMEtoEpoch
 from . import ntlm, securityblob
+from six import b
+import random
+import string
+from Crypto.Cipher import ARC4
 
 try:
     import hashlib
@@ -371,10 +375,16 @@ class SMB(NMBSession):
             self.log.info('Performing NTLMv1 authentication (on SMB2) with server challenge "%s"', binascii.hexlify(server_challenge))
             nt_challenge_response, lm_challenge_response, session_key = ntlm.generateChallengeResponseV1(self.password, server_challenge, True)
 
+        session_base_key = session_key
+        session_sign_key = b("".join([random.choice(string.digits+string.ascii_letters) for _ in range(16)]))
+        cipher = ARC4.new(session_key)
+        cipher_encrypt = cipher.encrypt
+        session_encrypted_key = cipher_encrypt(session_sign_key)
+        self.log.info("SMB keys = %s:%s:%s", session_encrypted_key.hex(), session_base_key.hex(), session_sign_key.hex())
         ntlm_data = ntlm.generateAuthenticateMessage(server_flags,
                                                      nt_challenge_response,
                                                      lm_challenge_response,
-                                                     session_key,
+                                                     session_encrypted_key,
                                                      self.username,
                                                      self.domain,
                                                      self.my_name)
@@ -397,7 +407,8 @@ class SMB(NMBSession):
 
         if self.is_signing_active:
             self.log.info("SMB signing activated. All SMB messages will be signed.")
-            self.signing_session_key = (session_key + b'\0'*16)[:16]
+            self.signing_session_key = session_sign_key
+            self.log.info("SMB signing key = %s", self.signing_session_key.hex())
             if self.capabilities & CAP_EXTENDED_SECURITY:
                 self.signing_challenge_response = None
             else:
