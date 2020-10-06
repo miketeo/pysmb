@@ -371,13 +371,13 @@ class SMB(NMBSession):
             self.log.info('Performing NTLMv1 authentication (on SMB2) with server challenge "%s"', binascii.hexlify(server_challenge))
             nt_challenge_response, lm_challenge_response, session_key = ntlm.generateChallengeResponseV1(self.password, server_challenge, True)
 
-        ntlm_data = ntlm.generateAuthenticateMessage(server_flags,
-                                                     nt_challenge_response,
-                                                     lm_challenge_response,
-                                                     session_key,
-                                                     self.username,
-                                                     self.domain,
-                                                     self.my_name)
+        ntlm_data, session_signing_key = ntlm.generateAuthenticateMessage(server_flags,
+                                                                          nt_challenge_response,
+                                                                          lm_challenge_response,
+                                                                          session_key,
+                                                                          self.username,
+                                                                          self.domain,
+                                                                          self.my_name)
 
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))
@@ -397,7 +397,7 @@ class SMB(NMBSession):
 
         if self.is_signing_active:
             self.log.info("SMB signing activated. All SMB messages will be signed.")
-            self.signing_session_key = session_key
+            self.signing_session_key = session_signing_key
             if self.log.isEnabledFor(logging.DEBUG):
                 self.log.info("SMB signing key is %s", binascii.hexlify(self.signing_session_key))
 
@@ -1905,13 +1905,13 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self.log.info('Performing NTLMv1 authentication (with extended security) with server challenge "%s"', binascii.hexlify(server_challenge))
             nt_challenge_response, lm_challenge_response, session_key = ntlm.generateChallengeResponseV1(self.password, server_challenge, True)
 
-        ntlm_data = ntlm.generateAuthenticateMessage(server_flags,
-                                                     nt_challenge_response,
-                                                     lm_challenge_response,
-                                                     session_key,
-                                                     self.username,
-                                                     self.domain,
-                                                     self.my_name)
+            ntlm_data, signing_session_key = ntlm.generateAuthenticateMessage(server_flags,
+                                                                              nt_challenge_response,
+                                                                              lm_challenge_response,
+                                                                              session_key,
+                                                                              self.username,
+                                                                              self.domain,
+                                                                              self.my_name)
 
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))
@@ -1931,7 +1931,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if self.is_signing_active:
             self.log.info("SMB signing activated. All SMB messages will be signed.")
-            self.signing_session_key = session_key
+            self.signing_session_key = signing_session_key
             if self.capabilities & CAP_EXTENDED_SECURITY:
                 self.signing_challenge_response = None
             else:

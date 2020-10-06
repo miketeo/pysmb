@@ -59,14 +59,14 @@ NTLM_Negotiate56                     =  0x80000000
 
 NTLM_FLAGS = NTLM_NegotiateUnicode | \
              NTLM_RequestTarget | \
+             NTLM_NegotiateSign | \
              NTLM_NegotiateNTLM | \
              NTLM_NegotiateAlwaysSign | \
              NTLM_NegotiateExtendedSecurity | \
              NTLM_NegotiateTargetInfo | \
              NTLM_NegotiateVersion | \
              NTLM_Negotiate128 | \
-             NTLM_NegotiateKeyExchange | \
-             NTLM_Negotiate56
+             NTLM_NegotiateKeyExchange
 
 def generateNegotiateMessage():
     """
@@ -93,10 +93,11 @@ def generateAuthenticateMessage(challenge_flags, nt_response, lm_response, reque
 
     # [MS-NLMP]: 3.1.5.1.2
     # http://grutz.jingojango.net/exploits/davenport-ntlm.html
-    session_key = request_session_key
+    session_key = session_signing_key = request_session_key
     if challenge_flags & NTLM_NegotiateKeyExchange:
         cipher = ARC4.new(request_session_key)
-        session_key = cipher.encrypt("".join([ random.choice(string.digits+string.ascii_letters) for _ in range(16) ]).encode('ascii'))
+        session_signing_key = "".join([ random.choice(string.digits+string.ascii_letters) for _ in range(16) ]).encode('ascii')
+        session_key = cipher.encrypt(session_signing_key)
 
     lm_response_length = len(lm_response)
     lm_response_offset = FORMAT_SIZE
@@ -133,7 +134,7 @@ def generateAuthenticateMessage(challenge_flags, nt_response, lm_response, reque
                     session_key_length, session_key_length, session_key_offset,
                     auth_flags)
 
-    return s + lm_response + nt_response + padding + domain_unicode + user_unicode + workstation_unicode + session_key
+    return s + lm_response + nt_response + padding + domain_unicode + user_unicode + workstation_unicode + session_key, session_signing_key
 
 
 def decodeChallengeMessage(ntlm_data):
