@@ -1,6 +1,7 @@
 pysmb-1.2.3, 6 Oct 2020
 =======================
 - Fix bug in session key generation during session negotiation (#166)
+- Fix bug in SMB message signing which leads to operation failures with Samba services.
 
 pysmb-1.2.2, 5 Sep 2020
 =======================
