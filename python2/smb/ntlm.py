@@ -1,6 +1,6 @@
 
 import types, hmac, binascii, struct, random, string
-from Crypto.Cipher import ARC4
+from .utils.rc4 import RC4_encrypt
 from utils.pyDes import des
 
 try:
@@ -95,9 +95,8 @@ def generateAuthenticateMessage(challenge_flags, nt_response, lm_response, reque
     # http://grutz.jingojango.net/exploits/davenport-ntlm.html
     session_key = session_signing_key = request_session_key
     if challenge_flags & NTLM_NegotiateKeyExchange:
-        cipher = ARC4.new(request_session_key)
         session_signing_key = "".join([ random.choice(string.digits+string.ascii_letters) for _ in range(16) ]).encode('ascii')
-        session_key = cipher.encrypt(session_signing_key)
+        session_key = RC4_encrypt(request_session_key, session_signing_key)
 
     lm_response_length = len(lm_response)
     lm_response_offset = FORMAT_SIZE

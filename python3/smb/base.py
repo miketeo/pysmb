@@ -1905,13 +1905,13 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self.log.info('Performing NTLMv1 authentication (with extended security) with server challenge "%s"', binascii.hexlify(server_challenge))
             nt_challenge_response, lm_challenge_response, session_key = ntlm.generateChallengeResponseV1(self.password, server_challenge, True)
 
-            ntlm_data, signing_session_key = ntlm.generateAuthenticateMessage(server_flags,
-                                                                              nt_challenge_response,
-                                                                              lm_challenge_response,
-                                                                              session_key,
-                                                                              self.username,
-                                                                              self.domain,
-                                                                              self.my_name)
+        ntlm_data, signing_session_key = ntlm.generateAuthenticateMessage(server_flags,
+                                                                          nt_challenge_response,
+                                                                          lm_challenge_response,
+                                                                          session_key,
+                                                                          self.username,
+                                                                          self.domain,
+                                                                          self.my_name)
 
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug('NT challenge response is "%s" (%d bytes)', binascii.hexlify(nt_challenge_response), len(nt_challenge_response))
