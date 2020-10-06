@@ -1,5 +1,6 @@
 
-import types, hmac, binascii, struct, random
+import types, hmac, binascii, struct, random, string
+from Crypto.Cipher import ARC4
 from .utils.pyDes import des
 
 try:
@@ -81,7 +82,7 @@ def generateNegotiateMessage():
     return s
 
 
-def generateAuthenticateMessage(challenge_flags, nt_response, lm_response, session_key, user, domain = 'WORKGROUP', workstation = 'LOCALHOST'):
+def generateAuthenticateMessage(challenge_flags, nt_response, lm_response, request_session_key, user, domain = 'WORKGROUP', workstation = 'LOCALHOST'):
     """
     References:
     ===========
@@ -89,6 +90,13 @@ def generateAuthenticateMessage(challenge_flags, nt_response, lm_response, sessi
     """
     FORMAT = '<8sIHHIHHIHHIHHIHHIHHII'
     FORMAT_SIZE = struct.calcsize(FORMAT)
+
+    # [MS-NLMP]: 3.1.5.1.2
+    # http://grutz.jingojango.net/exploits/davenport-ntlm.html
+    session_key = request_session_key
+    if challenge_flags & NTLM_NegotiateKeyExchange:
+        cipher = ARC4.new(request_session_key)
+        session_key = cipher.encrypt("".join([ random.choice(string.digits+string.ascii_letters) for _ in range(16) ]).encode('ascii'))
 
     lm_response_length = len(lm_response)
     lm_response_offset = FORMAT_SIZE
