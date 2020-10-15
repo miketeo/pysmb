@@ -429,17 +429,21 @@ class SMBConnection(SMB):
         finally:
             self.is_busy = False
 
-    def resetFileAttributes(self, service_name, path_file_pattern, timeout = 30):
+    def resetFileAttributes(self, service_name, path_file_pattern, file_attributes = ATTR_NORMAL, timeout = 30):
         """
         Reset file attributes of one or more regular files or folders.
         It supports the use of wildcards in file names, allowing for unlocking of multiple files/folders in a single request.
         This function is very helpful when deleting files/folders that are read-only.
-        Note: this function is currently only implemented for SMB2! Technically, it sets the FILE_ATTRIBUTE_NORMAL flag, therefore clearing all other flags. (See https://msdn.microsoft.com/en-us/library/cc232110.aspx for further information)
+        By default, it sets the ATTR_NORMAL flag, therefore clearing all other flags.
+        (See https://msdn.microsoft.com/en-us/library/cc232110.aspx for further information)
+
+        Note: this function is currently only implemented for SMB2!
 
         :param string/unicode service_name: Contains the name of the shared folder.
         :param string/unicode path_file_pattern: The pathname of the file(s) to be deleted, relative to the service_name.
                                                  Wildcards may be used in the filename component of the path.
                                                  If your path/filename contains non-English characters, you must pass in an unicode string.
+        :param int file_attributes: The desired file attributes to set. Defaults to `ATTR_NORMAL`.
         :return: None
         """
         if not self.sock:
@@ -454,12 +458,11 @@ class SMBConnection(SMB):
 
         self.is_busy = True
         try:
-            self._resetFileAttributes(service_name, path_file_pattern, cb, eb, timeout = timeout)
+            self._resetFileAttributes(service_name, path_file_pattern, cb, eb, file_attributes, timeout)
             while self.is_busy:
                 self._pollForNetBIOSPacket(timeout)
         finally:
             self.is_busy = False
-
 
     def createDirectory(self, service_name, path, timeout = 30):
         """
