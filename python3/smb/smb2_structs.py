@@ -370,7 +370,7 @@ class SMB2CreateRequest(Structure):
 
     def prepare(self, message):
         buf = self.filename.encode('UTF-16LE')
-        buf_len = len(buf)
+        filename_len = len(buf)
         if self.create_context_data:
             n = SMB2Message.HEADER_SIZE + self.STRUCTURE_SIZE + len(buf)
             if n % 8 != 0:
@@ -398,7 +398,7 @@ class SMB2CreateRequest(Structure):
                                    self.create_disp,
                                    self.create_options,
                                    SMB2Message.HEADER_SIZE + self.STRUCTURE_SIZE,  # NameOffset
-                                   buf_len,                 # Length of encoded filename in bytes
+                                   filename_len,            # Length of encoded filename in bytes
                                    create_context_offset,   # CreateContextOffset
                                    len(self.create_context_data)   # CreateContextLength
                                   ) + buf
