@@ -1293,7 +1293,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         sendCreate(tid)
 
-    def _resetFileAttributes_SMB2(self, service_name, path_file_pattern, callback, errback, timeout = 30):
+    def _resetFileAttributes_SMB2(self, service_name, path_file_pattern, callback, errback, file_attributes = ATTR_NORMAL, timeout = 30):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -1341,7 +1341,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                additional_info = 0,
                                                info_type = SMB2_INFO_FILE,
                                                file_info_class = 4,  # FileBasicInformation
-                                               data = struct.pack('qqqqii',0,0,0,0,0x80,0))) # FILE_ATTRIBUTE_NORMAL
+                                               data = struct.pack('qqqqii',0,0,0,0,file_attributes,0)))
             # [MS-SMB2]: 2.2.39, [MS-FSCC]: 2.4, [MS-FSCC]: 2.4.7, [MS-FSCC]: 2.6
             m.tid = tid
             self._sendSMBMessage(m)
@@ -2700,7 +2700,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         sendDelete(tid)
 
-    def _resetFileAttributes_SMB1(self, service_name, path_file_pattern, callback, errback, timeout = 30):
+    def _resetFileAttributes_SMB1(self, service_name, path_file_pattern, callback, errback, file_attributes=ATTR_NORMAL, timeout = 30):
         raise NotReadyError('resetFileAttributes is not yet implemented for SMB1')
 
     def _createDirectory_SMB1(self, service_name, path, callback, errback, timeout = 30):
