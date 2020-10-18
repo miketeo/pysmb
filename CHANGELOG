@@ -1,3 +1,9 @@
+pysmb-1.2.5, 18 Oct 2020
+=======================
+- Fix bug in filename encoding which leads to failure for file retrieval and upload operations (#170 #171).
+- Improve resetFileAttributes() method in SMBConnection class to allow the
+  new attribute to be specified in the reset operation (#172).
+
 pysmb-1.2.4, 6 Oct 2020
 =======================
 - Remove dependency on pycrypto as it is no longer under active maintenance
