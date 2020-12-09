@@ -2536,8 +2536,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def sendWrite(tid, fid, offset):
-            # For message signing, the total SMB message size must be not exceed the max_buffer_size. Non-message signing does not have this limitation
-            write_count = min((self.is_signing_active and (self.max_buffer_size-64)) or self.max_raw_size, 0xFFFF-1)  # Need to minus 1 byte from 0xFFFF because of the first NULL byte in the ComWriteAndxRequest message data
+            # [MS-SMB] 2.2.4.5.2.2: The total SMB message size (inclusive of SMB header) must be not exceed the max_buffer_size.
+            write_count = min(self.max_buffer_size-64, 0xFFFF-64) # SMB header is 32-bytes. We factor in another 32-bytes for the message parameter block
             data_bytes = file_obj.read(write_count)
             data_len = len(data_bytes)
             if data_len > 0:
