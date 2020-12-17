@@ -399,6 +399,34 @@ class SMBConnection(SMB):
 
         return results[0]
 
+    def storeDirectory(self, service_name, path, local_Dir, timeout = 30):
+        """
+        Store the local Directory *local_Dir* at *path* on the *service_name*.
+
+        :param string/unicode service_name: the name of the shared folder for the *path*
+        :param string/unicode path: Path of the file on the remote server. If the file at *path* does not exist, it will be created. Otherwise, it will be overwritten.
+                                    If the *path* refers to a folder or the file cannot be opened for writing, an :doc:`OperationFailure<smb_exceptions>` will be raised.
+        :param local_Dir: the name of the local directroy
+        """
+        for fpathe, dirs, fs in os.walk(local_Dir):
+            for f in fs:
+                fpp = open(os.path.join(fpathe, f), 'rb')
+                relativePath = fpathe.replace(local_Dir, "")# get relative paths
+                tt = relativePath.split("\\")
+                for i in range(len(tt) + 1):
+                    tempDir = []
+                    for j in range(i):
+                        tempDir.append(tt[j])
+                        tempDir.append("/")
+                    tempDir2 = ''.join(tempDir)
+                    try:
+                        self.samba.createDirectory(service_name, path + tempDir2,timeout=timeout)  # Create Directory
+                    except:
+                        pass
+
+                self.samba.storeFile(service_name, smb_dir + "/" + relativePath + "/" + f, fpp,timeout=timeout) #storeFile
+                fpp.close()
+
     def deleteFiles(self, service_name, path_file_pattern, delete_matching_folders = False, timeout = 30):
         """
         Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.
