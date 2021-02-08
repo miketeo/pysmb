@@ -52,7 +52,8 @@ class SMBHandler(urllib.request.BaseHandler):
             if names:
                 server_name = names[0]
             else:
-                raise urllib.error.URLError('SMB error: Hostname does not reply back with its machine name')
+                server_name = 'UNKNOWN'
+                #raise urllib.error.URLError('SMB error: Hostname does not reply back with its machine name')
 
         path, attrs = splitattr(req.selector)
         if path.startswith('/'):
