@@ -2984,7 +2984,7 @@ class SharedFile:
 
     If you encounter *SharedFile* instance where its short_name attribute is empty but the filename attribute contains a short name which does not correspond
     to any files/folders on your remote shared device, it could be that the original filename on the file/folder entry on the shared device contains
-    one of these prohibited characters: "\/[]:+|<>=;?,* (see [MS-CIFS]: 2.2.1.1.1 for more details).
+    one of these prohibited characters: "\\/[]:+|<>=;?,* (see [MS-CIFS]: 2.2.1.1.1 for more details).
 
     The following attributes are available:
 

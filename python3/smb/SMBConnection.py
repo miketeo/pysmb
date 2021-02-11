@@ -30,7 +30,7 @@ class SMBConnection(SMB):
         Some newer server installations might also support Direct hosting of SMB over TCP/IP; for these servers, the default TCP port is 445.
 
         :param string my_name: The local NetBIOS machine name that will identify where this connection is originating from.
-                               You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of ``\/:*?";|+``
+                               You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of ``\\/:*?";|+``
         :param string remote_name: The NetBIOS machine name of the remote server.
                                    On windows, you can find out the machine name by right-clicking on the "My Computer" and selecting "Properties".
                                    This parameter must be the same as what has been configured on the remote server, or else the connection will be rejected.
