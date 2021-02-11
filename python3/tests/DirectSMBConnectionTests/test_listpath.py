@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from nose2.tools.decorators import with_setup, with_teardown
 from smb.SMBConnection import SMBConnection
 from smb.smb_constants import *
-from .util import getConnectionInfo
-from nose.tools import with_setup
 from smb import smb_structs
+from .util import getConnectionInfo
 
 conn = None
 
@@ -26,7 +26,8 @@ def teardown_func():
     global conn
     conn.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_listPath_SMB1():
     global conn
     results = conn.listPath('smbtest', '/')
@@ -37,7 +38,8 @@ def test_listPath_SMB1():
     assert ( 'Implementing CIFS - SMB.html', False ) in filenames   # Test long English file names
     assert ( 'rfc1001.txt', False ) in filenames                    # Test short English file names
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_listSubPath_SMB1():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name/')
@@ -46,14 +48,16 @@ def test_listSubPath_SMB1():
     assert ( 'Test Folder', True ) in filenames
     assert ( '子文件夹', True ) in filenames
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_listPathWithManyFiles_SMB1():
     global conn
     results = conn.listPath('smbtest', '/RFC Archive/')
     filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
     assert len(list(filenames))==999
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_listPath_SMB2():
     global conn
     results = conn.listPath('smbtest', '/')
@@ -64,7 +68,8 @@ def test_listPath_SMB2():
     assert ( 'Implementing CIFS - SMB.html', False ) in filenames   # Test long English file names
     assert ( 'rfc1001.txt', False ) in filenames                    # Test short English file names
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_listSubPath_SMB2():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name/')
@@ -73,14 +78,16 @@ def test_listSubPath_SMB2():
     assert ( 'Test Folder', True ) in filenames
     assert ( '子文件夹', True ) in filenames
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_listPathWithManyFiles_SMB2():
     global conn
     results = conn.listPath('smbtest', '/RFC Archive/')
     filenames = map(lambda r: ( r.filename, r.isDirectory ), results)
     assert len(list(filenames))==999
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_listPathFilterForDirectory_SMB1():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name', search = SMB_FILE_ATTRIBUTE_DIRECTORY)
@@ -89,7 +96,8 @@ def test_listPathFilterForDirectory_SMB1():
     for f, isDirectory in filenames:
         assert isDirectory
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_listPathFilterForDirectory_SMB2():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name', search = SMB_FILE_ATTRIBUTE_DIRECTORY)
@@ -98,7 +106,8 @@ def test_listPathFilterForDirectory_SMB2():
     for f, isDirectory in filenames:
         assert isDirectory
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_listPathFilterForFiles_SMB1():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name', search = SMB_FILE_ATTRIBUTE_READONLY | SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM | SMB_FILE_ATTRIBUTE_ARCHIVE | SMB_FILE_ATTRIBUTE_INCL_NORMAL)
@@ -107,7 +116,8 @@ def test_listPathFilterForFiles_SMB1():
     for f, isDirectory in filenames:
         assert not isDirectory
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_listPathFilterForFiles_SMB2():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name', search = SMB_FILE_ATTRIBUTE_READONLY | SMB_FILE_ATTRIBUTE_HIDDEN | SMB_FILE_ATTRIBUTE_SYSTEM | SMB_FILE_ATTRIBUTE_ARCHIVE | SMB_FILE_ATTRIBUTE_INCL_NORMAL)
@@ -117,7 +127,8 @@ def test_listPathFilterForFiles_SMB2():
         assert not isDirectory
 
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_listPathFilterPattern_SMB1():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name', pattern = 'Test*')
@@ -127,7 +138,8 @@ def test_listPathFilterPattern_SMB1():
     assert ( u'Test Folder', True ) in filenames
     assert ( u'子文件夹', True ) not in filenames
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_listPathFilterPattern_SMB2():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name', pattern = 'Test*')
@@ -137,7 +149,8 @@ def test_listPathFilterPattern_SMB2():
     assert ( u'Test Folder', True ) in filenames
     assert ( u'子文件夹', True ) not in filenames
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_listPathFilterUnicodePattern_SMB1():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name', pattern = u'*件夹')
@@ -147,7 +160,8 @@ def test_listPathFilterUnicodePattern_SMB1():
     assert ( u'Test Folder', True ) not in filenames
     assert ( u'子文件夹', True ) in filenames
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_listPathFilterUnicodePattern_SMB2():
     global conn
     results = conn.listPath('smbtest', '/Test Folder with Long Name', pattern = u'*件夹')

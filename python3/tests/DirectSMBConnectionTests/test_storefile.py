@@ -2,10 +2,10 @@
 
 import os, tempfile, random, time
 from io import BytesIO
+from nose2.tools.decorators import with_setup, with_teardown
 from smb.SMBConnection import SMBConnection
-from .util import getConnectionInfo
-from nose.tools import with_setup
 from smb import smb_structs
+from .util import getConnectionInfo
 
 try:
     import hashlib
@@ -41,7 +41,8 @@ def teardown_func():
     conn.close()
 
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_store_long_filename_SMB1():
     filename = os.sep + 'StoreTest %d-%d.dat' % ( time.time(), random.randint(0, 10000) )
 
@@ -64,7 +65,8 @@ def test_store_long_filename_SMB1():
     conn.deleteFiles('smbtest', filename)
 
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_store_long_filename_SMB2():
     filename = os.sep + 'StoreTest %d-%d.dat' % ( time.time(), random.randint(0, 10000) )
 
@@ -87,7 +89,8 @@ def test_store_long_filename_SMB2():
     conn.deleteFiles('smbtest', filename)
 
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_store_unicode_filename_SMB1():
     filename = os.sep + '上载测试 %d-%d.dat' % ( time.time(), random.randint(0, 10000) )
 
@@ -110,7 +113,8 @@ def test_store_unicode_filename_SMB1():
     conn.deleteFiles('smbtest', filename)
 
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_store_unicode_filename_SMB2():
     filename = os.sep + '上载测试 %d-%d.dat' % ( time.time(), random.randint(0, 10000) )
 

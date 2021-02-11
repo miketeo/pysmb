@@ -1,8 +1,8 @@
 
+from nose2.tools.decorators import with_teardown
 from smb.SMBConnection import SMBConnection
-from .util import getConnectionInfo
-from nose.tools import with_setup
 from smb import smb_structs
+from .util import getConnectionInfo
 
 conn, conn2, conn3 = None, None, None
 
@@ -15,7 +15,7 @@ def teardown_func():
     if conn3:
         conn3.close();
 
-@with_setup(teardown = teardown_func)
+@with_teardown(teardown_func)
 def test_NTLMv1_auth_SMB1():
     global conn, conn2, conn3
     smb_structs.SUPPORT_SMB2 = False
@@ -29,7 +29,7 @@ def test_NTLMv1_auth_SMB1():
     conn3 = SMBConnection('INVALIDUSER', 'wrongPass', info['client_name'], info['server_name'], use_ntlm_v2 = False, is_direct_tcp = True)
     assert not conn3.connect(info['server_ip'], info['server_port'])
 
-@with_setup(teardown = teardown_func)
+@with_teardown(teardown_func)
 def test_NTLMv1_auth_SMB1_callable_password():
     global conn, conn2, conn3
     smb_structs.SUPPORT_SMB2 = False
@@ -43,7 +43,7 @@ def test_NTLMv1_auth_SMB1_callable_password():
     conn3 = SMBConnection('INVALIDUSER', lambda: 'wrongPass', info['client_name'], info['server_name'], use_ntlm_v2 = False, is_direct_tcp = True)
     assert not conn3.connect(info['server_ip'], info['server_port'])
 
-@with_setup(teardown = teardown_func)
+@with_teardown(teardown_func)
 def test_NTLMv2_auth_SMB1():
     global conn, conn2, conn3
     smb_structs.SUPPORT_SMB2 = False
@@ -57,7 +57,7 @@ def test_NTLMv2_auth_SMB1():
     conn3 = SMBConnection('INVALIDUSER', 'wrongPass', info['client_name'], info['server_name'], use_ntlm_v2 = True, is_direct_tcp = True)
     assert not conn3.connect(info['server_ip'], info['server_port'])
 
-@with_setup(teardown = teardown_func)
+@with_teardown(teardown_func)
 def test_NTLMv1_auth_SMB2():
     global conn, conn2, conn3
     smb_structs.SUPPORT_SMB2 = True
@@ -71,7 +71,7 @@ def test_NTLMv1_auth_SMB2():
     conn3 = SMBConnection('INVALIDUSER', 'wrongPass', info['client_name'], info['server_name'], use_ntlm_v2 = False, is_direct_tcp = True)
     assert not conn3.connect(info['server_ip'], info['server_port'])
 
-@with_setup(teardown = teardown_func)
+@with_teardown(teardown_func)
 def test_NTLMv2_auth_SMB2():
     global conn, conn2, conn3
     smb_structs.SUPPORT_SMB2 = True

@@ -2,7 +2,7 @@
 
 from smb.SMBConnection import SMBConnection
 from .util import getConnectionInfo
-from nose.tools import with_setup
+from nose2.tools.decorators import with_setup
 from smb import smb_structs
 
 conn = None

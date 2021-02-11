@@ -2,7 +2,7 @@
 
 import os, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, time, random
 from smb.SMBHandler import SMBHandler
-from . import util
+import util
 
 
 try:

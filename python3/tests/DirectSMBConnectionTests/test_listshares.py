@@ -1,8 +1,8 @@
 
+from nose2.tools.decorators import with_setup, with_teardown
 from smb.SMBConnection import SMBConnection
-from .util import getConnectionInfo
-from nose.tools import with_setup
 from smb import smb_structs
+from .util import getConnectionInfo
 
 conn = None
 
@@ -24,13 +24,15 @@ def teardown_func():
     global conn
     conn.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_listshares_SMB1():
     global conn
     results = conn.listShares()
     assert 'smbtest' in [r.name.lower() for r in results]
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_listshares_SMB2():
     global conn
     results = conn.listShares()

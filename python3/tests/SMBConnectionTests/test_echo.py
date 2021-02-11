@@ -1,8 +1,8 @@
 
 import random
+from nose2.tools.decorators import with_setup, with_teardown
 from smb.SMBConnection import SMBConnection
 from .util import getConnectionInfo
-from nose.tools import with_setup
 
 conn = None
 
@@ -16,7 +16,8 @@ def teardown_func():
     global conn
     conn.close()
 
-@with_setup(setup_func, teardown_func)
+@with_setup(setup_func)
+@with_teardown(teardown_func)
 def test_echo():
     global conn
 

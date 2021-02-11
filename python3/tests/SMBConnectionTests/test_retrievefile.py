@@ -2,10 +2,10 @@
 
 import os, tempfile
 from io import BytesIO
+from nose2.tools.decorators import with_setup, with_teardown
 from smb.SMBConnection import SMBConnection
-from .util import getConnectionInfo
-from nose.tools import with_setup
 from smb import smb_structs
+from .util import getConnectionInfo
 
 try:
     import hashlib
@@ -34,7 +34,8 @@ def teardown_func():
     global conn
     conn.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_retr_multiplereads_SMB1():
     # Test file retrieval using multiple ReadAndx calls (assuming each call will not reach more than 65534 bytes)
     global conn
@@ -48,7 +49,8 @@ def test_retr_multiplereads_SMB1():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_retr_multiplereads_SMB2():
     # Test file retrieval using multiple ReadAndx calls (assuming each call will not reach more than 65534 bytes)
     global conn
@@ -62,7 +64,8 @@ def test_retr_multiplereads_SMB2():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_retr_longfilename_SMB1():
     # Test file retrieval that has a long English filename
     global conn
@@ -76,7 +79,8 @@ def test_retr_longfilename_SMB1():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_retr_longfilename_SMB2():
     # Test file retrieval that has a long English filename
     global conn
@@ -90,7 +94,8 @@ def test_retr_longfilename_SMB2():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_retr_unicodefilename_SMB1():
     # Test file retrieval that has a long non-English filename inside a folder with a non-English name
     global conn
@@ -104,7 +109,8 @@ def test_retr_unicodefilename_SMB1():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_retr_unicodefilename_SMB2():
     # Test file retrieval that has a long non-English filename inside a folder with a non-English name
     global conn
@@ -118,7 +124,8 @@ def test_retr_unicodefilename_SMB2():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_retr_offset_SMB1():
     # Test file retrieval from offset to EOF
     global conn
@@ -132,7 +139,8 @@ def test_retr_offset_SMB1():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_retr_offset_SMB2():
     # Test file retrieval from offset to EOF
     global conn
@@ -146,7 +154,8 @@ def test_retr_offset_SMB2():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_retr_offset_and_biglimit_SMB1():
     # Test file retrieval from offset with a big max_length
     global conn
@@ -160,7 +169,8 @@ def test_retr_offset_and_biglimit_SMB1():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_retr_offset_and_biglimit_SMB2():
     # Test file retrieval from offset with a big max_length
     global conn
@@ -174,7 +184,8 @@ def test_retr_offset_and_biglimit_SMB2():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_retr_offset_and_smalllimit_SMB1():
     # Test file retrieval from offset with a small max_length
     global conn
@@ -188,7 +199,8 @@ def test_retr_offset_and_smalllimit_SMB1():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_retr_offset_and_smalllimit_SMB2():
     # Test file retrieval from offset with a small max_length
     global conn
@@ -202,7 +214,8 @@ def test_retr_offset_and_smalllimit_SMB2():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_retr_offset_and_zerolimit_SMB1():
     # Test file retrieval from offset to EOF with max_length=0
     global conn
@@ -216,7 +229,8 @@ def test_retr_offset_and_zerolimit_SMB1():
 
     temp_fh.close()
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_retr_offset_and_zerolimit_SMB2():
     # Test file retrieval from offset to EOF with max_length=0
     global conn

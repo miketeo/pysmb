@@ -2,10 +2,10 @@
 
 import os, time, random
 from io import BytesIO
+from nose2.tools.decorators import with_setup, with_teardown
 from smb.SMBConnection import SMBConnection
-from .util import getConnectionInfo
-from nose.tools import with_setup
 from smb import smb_structs
+from .util import getConnectionInfo
 
 conn = None
 
@@ -29,7 +29,8 @@ def teardown_func():
     global conn
     conn.close()
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_delete_without_subfolder_SMB1():
     global conn
 
@@ -77,7 +78,8 @@ def test_delete_without_subfolder_SMB1():
     assert 'random.txt' in filenames
 
 
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_delete_with_subfolder_SMB1():
     global conn
 
@@ -125,7 +127,8 @@ def test_delete_with_subfolder_SMB1():
     assert 'random.txt' in filenames
 
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_delete_without_subfolder_SMB2():
     global conn
 
@@ -172,7 +175,8 @@ def test_delete_without_subfolder_SMB2():
     assert 'aaBest.bin' in filenames
     assert 'random.txt' in filenames
 
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_delete_with_subfolder_SMB2():
     global conn
 
