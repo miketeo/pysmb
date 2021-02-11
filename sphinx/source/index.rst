@@ -1,14 +1,9 @@
-.. pysmb documentation master file, created by
-   sphinx-quickstart on Sun Dec 18 15:54:40 2011.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to pysmb's documentation!
 =================================
 
 pysmb is a pure Python implementation of the client-side SMB/CIFS protocol (SMB1 and SMB2) which is the underlying protocol
 that facilitates file sharing and printing between Windows machines, as well as with Linux machines via the Samba server application.
-pysmb is developed in Python 2.7.x and Python 3.5.x and has been tested against shared folders on Windows XP SP3, Windows Vista, Windows 7 and Samba 3.x.
+pysmb is developed in Python 2.7.x and Python 3.8.x and has been tested against shared folders on Windows 7, Windows 10 and Samba 4.x.
 
 The latest version of pysmb is always available at the pysmb project page at `miketeo.net <http://miketeo.net/projects/pysmb>`_.
 
