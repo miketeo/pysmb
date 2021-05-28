@@ -95,7 +95,7 @@ class SMBConnection(SMB):
     # Public Methods
     #
 
-    def connect(self, ip, port = 139, sock_family = socket.AF_INET, timeout = 60):
+    def connect(self, ip, port = 139, sock_family = None, timeout = 60):
         """
         Establish the SMB connection to the remote SMB/CIFS server.
 
@@ -108,9 +108,12 @@ class SMBConnection(SMB):
             self.sock.close()
 
         self.auth_result = None
-        self.sock = socket.socket(sock_family)
-        self.sock.settimeout(timeout)
-        self.sock.connect(( ip, port ))
+        if sock_family:
+            self.sock = socket.socket(sock_family)
+            self.sock.settimeout(timeout)
+            self.sock.connect(( ip, port ))
+        else:
+            self.sock = socket.create_connection(( ip, port ))
 
         self.is_busy = True
         try:
