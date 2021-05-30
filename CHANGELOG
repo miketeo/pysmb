@@ -1,3 +1,10 @@
+pysmb-1.2.7, 30 May 2021
+========================
+
+- Fix compatibility issues on file retrievals with Likewise servers (#177)
+- Improve SMBConnection's connect() method to remove the need to provide sock_family
+  parameter for IPv6 addresses in Python 3.x (#180)
+
 pysmb-1.2.6, 9 Dec 2020
 =======================
 - Fix bug in SMB1 store file implmentation which generates SMB_COM_WRITE_ANDX
