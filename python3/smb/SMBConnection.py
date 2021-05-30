@@ -102,6 +102,8 @@ class SMBConnection(SMB):
         You must call this method before attempting any of the file operations with the remote server.
         This method will block until the SMB connection has attempted at least one authentication.
 
+        :param port: Defaults to 139. If you are using direct TCP mode (is_direct_tcp=true when creating this SMBConnection instance), use 445.
+        :param sock_family: In Python 3.x, use *None* as we can infer the socket family from the provided *ip*. In Python 2.x, it must be either *socket.AF_INET* or *socket.AF_INET6*.
         :return: A boolean value indicating the result of the authentication atttempt: True if authentication is successful; False, if otherwise.
         """
         if self.sock:
