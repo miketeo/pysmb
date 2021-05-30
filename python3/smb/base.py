@@ -939,7 +939,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                      flags = 0,
                                                      additional_info = 0,
                                                      info_type = SMB2_INFO_FILE,
-                                                     file_info_class = 0x16,  # FileStreamInformation [MS-FSCC] 2.4
+                                                     file_info_class = 0x05,  # FileStandardInformation [MS-FSCC] 2.4
                                                      input_buf = b'',
                                                      output_buf_len = 4096))
                 m.tid = kwargs['tid']
