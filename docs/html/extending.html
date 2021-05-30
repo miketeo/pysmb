@@ -1,33 +1,22 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Extending pysmb For Other Frameworks &mdash; pysmb 1.2.1 documentation</title>
-    
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extending pysmb For Other Frameworks &#8212; pysmb 1.2.7 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.2.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="pysmb 1.2.1 documentation" href="index.html" />
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Upgrading from older pysmb versions" href="upgrading.html" />
     <link rel="prev" title="Security Descriptors" href="api/smb_security_descriptors.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -43,39 +32,10 @@
         <li class="right" >
           <a href="api/smb_security_descriptors.html" title="Security Descriptors"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Extending pysmb For Other Frameworks</a></li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="api/smb_security_descriptors.html"
-                        title="previous chapter">Security Descriptors</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="upgrading.html"
-                        title="next chapter">Upgrading from older pysmb versions</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/extending.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -88,20 +48,19 @@
 <p>In general, you need to take care of the SMB TCP connection setup, i.e. finding the IP address of the remote server and connect to the SMB/CIFS service.
 Then you need to read/write synchronously or asynchronously from and to the SMB socket. And you need to handle post-authentication callback methods, and from these methods,
 initiate file operations with the remote SMB/CIFS server.</p>
-<dl class="docutils">
-<dt>Now the above steps in more technical details:</dt>
-<dd><ol class="first arabic simple">
-<li>Create a new class which subclasses the <em>smb.base.SMB</em> class. Most often, the connection setup will be part of the <em>__init__</em> method.</li>
-<li>Override the <em>write(self, data)</em> method to provide an implementation which will write <em>data</em> to the socket.</li>
-<li>Write your own loop handling method to read data from the socket. Once data have been read, call <em>feedData</em> method with the parameter.
-The <em>feedData</em> method has its own internal buffer, so it can accept incomplete NetBIOS session packet data.</li>
-<li>Override</li>
+<dl>
+<dt>Now the above steps in more technical details:</dt><dd><ol class="arabic simple">
+<li><p>Create a new class which subclasses the <em>smb.base.SMB</em> class. Most often, the connection setup will be part of the <em>__init__</em> method.</p></li>
+<li><p>Override the <em>write(self, data)</em> method to provide an implementation which will write <em>data</em> to the socket.</p></li>
+<li><p>Write your own loop handling method to read data from the socket. Once data have been read, call <em>feedData</em> method with the parameter.
+The <em>feedData</em> method has its own internal buffer, so it can accept incomplete NetBIOS session packet data.</p></li>
+<li><p>Override</p></li>
 </ol>
-<blockquote class="last">
+<blockquote>
 <div><ul class="simple">
-<li><em>onAuthOK</em> method to include your own operations to perform when authentication is successful. You can initiate file operations in this method.</li>
-<li><em>onAuthFailed</em> method to include your own processing on what to do when authentication fails. You can report this as an error, or to try a different NTLM authentication algorithm (<em>use_ntlm_v2</em> parameter in the constructor).</li>
-<li><em>onNMBSessionFailed</em> method to include your own processing on what to do when pysmb fails to setup the NetBIOS session with the remote server. Usually, this is due to a wrong <em>remote_name</em> parameter in the constructor.</li>
+<li><p><em>onAuthOK</em> method to include your own operations to perform when authentication is successful. You can initiate file operations in this method.</p></li>
+<li><p><em>onAuthFailed</em> method to include your own processing on what to do when authentication fails. You can report this as an error, or to try a different NTLM authentication algorithm (<em>use_ntlm_v2</em> parameter in the constructor).</p></li>
+<li><p><em>onNMBSessionFailed</em> method to include your own processing on what to do when pysmb fails to setup the NetBIOS session with the remote server. Usually, this is due to a wrong <em>remote_name</em> parameter in the constructor.</p></li>
 </ul>
 </div></blockquote>
 </dd>
@@ -109,7 +68,35 @@ The <em>feedData</em> method has its own internal buffer, so it can accept incom
 </div>
 
 
+            <div class="clearer"></div>
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api/smb_security_descriptors.html"
+                        title="previous chapter">Security Descriptors</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="upgrading.html"
+                        title="next chapter">Upgrading from older pysmb versions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/extending.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -129,12 +116,13 @@ The <em>feedData</em> method has its own internal buffer, so it can accept incom
         <li class="right" >
           <a href="api/smb_security_descriptors.html" title="Security Descriptors"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Extending pysmb For Other Frameworks</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2001-2020, Michael Teo https://miketeo.net/.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+        &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
     </div>
   </body>
 </html>
