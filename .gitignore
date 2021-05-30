@@ -2,8 +2,8 @@
 *~
 
 # For virtualenvs in development
-/python2/venv2
-/python3/venv3
+/venv2
+/venv3
 
 #
 # From https://github.com/github/gitignore/blob/master/Python.gitignore
