@@ -420,11 +420,11 @@ class SMBConnection(SMB):
                         tempDir.append("/")
                     tempDir2 = ''.join(tempDir)
                     try:
-                        self.samba.createDirectory(service_name, path + tempDir2,timeout=timeout)  # Create Directory
+                        self.createDirectory(service_name, path + tempDir2,timeout=timeout)  # Create Directory
                     except:
                         pass
 
-                self.samba.storeFile(service_name, smb_dir + "/" + relativePath + "/" + f, fpp,timeout=timeout) #storeFile
+                self.storeFile(service_name, smb_dir + "/" + relativePath + "/" + f, fpp,timeout=timeout) #storeFile
                 fpp.close()
 
     def deleteFiles(self, service_name, path_file_pattern, delete_matching_folders = False, timeout = 30):
