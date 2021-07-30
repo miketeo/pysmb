@@ -2,7 +2,7 @@
 import os, sys, struct, types, logging, binascii, time
 from io import StringIO
 from .smb_constants import *
-
+from .strategy import DataFaultToleranceStrategy
 
 # Set to True if you want to enable support for extended security. Required for Windows Vista and later
 SUPPORT_EXTENDED_SECURITY = True
@@ -375,7 +375,7 @@ class ComNegotiateResponse(Payload):
                     while offset < data_len:
                         _s = message.data[offset:offset+2]
                         if _s == b'\0\0':
-                            self.domain = s.decode('UTF-16LE')
+                            self.domain = DataFaultToleranceStrategy.data_bytes_decode(s)#.decode('UTF-16LE')
                             break
                         else:
                             s += _s

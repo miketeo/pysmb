@@ -9,6 +9,7 @@ from .security_descriptors import SecurityDescriptor
 from nmb.base import NMBSession
 from .utils import convertFILETIMEtoEpoch
 from . import ntlm, securityblob
+from .strategy import DataFaultToleranceStrategy
 
 try:
     import hashlib
@@ -527,7 +528,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             for i in range(0, shares_count):
                 max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
                 offset += 12
-                results[i].name = data_bytes[offset:offset+length*2-2].decode('UTF-16LE')
+                results[i].name = DataFaultToleranceStrategy.data_bytes_decode(data_bytes[offset:offset+length*2-2])#.decode('UTF-16LE')
 
                 if length % 2 != 0:
                     offset += (length * 2 + 2)
@@ -536,7 +537,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
                 max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
                 offset += 12
-                results[i].comments = data_bytes[offset:offset+length*2-2].decode('UTF-16LE')
+                results[i].comments = DataFaultToleranceStrategy.data_bytes_decode(data_bytes[offset:offset+length*2-2])#.decode('UTF-16LE')
 
                 if length % 2 != 0:
                     offset += (length * 2 + 2)
@@ -684,8 +685,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if offset2 + filename_length > data_length:
                     return data_bytes[offset:]
 
-                filename = data_bytes[offset2:offset2+filename_length].decode('UTF-16LE')
-                short_name = short_name[:short_name_length].decode('UTF-16LE')
+                filename = DataFaultToleranceStrategy.data_bytes_decode(data_bytes[offset2:offset2+filename_length])#.decode('UTF-16LE')
+                short_name = DataFaultToleranceStrategy.data_bytes_decode(short_name[:short_name_length])#.decode('UTF-16LE')
 
                 accept_result = False
                 if (file_attributes & 0xff) in ( 0x00, ATTR_NORMAL ): # Only the first 8-bits are compared. We ignore other bits like temp, compressed, encryption, sparse, indexed, etc
@@ -1689,7 +1690,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 results = [ ]
                 snapshots_count = struct.unpack('<I', enum_message.payload.out_data[4:8])[0]
                 for i in range(0, snapshots_count):
-                    s = enum_message.payload.out_data[12+i*50:12+48+i*50].decode('UTF-16LE')
+                    s = DataFaultToleranceStrategy.data_bytes_decode(enum_message.payload.out_data[12+i*50:12+48+i*50])#.decode('UTF-16LE')
                     results.append(datetime(*list(map(int, ( s[5:9], s[10:12], s[13:15], s[16:18], s[19:21], s[22:24] )))))
                 closeFid(kwargs['tid'], kwargs['fid'], results = results)
             else:
@@ -2071,7 +2072,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             for i in range(0, shares_count):
                 max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
                 offset += 12
-                results[i].name = data_bytes[offset:offset+length*2-2].decode('UTF-16LE')
+                results[i].name = DataFaultToleranceStrategy.data_bytes_decode(data_bytes[offset:offset+length*2-2])#.decode('UTF-16LE')
 
                 if length % 2 != 0:
                     offset += (length * 2 + 2)
@@ -2080,7 +2081,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
                 max_length, _, length = struct.unpack('<III', data_bytes[offset:offset+12])
                 offset += 12
-                results[i].comments = data_bytes[offset:offset+length*2-2].decode('UTF-16LE')
+                results[i].comments = DataFaultToleranceStrategy.data_bytes_decode(data_bytes[offset:offset+length*2-2])#.decode('UTF-16LE')
 
                 if length % 2 != 0:
                     offset += (length * 2 + 2)
@@ -2189,8 +2190,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if offset2 + filename_length > data_length:
                     return data_bytes[offset:]
 
-                filename = data_bytes[offset2:offset2+filename_length].decode('UTF-16LE')
-                short_name = short_name.decode('UTF-16LE')
+                filename = DataFaultToleranceStrategy.data_bytes_decode(data_bytes[offset2:offset2+filename_length])#.decode('UTF-16LE')
+                short_name = DataFaultToleranceStrategy.data_bytes_decode(short_name)#.decode('UTF-16LE')
 
                 accept_result = False
                 if (file_attributes & 0xff) in ( 0x00, ATTR_NORMAL ): # Only the first 8-bits are compared. We ignore other bits like temp, compressed, encryption, sparse, indexed, etc
@@ -2864,7 +2865,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 results = [ ]
                 snapshots_count = struct.unpack('<I', enum_message.payload.data_bytes[4:8])[0]
                 for i in range(0, snapshots_count):
-                    s = enum_message.payload.data_bytes[12+i*50:12+48+i*50].decode('UTF-16LE')
+                    s = DataFaultToleranceStrategy.data_bytes_decode(enum_message.payload.data_bytes[12+i*50:12+48+i*50])#.decode('UTF-16LE')
                     results.append(datetime(*list(map(int, ( s[5:9], s[10:12], s[13:15], s[16:18], s[19:21], s[22:24] )))))
                 closeFid(kwargs['tid'], kwargs['fid'])
                 callback(results)
