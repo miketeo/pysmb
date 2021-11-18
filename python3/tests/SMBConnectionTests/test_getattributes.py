@@ -2,7 +2,7 @@
 
 from smb.SMBConnection import SMBConnection
 from .util import getConnectionInfo
-from nose2.tools.decorators import with_setup
+from nose2.tools.decorators import with_setup, with_teardown
 from smb import smb_structs
 
 conn = None
@@ -25,7 +25,8 @@ def teardown_func():
     global conn
     conn.close()
     
-@with_setup(setup_func_SMB2, teardown_func)
+@with_setup(setup_func_SMB2)
+@with_teardown(teardown_func)
 def test_getAttributes_SMB2():
     global conn
     info = conn.getAttributes('smbtest', '/Test Folder with Long Name/')
@@ -39,7 +40,8 @@ def test_getAttributes_SMB2():
     info = conn.getAttributes('smbtest', u'/\u6d4b\u8bd5\u6587\u4ef6\u5939')
     assert info.isDirectory
     
-@with_setup(setup_func_SMB1, teardown_func)
+@with_setup(setup_func_SMB1)
+@with_teardown(teardown_func)
 def test_getAttributes_SMB1():
     global conn
     info = conn.getAttributes('smbtest', '/Test Folder with Long Name/')
@@ -52,5 +54,4 @@ def test_getAttributes_SMB1():
     
     info = conn.getAttributes('smbtest', u'/\u6d4b\u8bd5\u6587\u4ef6\u5939')
     assert info.isDirectory
-    
-    
+
