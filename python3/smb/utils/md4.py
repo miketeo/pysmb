@@ -200,7 +200,7 @@ class MD4:
         if (56 <= int(self.count)): padlen = U32(56 - int(self.count) + 64)
         else: padlen = U32(56 - int(self.count))
 
-        temp.update(int_array2str(padding[:int(padlen)]))
+        temp.update(bytes(padding[:int(padlen)]))
 
         s[0]= (oldlen1)        & U32(0xFF)
         s[1]=((oldlen1) >>  8) & U32(0xFF)
@@ -210,7 +210,7 @@ class MD4:
         s[5]=((oldlen2) >>  8) & U32(0xFF)
         s[6]=((oldlen2) >> 16) & U32(0xFF)
         s[7]=((oldlen2) >> 24) & U32(0xFF)
-        temp.update(int_array2str(s))
+        temp.update(bytes(s))
 
         res[ 0]= temp.A        & U32(0xFF)
         res[ 1]=(temp.A >>  8) & U32(0xFF)
@@ -229,7 +229,7 @@ class MD4:
         res[14]=(temp.D >> 16) & U32(0xFF)
         res[15]=(temp.D >> 24) & U32(0xFF)
 
-        return int_array2str(res).encode('UTF-16LE')
+        return bytes(res)
 
 #====================================================================
 # helpers
@@ -242,14 +242,6 @@ def ROL(x, n): return (((x) << n) | ((x) >> (32-n)))
 def f1(a, b, c, d, k, s, X): return ROL(a + F(b, c, d) + X[k], s)
 def f2(a, b, c, d, k, s, X): return ROL(a + G(b, c, d) + X[k] + U32(0x5a827999), s)
 def f3(a, b, c, d, k, s, X): return ROL(a + H(b, c, d) + X[k] + U32(0x6ed9eba1), s)
-
-#--------------------------------------------------------------------
-# helper function
-def int_array2str(array):
-        str = ''
-        for i in array:
-            str = str + chr(i)
-        return str
 
 #--------------------------------------------------------------------
 # To be able to use md4.new() instead of md4.MD4()
