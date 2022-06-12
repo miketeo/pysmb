@@ -1,16 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SMBConnection Class &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>SMBConnection Class &#8212; pysmb 1.2.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -32,7 +34,7 @@
         <li class="right" >
           <a href="nmb_NetBIOS.html" title="NetBIOS class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SMBConnection Class</a></li> 
       </ul>
     </div>  
@@ -42,12 +44,12 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="smbconnection-class">
-<h1>SMBConnection Class<a class="headerlink" href="#smbconnection-class" title="Permalink to this headline">¶</a></h1>
+  <section id="smbconnection-class">
+<h1>SMBConnection Class<a class="headerlink" href="#smbconnection-class" title="Permalink to this heading">¶</a></h1>
 <p>The SMBConnection is suitable for developers who wish to use pysmb to perform file operations with a remote SMB/CIFS server sequentially.</p>
 <p>Each file operation method, when invoked, will block and return after it has completed or has encountered an error.</p>
-<div class="section" id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h2>
 <p>The following illustrates a simple file retrieving implementation.:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tempfile</span>
 <span class="kn">from</span> <span class="nn">smb.SMBConnection</span> <span class="kn">import</span> <span class="n">SMBConnection</span>
@@ -69,9 +71,9 @@
 <span class="n">file_obj</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="smb2-support">
-<h2>SMB2 Support<a class="headerlink" href="#smb2-support" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="smb2-support">
+<h2>SMB2 Support<a class="headerlink" href="#smb2-support" title="Permalink to this heading">¶</a></h2>
 <p>Starting from pysmb 1.1.0, pysmb will utilize SMB2 protocol for communication if the remote SMB/CIFS service supports SMB2.
 Otherwise, it will fallback automatically back to using SMB1 protocol.</p>
 <p>To disable SMB2 protocol in pysmb, set the <em>SUPPORT_SMB2</em> flag in the <em>smb_structs</em> module to <em>False</em> before creating the <em>SMBConnection</em> instance.:</p>
@@ -79,9 +81,9 @@ Otherwise, it will fallback automatically back to using SMB1 protocol.</p>
 <span class="n">smb_structs</span><span class="o">.</span><span class="n">SUPPORT_SMB2</span> <span class="o">=</span> <span class="kc">False</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="caveats">
-<h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="caveats">
+<h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>It is not meant to be used asynchronously.</p></li>
 <li><p>A single <em>SMBConnection</em> instance should not be used to perform more than one operation concurrently at the same time.</p></li>
@@ -90,11 +92,11 @@ Most SMB/CIFS servers have some sort of keepalive mechanism and impose a timeout
 If the clients fail to respond within the timeout limit, the SMB/CIFS server may disconnect the client.</p></li>
 </ul>
 <dl class="py class">
-<dt id="smb.SMBConnection.SMBConnection">
-<em class="property">class </em><code class="sig-prename descclassname">smb.SMBConnection.</code><code class="sig-name descname">SMBConnection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">username</span></em>, <em class="sig-param"><span class="n">password</span></em>, <em class="sig-param"><span class="n">my_name</span></em>, <em class="sig-param"><span class="n">remote_name</span></em>, <em class="sig-param"><span class="n">domain</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">use_ntlm_v2</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sign_options</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">is_direct_tcp</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.SMBConnection.</span></span><span class="sig-name descname"><span class="pre">SMBConnection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">my_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remote_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ntlm_v2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_direct_tcp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">username</span></em>, <em class="sig-param"><span class="n">password</span></em>, <em class="sig-param"><span class="n">my_name</span></em>, <em class="sig-param"><span class="n">remote_name</span></em>, <em class="sig-param"><span class="n">domain</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">use_ntlm_v2</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sign_options</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">is_direct_tcp</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">my_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remote_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ntlm_v2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_direct_tcp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new SMBConnection instance.</p>
 <p><em>username</em> and <em>password</em> are the user credentials required to authenticate the underlying SMB connection with the remote server.
 <em>password</em> can be a string or a callable returning a string.
@@ -103,7 +105,7 @@ File operations can only be proceeded after the connection has been authenticate
 <p>The default TCP port for most SMB/CIFS servers using NetBIOS over TCP/IP is 139.
 Some newer server installations might also support Direct hosting of SMB over TCP/IP; for these servers, the default TCP port is 445.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>my_name</strong> (<em>string</em>) – The local NetBIOS machine name that will identify where this connection is originating from.
 You can freely choose a name as long as it contains a maximum of 15 alphanumeric characters and does not contain spaces and any of <code class="docutils literal notranslate"><span class="pre">\/:*?&quot;;|+</span></code></p></li>
@@ -127,73 +129,73 @@ The default parameter is False which will use NetBIOS over TCP/IP for wider comp
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.close">
-<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.close" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminate the SMB connection (if it has been started) and release any sources held by the underlying socket.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.connect">
-<code class="sig-name descname">connect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ip</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">139</span></em>, <em class="sig-param"><span class="n">sock_family</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">60</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.connect" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.connect">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">139</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sock_family</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.connect" title="Permalink to this definition">¶</a></dt>
 <dd><p>Establish the SMB connection to the remote SMB/CIFS server.</p>
 <p>You must call this method before attempting any of the file operations with the remote server.
 This method will block until the SMB connection has attempted at least one authentication.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>port</strong> – Defaults to 139. If you are using direct TCP mode (is_direct_tcp=true when creating this SMBConnection instance), use 445.</p></li>
 <li><p><strong>sock_family</strong> – In Python 3.x, use <em>None</em> as we can infer the socket family from the provided <em>ip</em>. In Python 2.x, it must be either <em>socket.AF_INET</em> or <em>socket.AF_INET6</em>.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A boolean value indicating the result of the authentication atttempt: True if authentication is successful; False, if otherwise.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.createDirectory">
-<code class="sig-name descname">createDirectory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.createDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.createDirectory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.createDirectory">
+<span class="sig-name descname"><span class="pre">createDirectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.createDirectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.createDirectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a new directory <em>path</em> on the <em>service_name</em>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – Contains the name of the shared folder.</p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – The path of the new folder (relative to) the shared folder.
 If the path contains non-English characters, an unicode string must be used to pass in the path.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.deleteDirectory">
-<code class="sig-name descname">deleteDirectory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteDirectory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.deleteDirectory">
+<span class="sig-name descname"><span class="pre">deleteDirectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteDirectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteDirectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete the empty folder at <em>path</em> on <em>service_name</em></p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – Contains the name of the shared folder.</p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – The path of the to-be-deleted folder (relative to) the shared folder.
 If the path contains non-English characters, an unicode string must be used to pass in the path.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.deleteFiles">
-<code class="sig-name descname">deleteFiles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path_file_pattern</span></em>, <em class="sig-param"><span class="n">delete_matching_folders</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteFiles" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.deleteFiles">
+<span class="sig-name descname"><span class="pre">deleteFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_file_pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delete_matching_folders</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.deleteFiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.deleteFiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delete one or more regular files. It supports the use of wildcards in file names, allowing for deletion of multiple files in a single request.</p>
 <p>If delete_matching_folders is True, immediate sub-folders that match the path_file_pattern will be deleted recursively.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – Contains the name of the shared folder.</p></li>
 <li><p><strong>path_file_pattern</strong> (<em>string/unicode</em>) – The pathname of the file(s) to be deleted, relative to the service_name.
@@ -201,63 +203,63 @@ Wildcards may be used in th filename component of the path.
 If your path/filename contains non-English characters, you must pass in an unicode string.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.echo">
-<code class="sig-name descname">echo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.echo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.echo" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.echo">
+<span class="sig-name descname"><span class="pre">echo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.echo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.echo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send an echo command containing <em>data</em> to the remote SMB/CIFS server. The remote SMB/CIFS will reply with the same <em>data</em>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data</strong> (<em>bytes</em>) – Data to send to the remote server. Must be a bytes object.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The <em>data</em> parameter</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.getAttributes">
-<code class="sig-name descname">getAttributes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.getAttributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.getAttributes" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.getAttributes">
+<span class="sig-name descname"><span class="pre">getAttributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.getAttributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.getAttributes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve information about the file at <em>path</em> on the <em>service_name</em>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – the name of the shared folder for the <em>path</em></p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – Path of the file on the remote server. If the file cannot be opened for reading, an <a class="reference internal" href="smb_exceptions.html"><span class="doc">OperationFailure</span></a> will be raised.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A <a class="reference internal" href="smb_SharedFile.html"><span class="doc">smb.base.SharedFile</span></a> instance containing the attributes of the file.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.getSecurity">
-<code class="sig-name descname">getSecurity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.getSecurity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.getSecurity" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.getSecurity">
+<span class="sig-name descname"><span class="pre">getSecurity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.getSecurity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.getSecurity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the security descriptor of the file at <em>path</em> on the <em>service_name</em>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – the name of the shared folder for the <em>path</em></p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – Path of the file on the remote server. If the file cannot be opened for reading, an <a class="reference internal" href="smb_exceptions.html"><span class="doc">OperationFailure</span></a> will be raised.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A <a class="reference internal" href="smb_security_descriptors.html#smb.security_descriptors.SecurityDescriptor" title="smb.security_descriptors.SecurityDescriptor"><code class="xref py py-class docutils literal notranslate"><span class="pre">smb.security_descriptors.SecurityDescriptor</span></code></a> instance containing the security information of the file.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.listPath">
-<code class="sig-name descname">listPath</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">search</span><span class="o">=</span><span class="default_value">65591</span></em>, <em class="sig-param"><span class="n">pattern</span><span class="o">=</span><span class="default_value">'*'</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listPath" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.listPath">
+<span class="sig-name descname"><span class="pre">listPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">65591</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listPath"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listPath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a directory listing of files/folders at <em>path</em></p>
 <p>For simplicity, pysmb defines a “normal” file as a file entry that is not read-only, not hidden, not system, not archive and not a directory.
 It ignores other attributes like compression, indexed, sparse, temporary and encryption.</p>
@@ -267,7 +269,7 @@ and directories (SMB_FILE_ATTRIBUTE_DIRECTORY).
 If you do not need to include “normal” files in the result, define your own search parameter without the SMB_FILE_ATTRIBUTE_INCL_NORMAL constant.
 SMB_FILE_ATTRIBUTE_NORMAL should be used by itself and not be used with other bit constants.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – the name of the shared folder for the <em>path</em></p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – path relative to the <em>service_name</em> where we are interested to learn about its files/sub-folders.</p></li>
@@ -275,60 +277,60 @@ SMB_FILE_ATTRIBUTE_NORMAL should be used by itself and not be used with other bi
 <li><p><strong>pattern</strong> (<em>string/unicode</em>) – the filter to apply to the results before returning to the client.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A list of <a class="reference internal" href="smb_SharedFile.html"><span class="doc">smb.base.SharedFile</span></a> instances.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.listShares">
-<code class="sig-name descname">listShares</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listShares"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listShares" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.listShares">
+<span class="sig-name descname"><span class="pre">listShares</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listShares"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listShares" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a list of shared resources on remote server.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A list of <a class="reference internal" href="smb_SharedDevice.html"><span class="doc">smb.base.SharedDevice</span></a> instances describing the shared resource</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.listSnapshots">
-<code class="sig-name descname">listSnapshots</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listSnapshots"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listSnapshots" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.listSnapshots">
+<span class="sig-name descname"><span class="pre">listSnapshots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.listSnapshots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.listSnapshots" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve a list of available snapshots (shadow copies) for <em>path</em>.</p>
 <p>Note that snapshot features are only supported on Windows Vista Business, Enterprise and Ultimate, and on all Windows 7 editions.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – the name of the shared folder for the <em>path</em></p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – path relative to the <em>service_name</em> where we are interested in the list of available snapshots</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A list of python <em>datetime.DateTime</em> instances in GMT/UTC time zone</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.rename">
-<code class="sig-name descname">rename</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">old_path</span></em>, <em class="sig-param"><span class="n">new_path</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.rename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.rename" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.rename">
+<span class="sig-name descname"><span class="pre">rename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.rename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.rename" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rename a file or folder at <em>old_path</em> to <em>new_path</em> shared at <em>service_name</em>. Note that this method cannot be used to rename file/folder across different shared folders</p>
 <p><em>old_path</em> and <em>new_path</em> are string/unicode referring to the old and new path of the renamed resources (relative to) the shared folder.
 If the path contains non-English characters, an unicode string must be used to pass in the path.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>service_name</strong> (<em>string/unicode</em>) – Contains the name of the shared folder.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.resetFileAttributes">
-<code class="sig-name descname">resetFileAttributes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path_file_pattern</span></em>, <em class="sig-param"><span class="n">file_attributes</span><span class="o">=</span><span class="default_value">128</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.resetFileAttributes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.resetFileAttributes" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.resetFileAttributes">
+<span class="sig-name descname"><span class="pre">resetFileAttributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_file_pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_attributes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.resetFileAttributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.resetFileAttributes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset file attributes of one or more regular files or folders.
 It supports the use of wildcards in file names, allowing for unlocking of multiple files/folders in a single request.
 This function is very helpful when deleting files/folders that are read-only.
@@ -336,7 +338,7 @@ By default, it sets the ATTR_NORMAL flag, therefore clearing all other flags.
 (See <a class="reference external" href="https://msdn.microsoft.com/en-us/library/cc232110.aspx">https://msdn.microsoft.com/en-us/library/cc232110.aspx</a> for further information)</p>
 <p>Note: this function is currently only implemented for SMB2!</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – Contains the name of the shared folder.</p></li>
 <li><p><strong>path_file_pattern</strong> (<em>string/unicode</em>) – The pathname of the file(s) to be deleted, relative to the service_name.
@@ -345,26 +347,26 @@ If your path/filename contains non-English characters, you must pass in an unico
 <li><p><strong>file_attributes</strong> (<em>int</em>) – The desired file attributes to set. Defaults to <cite>ATTR_NORMAL</cite>.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.retrieveFile">
-<code class="sig-name descname">retrieveFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">file_obj</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFile" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.retrieveFile">
+<span class="sig-name descname"><span class="pre">retrieveFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the contents of the file at <em>path</em> on the <em>service_name</em> and write these contents to the provided <em>file_obj</em>.</p>
 <p>Use <em>retrieveFileFromOffset()</em> method if you wish to specify the offset to read from the remote <em>path</em> and/or the number of bytes to write to the <em>file_obj</em>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – the name of the shared folder for the <em>path</em></p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – Path of the file on the remote server. If the file cannot be opened for reading, an <a class="reference internal" href="smb_exceptions.html"><span class="doc">OperationFailure</span></a> will be raised.</p></li>
 <li><p><strong>file_obj</strong> – A file-like object that has a <em>write</em> method. Data will be written continuously to <em>file_obj</em> until EOF is received from the remote service. In Python3, this file-like object must have a <em>write</em> method which accepts a bytes parameter.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A 2-element tuple of ( file attributes of the file on server, number of bytes written to <em>file_obj</em> ).
 The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FILE_ATTRIBUTE_xxx</em> bits (see smb_constants.py)</p>
 </dd>
@@ -372,11 +374,11 @@ The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FIL
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.retrieveFileFromOffset">
-<code class="sig-name descname">retrieveFileFromOffset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">file_obj</span></em>, <em class="sig-param"><span class="n">offset</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">max_length</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFileFromOffset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFileFromOffset" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.retrieveFileFromOffset">
+<span class="sig-name descname"><span class="pre">retrieveFileFromOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.retrieveFileFromOffset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.retrieveFileFromOffset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the contents of the file at <em>path</em> on the <em>service_name</em> and write these contents to the provided <em>file_obj</em>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – the name of the shared folder for the <em>path</em></p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – Path of the file on the remote server. If the file cannot be opened for reading, an <a class="reference internal" href="smb_exceptions.html"><span class="doc">OperationFailure</span></a> will be raised.</p></li>
@@ -386,7 +388,7 @@ The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FIL
 If zero, the method returns immediately after the file is opened successfully for reading.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A 2-element tuple of ( file attributes of the file on server, number of bytes written to <em>file_obj</em> ).
 The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FILE_ATTRIBUTE_xxx</em> bits (see smb_constants.py)</p>
 </dd>
@@ -394,12 +396,12 @@ The file attributes is an integer value made up from a bitwise-OR of <em>SMB_FIL
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.storeFile">
-<code class="sig-name descname">storeFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">file_obj</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFile" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.storeFile">
+<span class="sig-name descname"><span class="pre">storeFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.
 If the file already exists on the remote server, it will be truncated and overwritten.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – the name of the shared folder for the <em>path</em></p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – Path of the file on the remote server. If the file at <em>path</em> does not exist, it will be created. Otherwise, it will be overwritten.
@@ -407,18 +409,18 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
 <li><p><strong>file_obj</strong> – A file-like object that has a <em>read</em> method. Data will read continuously from <em>file_obj</em> until EOF. In Python3, this file-like object must have a <em>read</em> method which returns a bytes parameter.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Number of bytes uploaded</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.storeFileFromOffset">
-<code class="sig-name descname">storeFileFromOffset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_name</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">file_obj</span></em>, <em class="sig-param"><span class="n">offset</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">truncate</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFileFromOffset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFileFromOffset" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.storeFileFromOffset">
+<span class="sig-name descname"><span class="pre">storeFileFromOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truncate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/SMBConnection.html#SMBConnection.storeFileFromOffset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.SMBConnection.SMBConnection.storeFileFromOffset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Store the contents of the <em>file_obj</em> at <em>path</em> on the <em>service_name</em>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>service_name</strong> (<em>string/unicode</em>) – the name of the shared folder for the <em>path</em></p></li>
 <li><p><strong>path</strong> (<em>string/unicode</em>) – Path of the file on the remote server. If the file at <em>path</em> does not exist, it will be created.
@@ -428,40 +430,40 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
 <li><p><strong>truncate</strong> – Boolean value. If True and the file exists on the remote server, it will be truncated first before writing. Default is False.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the file position where the next byte will be written.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.SMBConnection.SMBConnection.SIGN_NEVER">
-<code class="sig-name descname">SIGN_NEVER</code><em class="property"> = 0</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_NEVER" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.SIGN_NEVER">
+<span class="sig-name descname"><span class="pre">SIGN_NEVER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_NEVER" title="Permalink to this definition">¶</a></dt>
 <dd><p>SMB messages will never be signed regardless of remote server’s configurations; access errors will occur if the remote server requires signing.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.SMBConnection.SMBConnection.SIGN_WHEN_REQUIRED">
-<code class="sig-name descname">SIGN_WHEN_REQUIRED</code><em class="property"> = 2</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_WHEN_REQUIRED" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.SIGN_WHEN_REQUIRED">
+<span class="sig-name descname"><span class="pre">SIGN_WHEN_REQUIRED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_WHEN_REQUIRED" title="Permalink to this definition">¶</a></dt>
 <dd><p>SMB messages will only be signed when remote server requires signing.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED">
-<code class="sig-name descname">SIGN_WHEN_SUPPORTED</code><em class="property"> = 1</em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED">
+<span class="sig-name descname"><span class="pre">SIGN_WHEN_SUPPORTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#smb.SMBConnection.SMBConnection.SIGN_WHEN_SUPPORTED" title="Permalink to this definition">¶</a></dt>
 <dd><p>SMB messages will be signed when remote server supports signing but not requires signing.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="smb.SMBConnection.SMBConnection.isUsingSMB2">
-<em class="property">property </em><code class="sig-name descname">isUsingSMB2</code><a class="headerlink" href="#smb.SMBConnection.SMBConnection.isUsingSMB2" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="smb.SMBConnection.SMBConnection.isUsingSMB2">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isUsingSMB2</span></span><a class="headerlink" href="#smb.SMBConnection.SMBConnection.isUsingSMB2" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenient property to return True if the underlying SMB connection is using SMB2 protocol.</p>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -470,8 +472,9 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">SMBConnection Class</a><ul>
 <li><a class="reference internal" href="#example">Example</a></li>
 <li><a class="reference internal" href="#smb2-support">SMB2 Support</a></li>
@@ -480,12 +483,17 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
 </li>
 </ul>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="nmb_NetBIOS.html"
-                        title="previous chapter">NetBIOS class</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="smb_SMBHandler.html"
-                        title="next chapter">SMbHandler Class</a></p>
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="nmb_NetBIOS.html"
+                          title="previous chapter">NetBIOS class</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="smb_SMBHandler.html"
+                          title="next chapter">SMbHandler Class</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -497,12 +505,12 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -522,13 +530,13 @@ If the <em>path</em> refers to a folder or the file cannot be opened for writing
         <li class="right" >
           <a href="nmb_NetBIOS.html" title="NetBIOS class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SMBConnection Class</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>

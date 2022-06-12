@@ -1,16 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Extending pysmb For Other Frameworks &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Extending pysmb For Other Frameworks &#8212; pysmb 1.2.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -32,7 +34,7 @@
         <li class="right" >
           <a href="api/smb_security_descriptors.html" title="Security Descriptors"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Extending pysmb For Other Frameworks</a></li> 
       </ul>
     </div>  
@@ -42,8 +44,8 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="extending-pysmb-for-other-frameworks">
-<h1>Extending pysmb For Other Frameworks<a class="headerlink" href="#extending-pysmb-for-other-frameworks" title="Permalink to this headline">¶</a></h1>
+  <section id="extending-pysmb-for-other-frameworks">
+<h1>Extending pysmb For Other Frameworks<a class="headerlink" href="#extending-pysmb-for-other-frameworks" title="Permalink to this heading">¶</a></h1>
 <p>This page briefly describes the steps involved in extending pysmb for other frameworks.</p>
 <p>In general, you need to take care of the SMB TCP connection setup, i.e. finding the IP address of the remote server and connect to the SMB/CIFS service.
 Then you need to read/write synchronously or asynchronously from and to the SMB socket. And you need to handle post-authentication callback methods, and from these methods,
@@ -65,7 +67,7 @@ The <em>feedData</em> method has its own internal buffer, so it can accept incom
 </div></blockquote>
 </dd>
 </dl>
-</div>
+</section>
 
 
             <div class="clearer"></div>
@@ -74,12 +76,16 @@ The <em>feedData</em> method has its own internal buffer, so it can accept incom
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="api/smb_security_descriptors.html"
-                        title="previous chapter">Security Descriptors</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="upgrading.html"
-                        title="next chapter">Upgrading from older pysmb versions</a></p>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="api/smb_security_descriptors.html"
+                          title="previous chapter">Security Descriptors</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="upgrading.html"
+                          title="next chapter">Upgrading from older pysmb versions</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -91,12 +97,12 @@ The <em>feedData</em> method has its own internal buffer, so it can accept incom
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -116,13 +122,13 @@ The <em>feedData</em> method has its own internal buffer, so it can accept incom
         <li class="right" >
           <a href="api/smb_security_descriptors.html" title="Security Descriptors"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Extending pysmb For Other Frameworks</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>

@@ -1,16 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SharedFile Class &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>SharedFile Class &#8212; pysmb 1.2.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -32,7 +34,7 @@
         <li class="right" >
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SharedFile Class</a></li> 
       </ul>
     </div>  
@@ -42,11 +44,11 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="sharedfile-class">
-<h1>SharedFile Class<a class="headerlink" href="#sharedfile-class" title="Permalink to this headline">¶</a></h1>
+  <section id="sharedfile-class">
+<h1>SharedFile Class<a class="headerlink" href="#sharedfile-class" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
-<dt id="smb.base.SharedFile">
-<em class="property">class </em><code class="sig-prename descclassname">smb.base.</code><code class="sig-name descname">SharedFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">create_time</span></em>, <em class="sig-param"><span class="n">last_access_time</span></em>, <em class="sig-param"><span class="n">last_write_time</span></em>, <em class="sig-param"><span class="n">last_attr_change_time</span></em>, <em class="sig-param"><span class="n">file_size</span></em>, <em class="sig-param"><span class="n">alloc_size</span></em>, <em class="sig-param"><span class="n">file_attributes</span></em>, <em class="sig-param"><span class="n">short_name</span></em>, <em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">file_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/base.html#SharedFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedFile" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.base.</span></span><span class="sig-name descname"><span class="pre">SharedFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">create_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_access_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_write_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_attr_change_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alloc_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">short_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/base.html#SharedFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.base.SharedFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contain information about a file/folder entry that is shared on the shared device.</p>
 <p>As an application developer, you should not need to instantiate a <em>SharedFile</em> instance directly in your application.
 These <em>SharedFile</em> instances are usually returned via a call to <em>listPath</em> method in <a class="reference internal" href="smb_SMBProtocolFactory.html"><span class="doc">smb.SMBProtocol.SMBProtocolFactory</span></a>.</p>
@@ -67,88 +69,88 @@ one of these prohibited characters: “/[]:+|&lt;&gt;=;?,* (see [MS-CIFS]: 2.2.1
 <li><p>file_id : Long value representing the file reference number for the file. If the remote system does not support this field, this field will be None or 0. See [MS-FSCC]: 2.4.17</p></li>
 </ul>
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.alloc_size">
-<code class="sig-name descname">alloc_size</code><a class="headerlink" href="#smb.base.SharedFile.alloc_size" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.alloc_size">
+<span class="sig-name descname"><span class="pre">alloc_size</span></span><a class="headerlink" href="#smb.base.SharedFile.alloc_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Total number of bytes allocated to store this file</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.create_time">
-<code class="sig-name descname">create_time</code><a class="headerlink" href="#smb.base.SharedFile.create_time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.create_time">
+<span class="sig-name descname"><span class="pre">create_time</span></span><a class="headerlink" href="#smb.base.SharedFile.create_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Float value in number of seconds since 1970-01-01 00:00:00 to the time of creation of this file resource on the remote server</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.file_attributes">
-<code class="sig-name descname">file_attributes</code><a class="headerlink" href="#smb.base.SharedFile.file_attributes" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.file_attributes">
+<span class="sig-name descname"><span class="pre">file_attributes</span></span><a class="headerlink" href="#smb.base.SharedFile.file_attributes" title="Permalink to this definition">¶</a></dt>
 <dd><p>A SMB_EXT_FILE_ATTR integer value. See [MS-CIFS]: 2.2.1.2.3. You can perform bit-wise tests to determine the status of the file using the ATTR_xxx constants in smb_constants.py.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.file_id">
-<code class="sig-name descname">file_id</code><a class="headerlink" href="#smb.base.SharedFile.file_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.file_id">
+<span class="sig-name descname"><span class="pre">file_id</span></span><a class="headerlink" href="#smb.base.SharedFile.file_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Long value representing the file reference number for the file. If the remote system does not support this field, this field will be None or 0. See [MS-FSCC]: 2.4.17</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.file_size">
-<code class="sig-name descname">file_size</code><a class="headerlink" href="#smb.base.SharedFile.file_size" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.file_size">
+<span class="sig-name descname"><span class="pre">file_size</span></span><a class="headerlink" href="#smb.base.SharedFile.file_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>File size in number of bytes</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.filename">
-<code class="sig-name descname">filename</code><a class="headerlink" href="#smb.base.SharedFile.filename" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.filename">
+<span class="sig-name descname"><span class="pre">filename</span></span><a class="headerlink" href="#smb.base.SharedFile.filename" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unicode string containing the long filename of this file. Each OS has a limit to the length of this file name. On Windows, it is 256 characters.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="smb.base.SharedFile.isDirectory">
-<em class="property">property </em><code class="sig-name descname">isDirectory</code><a class="headerlink" href="#smb.base.SharedFile.isDirectory" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="smb.base.SharedFile.isDirectory">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isDirectory</span></span><a class="headerlink" href="#smb.base.SharedFile.isDirectory" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenience property to return True if this file resource is a directory on the remote server</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="smb.base.SharedFile.isNormal">
-<em class="property">property </em><code class="sig-name descname">isNormal</code><a class="headerlink" href="#smb.base.SharedFile.isNormal" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="smb.base.SharedFile.isNormal">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isNormal</span></span><a class="headerlink" href="#smb.base.SharedFile.isNormal" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenient property to return True if this is a normal file.</p>
 <p>Note that pysmb defines a normal file as a file entry that is not read-only, not hidden, not system, not archive and not a directory.
 It ignores other attributes like compression, indexed, sparse, temporary and encryption.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="smb.base.SharedFile.isReadOnly">
-<em class="property">property </em><code class="sig-name descname">isReadOnly</code><a class="headerlink" href="#smb.base.SharedFile.isReadOnly" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="smb.base.SharedFile.isReadOnly">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isReadOnly</span></span><a class="headerlink" href="#smb.base.SharedFile.isReadOnly" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenient property to return True if this file resource is read-only on the remote server</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.last_access_time">
-<code class="sig-name descname">last_access_time</code><a class="headerlink" href="#smb.base.SharedFile.last_access_time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.last_access_time">
+<span class="sig-name descname"><span class="pre">last_access_time</span></span><a class="headerlink" href="#smb.base.SharedFile.last_access_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Float value in number of seconds since 1970-01-01 00:00:00 to the time of last access of this file resource on the remote server</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.last_attr_change_time">
-<code class="sig-name descname">last_attr_change_time</code><a class="headerlink" href="#smb.base.SharedFile.last_attr_change_time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.last_attr_change_time">
+<span class="sig-name descname"><span class="pre">last_attr_change_time</span></span><a class="headerlink" href="#smb.base.SharedFile.last_attr_change_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Float value in number of seconds since 1970-01-01 00:00:00 to the time of last attribute change of this file resource on the remote server</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.last_write_time">
-<code class="sig-name descname">last_write_time</code><a class="headerlink" href="#smb.base.SharedFile.last_write_time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.last_write_time">
+<span class="sig-name descname"><span class="pre">last_write_time</span></span><a class="headerlink" href="#smb.base.SharedFile.last_write_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Float value in number of seconds since 1970-01-01 00:00:00 to the time of last modification of this file resource on the remote server</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedFile.short_name">
-<code class="sig-name descname">short_name</code><a class="headerlink" href="#smb.base.SharedFile.short_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedFile.short_name">
+<span class="sig-name descname"><span class="pre">short_name</span></span><a class="headerlink" href="#smb.base.SharedFile.short_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unicode string containing the short name of this file (usually in 8.3 notation)</p>
 </dd></dl>
 
 </dd></dl>
 
-</div>
+</section>
 
 
             <div class="clearer"></div>
@@ -157,12 +159,16 @@ It ignores other attributes like compression, indexed, sparse, temporary and enc
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="smb_SharedDevice.html"
-                        title="previous chapter">SharedDevice Class</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="smb_exceptions.html"
-                        title="next chapter">SMB Exceptions</a></p>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="smb_SharedDevice.html"
+                          title="previous chapter">SharedDevice Class</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="smb_exceptions.html"
+                          title="next chapter">SMB Exceptions</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -174,12 +180,12 @@ It ignores other attributes like compression, indexed, sparse, temporary and enc
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -199,13 +205,13 @@ It ignores other attributes like compression, indexed, sparse, temporary and enc
         <li class="right" >
           <a href="smb_SharedDevice.html" title="SharedDevice Class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SharedFile Class</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>

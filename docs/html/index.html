@@ -1,16 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome to pysmb’s documentation! &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Welcome to pysmb’s documentation! &#8212; pysmb 1.2.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -28,7 +30,7 @@
         <li class="right" >
           <a href="api/nmb_NBNSProtocol.html" title="NBNSProtocol Class"
              accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="#">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Welcome to pysmb’s documentation!</a></li> 
       </ul>
     </div>  
@@ -38,23 +40,23 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="welcome-to-pysmb-s-documentation">
-<h1>Welcome to pysmb’s documentation!<a class="headerlink" href="#welcome-to-pysmb-s-documentation" title="Permalink to this headline">¶</a></h1>
+  <section id="welcome-to-pysmb-s-documentation">
+<h1>Welcome to pysmb’s documentation!<a class="headerlink" href="#welcome-to-pysmb-s-documentation" title="Permalink to this heading">¶</a></h1>
 <p>pysmb is a pure Python implementation of the client-side SMB/CIFS protocol (SMB1 and SMB2) which is the underlying protocol
 that facilitates file sharing and printing between Windows machines, as well as with Linux machines via the Samba server application.
 pysmb is developed in Python 2.7.x and Python 3.8.x and has been tested against shared folders on Windows 7, Windows 10 and Samba 4.x.</p>
 <p>The latest version of pysmb is always available at the pysmb project page at <a class="reference external" href="http://miketeo.net/projects/pysmb">miketeo.net</a>.</p>
-<div class="section" id="license">
-<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading">¶</a></h2>
 <p>pysmb itself is licensed under an opensource license.
 You are free to use pysmb in any applications, including for commercial purposes.
 For more details on the terms of use, please read the LICENSE file that comes with your pysmb source.</p>
 <p>pysmb depends on other 3rd-party modules whose terms of use are not covered by pysmb.
 Use of these modules could possibly conflict with your licensing needs. Please exercise your own discretion to determine their suitabilities.
 I have listed these modules in the following section.</p>
-</div>
-<div class="section" id="credits">
-<h2>Credits<a class="headerlink" href="#credits" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="credits">
+<h2>Credits<a class="headerlink" href="#credits" title="Permalink to this heading">¶</a></h2>
 <p>pysmb is not alone. It is made possible with support from other modules.</p>
 <ul class="simple">
 <li><p><strong>pyasn1</strong> : Pure Python implementation of ASN.1 parsing and encoding (not included together with pysmb; needs to be installed separately)</p></li>
@@ -66,10 +68,10 @@ the Python standard library (usually Python 2.4) does not provide the SHA-256 ha
 <p>In various places, there are references to different specifications. Most of these referenced specifications
 can be downloaded from Microsoft web site under Microsoft’s “Open Specification Promise”. If you need to download
 a copy of these specifications, please google for it. For example, google for “MS-CIFS” to download the CIFS specification for NT LM dialect.</p>
-</div>
-</div>
-<div class="section" id="package-contents-and-description">
-<h1>Package Contents and Description<a class="headerlink" href="#package-contents-and-description" title="Permalink to this headline">¶</a></h1>
+</section>
+</section>
+<section id="package-contents-and-description">
+<h1>Package Contents and Description<a class="headerlink" href="#package-contents-and-description" title="Permalink to this heading">¶</a></h1>
 <p>pysmb is organized into 2 main packages: smb and nmb.
 The smb package contains all the functionalities related to Server Message Block (SMB) implementation.
 As an application developer, you will be importing this module into your application.
@@ -103,9 +105,9 @@ Contains the SMB protocol implementation for use in the Twisted framework.</p></
 <li><p><strong>smb/SMBHandler.py</strong> :
 Provides support for “<a class="reference external" href="smb://">smb://</a>” URL in the urllib2 python package.</p></li>
 </ul>
-</div>
-<div class="section" id="using-pysmb">
-<h1>Using pysmb<a class="headerlink" href="#using-pysmb" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="using-pysmb">
+<h1>Using pysmb<a class="headerlink" href="#using-pysmb" title="Permalink to this heading">¶</a></h1>
 <dl class="simple">
 <dt>As an application developer who is looking to use pysmb to translate NetBIOS names to IP addresses,</dt><dd><ul class="simple">
 <li><p>To use pysmb in applications where you want the file operations to return after they have completed (synchronous style), please read
@@ -129,9 +131,9 @@ Provides support for “<a class="reference external" href="smb://">smb://</a>�
 </ul>
 </dd>
 </dl>
-</div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="api/nmb_NBNSProtocol.html">NBNSProtocol Class</a></li>
@@ -151,7 +153,7 @@ Provides support for “<a class="reference external" href="smb://">smb://</a>�
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</div>
+</section>
 
 
             <div class="clearer"></div>
@@ -160,8 +162,9 @@ Provides support for “<a class="reference external" href="smb://">smb://</a>�
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="#">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">Welcome to pysmb’s documentation!</a><ul>
 <li><a class="reference internal" href="#license">License</a></li>
 <li><a class="reference internal" href="#credits">Credits</a></li>
@@ -172,9 +175,12 @@ Provides support for “<a class="reference external" href="smb://">smb://</a>�
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
-  <h4>Next topic</h4>
-  <p class="topless"><a href="api/nmb_NBNSProtocol.html"
-                        title="next chapter">NBNSProtocol Class</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="api/nmb_NBNSProtocol.html"
+                          title="next chapter">NBNSProtocol Class</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -186,12 +192,12 @@ Provides support for “<a class="reference external" href="smb://">smb://</a>�
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -208,13 +214,13 @@ Provides support for “<a class="reference external" href="smb://">smb://</a>�
         <li class="right" >
           <a href="api/nmb_NBNSProtocol.html" title="NBNSProtocol Class"
              >next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="#">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Welcome to pysmb’s documentation!</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>

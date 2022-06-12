@@ -1,16 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Upgrading from older pysmb versions &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Upgrading from older pysmb versions &#8212; pysmb 1.2.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -28,7 +30,7 @@
         <li class="right" >
           <a href="extending.html" title="Extending pysmb For Other Frameworks"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Upgrading from older pysmb versions</a></li> 
       </ul>
     </div>  
@@ -38,32 +40,32 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="upgrading-from-older-pysmb-versions">
-<h1>Upgrading from older pysmb versions<a class="headerlink" href="#upgrading-from-older-pysmb-versions" title="Permalink to this headline">¶</a></h1>
+  <section id="upgrading-from-older-pysmb-versions">
+<h1>Upgrading from older pysmb versions<a class="headerlink" href="#upgrading-from-older-pysmb-versions" title="Permalink to this heading">¶</a></h1>
 <p>This page documents the improvements and changes to the API that could be incompatible with previous releases.</p>
-<div class="section" id="pysmb-1-2-0">
-<h2>pysmb 1.2.0<a class="headerlink" href="#pysmb-1-2-0" title="Permalink to this headline">¶</a></h2>
+<section id="pysmb-1-2-0">
+<h2>pysmb 1.2.0<a class="headerlink" href="#pysmb-1-2-0" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Add new <cite>delete_matching_folders</cite> parameter to <cite>deleteFiles()</cite> method in SMBProtocolFactory and SMBConnection
 class to support deletion of sub-folders. If you are passing timeout parameter to the <cite>deleteFiles()</cite> method
 in your application, please switch to using named parameter for timeout.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-1-28">
-<h2>pysmb 1.1.28<a class="headerlink" href="#pysmb-1-1-28" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-1-28">
+<h2>pysmb 1.1.28<a class="headerlink" href="#pysmb-1-1-28" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>SharedFile instances returned from the <cite>listPath()</cite> method now has a new property
 <cite>file_id</cite> attribute which represents the file reference number given by the remote SMB server.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-1-26">
-<h2>pysmb 1.1.26<a class="headerlink" href="#pysmb-1-1-26" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-1-26">
+<h2>pysmb 1.1.26<a class="headerlink" href="#pysmb-1-1-26" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>SMBConnection class can now be used as a context manager</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-1-25">
-<h2>pysmb 1.1.25<a class="headerlink" href="#pysmb-1-1-25" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-1-25">
+<h2>pysmb 1.1.25<a class="headerlink" href="#pysmb-1-1-25" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>SharedFile class has a new property <cite>isNormal</cite> which will be True if the file is a
 ‘normal’ file. pysmb defines a ‘normal’ file as a file entry that is not
@@ -72,55 +74,55 @@ it ignores other attributes like compression, indexed, sparse, temporary and enc
 <li><p><cite>listPath()</cite> method in SMBProtocolFactory and SMBConnection class will now include
 ‘normal’ files by default if you do not specify the <cite>search</cite> parameter.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-1-20">
-<h2>pysmb 1.1.20<a class="headerlink" href="#pysmb-1-1-20" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-1-20">
+<h2>pysmb 1.1.20<a class="headerlink" href="#pysmb-1-1-20" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>A new method <cite>getSecurity()</cite> was added to SMBConnection and SMBProtocolFactory class.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-1-15">
-<h2>pysmb 1.1.15<a class="headerlink" href="#pysmb-1-1-15" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-1-15">
+<h2>pysmb 1.1.15<a class="headerlink" href="#pysmb-1-1-15" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Add new <cite>truncate</cite> parameter to <cite>storeFileFromOffset()</cite> in SMBProtocolFactory and SMBConnection
 class to support truncation of the file before writing. If you are passing timeout parameter
 to the <cite>storeFileFromOffset()</cite> method in your application, please switch to using named parameter for timeout.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-1-11">
-<h2>pysmb 1.1.11<a class="headerlink" href="#pysmb-1-1-11" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-1-11">
+<h2>pysmb 1.1.11<a class="headerlink" href="#pysmb-1-1-11" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>A new method <cite>storeFileFromOffset()</cite> was added to SMBConnection and SMBProtocolFactory class.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-1-10">
-<h2>pysmb 1.1.10<a class="headerlink" href="#pysmb-1-1-10" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-1-10">
+<h2>pysmb 1.1.10<a class="headerlink" href="#pysmb-1-1-10" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>A new method <cite>getAttributes()</cite> was added to SMBConnection and SMBProtocolFactory class</p></li>
 <li><p>SharedFile class has a new property <cite>isReadOnly</cite> to indicate the file is read-only on the remote filesystem.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-1-2">
-<h2>pysmb 1.1.2<a class="headerlink" href="#pysmb-1-1-2" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-1-2">
+<h2>pysmb 1.1.2<a class="headerlink" href="#pysmb-1-1-2" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><cite>queryIPForName()</cite> method in nmb.NetBIOS and nmb.NBNSProtocol class will now return only the server machine name and ignore workgroup names.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-0-3">
-<h2>pysmb 1.0.3<a class="headerlink" href="#pysmb-1-0-3" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-0-3">
+<h2>pysmb 1.0.3<a class="headerlink" href="#pysmb-1-0-3" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Two new methods were added to NBNSProtocol class: <cite>queryIPForName()</cite> and <cite>NetBIOS.queryIPForName()</cite>
 to support querying for a machine’s NetBIOS name at the given IP address.</p></li>
 <li><p>A new method <cite>retrieveFileFromOffset()</cite> was added to SMBProtocolFactory and SMBConnection
 to support finer control of file retrieval operation.</p></li>
 </ul>
-</div>
-<div class="section" id="pysmb-1-0-0">
-<h2>pysmb 1.0.0<a class="headerlink" href="#pysmb-1-0-0" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pysmb-1-0-0">
+<h2>pysmb 1.0.0<a class="headerlink" href="#pysmb-1-0-0" title="Permalink to this heading">¶</a></h2>
 <p>pysmb was completely rewritten in version 1.0.0.
 If you are upgrading from pysmb 0.x, you most likely have to rewrite your application for the new 1.x API.</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -129,8 +131,9 @@ If you are upgrading from pysmb 0.x, you most likely have to rewrite your applic
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">Upgrading from older pysmb versions</a><ul>
 <li><a class="reference internal" href="#pysmb-1-2-0">pysmb 1.2.0</a></li>
 <li><a class="reference internal" href="#pysmb-1-1-28">pysmb 1.1.28</a></li>
@@ -147,9 +150,12 @@ If you are upgrading from pysmb 0.x, you most likely have to rewrite your applic
 </li>
 </ul>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="extending.html"
-                        title="previous chapter">Extending pysmb For Other Frameworks</a></p>
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="extending.html"
+                          title="previous chapter">Extending pysmb For Other Frameworks</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -161,12 +167,12 @@ If you are upgrading from pysmb 0.x, you most likely have to rewrite your applic
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -183,13 +189,13 @@ If you are upgrading from pysmb 0.x, you most likely have to rewrite your applic
         <li class="right" >
           <a href="extending.html" title="Extending pysmb For Other Frameworks"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Upgrading from older pysmb versions</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>

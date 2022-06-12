@@ -1,16 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NetBIOS class &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>NetBIOS class &#8212; pysmb 1.2.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -32,7 +34,7 @@
         <li class="right" >
           <a href="nmb_NBNSProtocol.html" title="NBNSProtocol Class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">NetBIOS class</a></li> 
       </ul>
     </div>  
@@ -42,8 +44,8 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="netbios-class">
-<h1>NetBIOS class<a class="headerlink" href="#netbios-class" title="Permalink to this headline">¶</a></h1>
+  <section id="netbios-class">
+<h1>NetBIOS class<a class="headerlink" href="#netbios-class" title="Permalink to this heading">¶</a></h1>
 <dl class="simple">
 <dt>To use the NetBIOS class in your application,</dt><dd><ol class="arabic simple">
 <li><p>Create a new NetBIOS instance</p></li>
@@ -53,14 +55,14 @@
 </dd>
 </dl>
 <dl class="py class">
-<dt id="nmb.NetBIOS.NetBIOS">
-<em class="property">class </em><code class="sig-prename descclassname">nmb.NetBIOS.</code><code class="sig-name descname">NetBIOS</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">broadcast</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">listen_port</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nmb.NetBIOS.NetBIOS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmb.NetBIOS.</span></span><span class="sig-name descname"><span class="pre">NetBIOS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">broadcast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">listen_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
-<dt id="nmb.NetBIOS.NetBIOS.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">broadcast</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">listen_port</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nmb.NetBIOS.NetBIOS.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">broadcast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">listen_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Instantiate a NetBIOS instance, and creates a IPv4 UDP socket to listen/send NBNS packets.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>broadcast</strong> (<em>boolean</em>) – A boolean flag to indicate if we should setup the listening UDP port in broadcast mode</p></li>
 <li><p><strong>listen_port</strong> (<em>integer</em>) – Specifies the UDP port number to bind to for listening. If zero, OS will automatically select a free port number.</p></li>
@@ -70,24 +72,24 @@
 </dd></dl>
 
 <dl class="py method">
-<dt id="nmb.NetBIOS.NetBIOS.close">
-<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.close" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nmb.NetBIOS.NetBIOS.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close the underlying and free resources.</p>
 <p>The NetBIOS instance should not be used to perform any operations after this method returns.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nmb.NetBIOS.NetBIOS.queryIPForName">
-<code class="sig-name descname">queryIPForName</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ip</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">137</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.queryIPForName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.queryIPForName" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nmb.NetBIOS.NetBIOS.queryIPForName">
+<span class="sig-name descname"><span class="pre">queryIPForName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">137</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.queryIPForName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.queryIPForName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send a query to the machine with <em>ip</em> and hopes that the machine will reply back with its name.</p>
 <p>The implementation of this function is contributed by Jason Anderson.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ip</strong> (<em>string</em>) – If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.
 If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</p></li>
@@ -95,18 +97,18 @@ If the NBNSProtocol instance was instianted with broadcast=False, then you shoul
 <li><p><strong>timeout</strong> (<em>integer/float</em>) – Number of seconds to wait for a reply, after which the method will return None</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A list of string containing the names of the machine at <em>ip</em>. On timeout, returns None.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt id="nmb.NetBIOS.NetBIOS.queryName">
-<code class="sig-name descname">queryName</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">ip</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">137</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.queryName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.queryName" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="nmb.NetBIOS.NetBIOS.queryName">
+<span class="sig-name descname"><span class="pre">queryName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">137</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOS.html#NetBIOS.queryName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOS.NetBIOS.queryName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send a query on the network and hopes that if machine matching the <em>name</em> will reply with its IP address.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ip</strong> (<em>string</em>) – If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.
 If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</p></li>
@@ -114,7 +116,7 @@ If the NBNSProtocol instance was instianted with broadcast=False, then you shoul
 <li><p><strong>timeout</strong> (<em>integer/float</em>) – Number of seconds to wait for a reply, after which the method will return None</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A list of IP addresses in dotted notation (aaa.bbb.ccc.ddd). On timeout, returns None.</p>
 </dd>
 </dl>
@@ -122,7 +124,7 @@ If the NBNSProtocol instance was instianted with broadcast=False, then you shoul
 
 </dd></dl>
 
-</div>
+</section>
 
 
             <div class="clearer"></div>
@@ -131,12 +133,16 @@ If the NBNSProtocol instance was instianted with broadcast=False, then you shoul
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="nmb_NBNSProtocol.html"
-                        title="previous chapter">NBNSProtocol Class</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="smb_SMBConnection.html"
-                        title="next chapter">SMBConnection Class</a></p>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="nmb_NBNSProtocol.html"
+                          title="previous chapter">NBNSProtocol Class</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="smb_SMBConnection.html"
+                          title="next chapter">SMBConnection Class</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -148,12 +154,12 @@ If the NBNSProtocol instance was instianted with broadcast=False, then you shoul
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -173,13 +179,13 @@ If the NBNSProtocol instance was instianted with broadcast=False, then you shoul
         <li class="right" >
           <a href="nmb_NBNSProtocol.html" title="NBNSProtocol Class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">NetBIOS class</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>

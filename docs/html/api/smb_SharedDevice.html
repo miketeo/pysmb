@@ -1,16 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SharedDevice Class &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>SharedDevice Class &#8212; pysmb 1.2.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -32,7 +34,7 @@
         <li class="right" >
           <a href="smb_SMBProtocolFactory.html" title="SMBProtocolFactory Class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SharedDevice Class</a></li> 
       </ul>
     </div>  
@@ -42,11 +44,11 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="shareddevice-class">
-<h1>SharedDevice Class<a class="headerlink" href="#shareddevice-class" title="Permalink to this headline">¶</a></h1>
+  <section id="shareddevice-class">
+<h1>SharedDevice Class<a class="headerlink" href="#shareddevice-class" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
-<dt id="smb.base.SharedDevice">
-<em class="property">class </em><code class="sig-prename descclassname">smb.base.</code><code class="sig-name descname">SharedDevice</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">type</span></em>, <em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">comments</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/base.html#SharedDevice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smb.base.SharedDevice" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedDevice">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.base.</span></span><span class="sig-name descname"><span class="pre">SharedDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comments</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/base.html#SharedDevice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.base.SharedDevice" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contains information about a single shared device on the remote server.</p>
 <p>The following attributes are available:</p>
 <ul class="simple">
@@ -54,34 +56,34 @@
 <li><p>comments : An unicode string containing the user description of the shared device</p></li>
 </ul>
 <dl class="py attribute">
-<dt id="smb.base.SharedDevice.comments">
-<code class="sig-name descname">comments</code><a class="headerlink" href="#smb.base.SharedDevice.comments" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedDevice.comments">
+<span class="sig-name descname"><span class="pre">comments</span></span><a class="headerlink" href="#smb.base.SharedDevice.comments" title="Permalink to this definition">¶</a></dt>
 <dd><p>An unicode string containing the user description of the shared device</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="smb.base.SharedDevice.isSpecial">
-<em class="property">property </em><code class="sig-name descname">isSpecial</code><a class="headerlink" href="#smb.base.SharedDevice.isSpecial" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="smb.base.SharedDevice.isSpecial">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isSpecial</span></span><a class="headerlink" href="#smb.base.SharedDevice.isSpecial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if this shared device is a special share reserved for interprocess communication (IPC$)
 or remote administration of the server (ADMIN$). Can also refer to administrative shares such as
 C$, D$, E$, and so forth</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="smb.base.SharedDevice.isTemporary">
-<em class="property">property </em><code class="sig-name descname">isTemporary</code><a class="headerlink" href="#smb.base.SharedDevice.isTemporary" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="smb.base.SharedDevice.isTemporary">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isTemporary</span></span><a class="headerlink" href="#smb.base.SharedDevice.isTemporary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if this is a temporary share that is not persisted for creation each time the file server initializes.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="smb.base.SharedDevice.name">
-<code class="sig-name descname">name</code><a class="headerlink" href="#smb.base.SharedDevice.name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="smb.base.SharedDevice.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#smb.base.SharedDevice.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>An unicode string containing the name of the shared device</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="smb.base.SharedDevice.type">
-<em class="property">property </em><code class="sig-name descname">type</code><a class="headerlink" href="#smb.base.SharedDevice.type" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="smb.base.SharedDevice.type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#smb.base.SharedDevice.type" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Returns one of the following integral constants.</dt><dd><ul class="simple">
 <li><p>SharedDevice.DISK_TREE</p></li>
@@ -95,7 +97,7 @@ C$, D$, E$, and so forth</p>
 
 </dd></dl>
 
-</div>
+</section>
 
 
             <div class="clearer"></div>
@@ -104,12 +106,16 @@ C$, D$, E$, and so forth</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="smb_SMBProtocolFactory.html"
-                        title="previous chapter">SMBProtocolFactory Class</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="smb_SharedFile.html"
-                        title="next chapter">SharedFile Class</a></p>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="smb_SMBProtocolFactory.html"
+                          title="previous chapter">SMBProtocolFactory Class</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="smb_SharedFile.html"
+                          title="next chapter">SharedFile Class</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -121,12 +127,12 @@ C$, D$, E$, and so forth</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -146,13 +152,13 @@ C$, D$, E$, and so forth</p>
         <li class="right" >
           <a href="smb_SMBProtocolFactory.html" title="SMBProtocolFactory Class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SharedDevice Class</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>

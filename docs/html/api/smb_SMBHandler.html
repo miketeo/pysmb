@@ -1,16 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SMbHandler Class &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>SMbHandler Class &#8212; pysmb 1.2.8 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -32,7 +34,7 @@
         <li class="right" >
           <a href="smb_SMBConnection.html" title="SMBConnection Class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SMbHandler Class</a></li> 
       </ul>
     </div>  
@@ -42,11 +44,11 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="smbhandler-class">
-<h1>SMbHandler Class<a class="headerlink" href="#smbhandler-class" title="Permalink to this headline">¶</a></h1>
+  <section id="smbhandler-class">
+<h1>SMbHandler Class<a class="headerlink" href="#smbhandler-class" title="Permalink to this heading">¶</a></h1>
 <p>The SMBHandler class provides support for “<a class="reference external" href="smb://">smb://</a>” URLs in the <a class="reference external" href="http://docs.python.org/library/urllib2.html">urllib2</a> python package.</p>
-<div class="section" id="notes">
-<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>The host component of the URL must be one of the following:</p>
 <ul>
@@ -60,9 +62,9 @@ Subsequent path components will point to the directory/folder of the file.</p></
 <li><p>You can retrieve and upload files, but you cannot delete files/folders or create folders.
 In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> will be raised.</p></li>
 </ul>
-</div>
-<div class="section" id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading">¶</a></h2>
 <p>The following code snippet illustrates file retrieval with Python 2.:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">urllib2</span>
@@ -124,8 +126,8 @@ In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> wil
 <span class="n">fh</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -134,8 +136,9 @@ In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> wil
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">SMbHandler Class</a><ul>
 <li><a class="reference internal" href="#notes">Notes</a></li>
 <li><a class="reference internal" href="#example">Example</a></li>
@@ -143,12 +146,17 @@ In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> wil
 </li>
 </ul>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="smb_SMBConnection.html"
-                        title="previous chapter">SMBConnection Class</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="smb_SMBProtocolFactory.html"
-                        title="next chapter">SMBProtocolFactory Class</a></p>
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="smb_SMBConnection.html"
+                          title="previous chapter">SMBConnection Class</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="smb_SMBProtocolFactory.html"
+                          title="next chapter">SMBProtocolFactory Class</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -160,12 +168,12 @@ In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> wil
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -185,13 +193,13 @@ In uploads, if the parent folders do not exist, an <em>urllib2.URLError</em> wil
         <li class="right" >
           <a href="smb_SMBConnection.html" title="SMBConnection Class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SMbHandler Class</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>
