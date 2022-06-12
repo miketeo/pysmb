@@ -625,7 +625,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 """.replace(' ', '').replace('\n', ''))
             m = SMB2Message(SMB2CreateRequest(path,
                                               file_attributes = 0,
-                                              access_mask = FILE_READ_DATA | FILE_READ_EA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
+                                              access_mask = FILE_READ_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
                                               share_access = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                               oplock = SMB2_OPLOCK_LEVEL_NONE,
                                               impersonation = SEC_IMPERSONATE,
