@@ -1,3 +1,10 @@
+pysmb-1.2.8, 12 Jun 2022
+========================
+
+- Fix issue with listPath based on recommendation in #195
+- Fix embedded MD4 algorithm
+- Add SMB UTF-16 surrogate exception workaround policy
+
 pysmb-1.2.7, 30 May 2021
 ========================
 
