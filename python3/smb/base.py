@@ -1,6 +1,8 @@
 
 import logging, binascii, time, hmac
 from datetime import datetime
+
+from tqdm import tqdm
 from .smb_constants import *
 from .smb2_constants import *
 from .smb_structs import *
@@ -897,7 +899,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
     def _retrieveFile_SMB2(self, service_name, path, file_obj, callback, errback, timeout = 30):
         return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0, -1, timeout)
 
-    def _retrieveFileFromOffset_SMB2(self, service_name, path, file_obj, callback, errback, starting_offset, max_length, timeout = 30):
+    def _retrieveFileFromOffset_SMB2(self, service_name, path, file_obj, callback, errback, starting_offset, max_length, timeout = 30, show_progress = False, tqdm_kwargs = { }):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -958,6 +960,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if info_message.status == 0:
                 file_len = struct.unpack('<Q', info_message.payload.data[8:16])[0]
                 if max_length == 0 or starting_offset > file_len:
+                    if show_progress:
+                        self.pbar.close()
                     closeFid(info_message.tid, kwargs['fid'])
                     callback(( file_obj, kwargs['file_attributes'], 0 ))  # Note that this is a tuple of 3-elements
                 else:
@@ -966,6 +970,17 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                         remaining_len = file_len
                     if starting_offset + remaining_len > file_len:
                         remaining_len = file_len - starting_offset
+                    if show_progress:
+                        self.__pbar_total = remaining_len
+                        self.__pbar_last_len = 0
+                        self.pbar = tqdm(
+                            total = remaining_len,
+                            unit="B",
+                            unit_scale=True,
+                            unit_divisor=1024,
+                            desc = f"Downloading {path}",
+                            **tqdm_kwargs
+                        )
                     sendRead(kwargs['tid'], kwargs['fid'], starting_offset, remaining_len, 0, kwargs['file_attributes'])
             else:
                 errback(OperationFailure('Failed to retrieve %s on %s: Unable to retrieve information on file' % ( path, service_name ), messages_history))
@@ -991,7 +1006,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
                 if remaining_len > 0:
                     sendRead(kwargs['tid'], kwargs['fid'], kwargs['offset'] + data_len, remaining_len, kwargs['read_len'] + data_len, kwargs['file_attributes'])
+                    if show_progress:
+                        self.pbar.update(data_len)
                 else:
+                    if show_progress:
+                        self.pbar.close()
                     closeFid(kwargs['tid'], kwargs['fid'], ret = ( file_obj, kwargs['file_attributes'], kwargs['read_len'] + data_len ))
             else:
                 messages_history.append(read_message)

@@ -1,5 +1,7 @@
 
 import os, logging, select, socket, types, struct, errno
+
+from tqdm import tqdm
 from .smb_constants import *
 from .smb_structs import *
 from .base import SMB, NotConnectedError, NotReadyError, SMBTimeout
@@ -306,7 +308,7 @@ class SMBConnection(SMB):
 
         return results[0]
 
-    def retrieveFile(self, service_name, path, file_obj, timeout = 30):
+    def retrieveFile(self, service_name, path, file_obj, timeout = 30, show_progress = False, tqdm_kwargs = {}):
         """
         Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.
 
@@ -318,9 +320,9 @@ class SMBConnection(SMB):
         :return: A 2-element tuple of ( file attributes of the file on server, number of bytes written to *file_obj* ).
                  The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)
         """
-        return self.retrieveFileFromOffset(service_name, path, file_obj, 0, -1, timeout)
+        return self.retrieveFileFromOffset(service_name, path, file_obj, 0, -1, timeout, show_progress = show_progress, tqdm_kwargs = tqdm_kwargs)
 
-    def retrieveFileFromOffset(self, service_name, path, file_obj, offset = 0, max_length = -1, timeout = 30):
+    def retrieveFileFromOffset(self, service_name, path, file_obj, offset = 0, max_length = -1, timeout = 30, show_progress = False, tqdm_kwargs = {}):
         """
         Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.
 
@@ -347,8 +349,9 @@ class SMBConnection(SMB):
             raise failure
 
         self.is_busy = True
+        
         try:
-            self._retrieveFileFromOffset(service_name, path, file_obj, cb, eb, offset, max_length, timeout = timeout)
+            self._retrieveFileFromOffset(service_name, path, file_obj, cb, eb, offset, max_length, timeout = timeout, show_progress=show_progress, tqdm_kwargs=tqdm_kwargs)
             while self.is_busy:
                 self._pollForNetBIOSPacket(timeout)
         finally:
