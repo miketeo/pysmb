@@ -359,7 +359,7 @@ class SMBConnection(SMB):
 
         return results[0]
 
-    def storeFile(self, service_name, path, file_obj, timeout = 30):
+    def storeFile(self, service_name, path, file_obj, timeout = 30, show_progress = False, tqdm_kwargs = {}):
         """
         Store the contents of the *file_obj* at *path* on the *service_name*.
         If the file already exists on the remote server, it will be truncated and overwritten.
@@ -370,9 +370,9 @@ class SMBConnection(SMB):
         :param file_obj: A file-like object that has a *read* method. Data will read continuously from *file_obj* until EOF. In Python3, this file-like object must have a *read* method which returns a bytes parameter.
         :return: Number of bytes uploaded
         """
-        return self.storeFileFromOffset(service_name, path, file_obj, 0, True, timeout)
+        return self.storeFileFromOffset(service_name, path, file_obj, 0, True, timeout, show_progress = show_progress, tqdm_kwargs = tqdm_kwargs)
 
-    def storeFileFromOffset(self, service_name, path, file_obj, offset = 0, truncate = False, timeout = 30):
+    def storeFileFromOffset(self, service_name, path, file_obj, offset = 0, truncate = False, timeout = 30, show_progress = False, tqdm_kwargs = {}):
         """
         Store the contents of the *file_obj* at *path* on the *service_name*.
 
@@ -399,7 +399,7 @@ class SMBConnection(SMB):
 
         self.is_busy = True
         try:
-            self._storeFileFromOffset(service_name, path, file_obj, cb, eb, offset, truncate = truncate, timeout = timeout)
+            self._storeFileFromOffset(service_name, path, file_obj, cb, eb, offset, truncate = truncate, timeout = timeout, show_progress=show_progress, tqdm_kwargs=tqdm_kwargs)
             while self.is_busy:
                 self._pollForNetBIOSPacket(timeout)
         finally:
