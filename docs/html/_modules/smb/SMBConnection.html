@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>smb.SMBConnection &#8212; pysmb 1.2.8 documentation</title>
+    <title>smb.SMBConnection &#8212; pysmb 1.2.9 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinxdoc.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
@@ -25,7 +25,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.9 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">smb.SMBConnection</a></li> 
       </ul>
@@ -39,6 +39,8 @@
   <h1>Source code for smb.SMBConnection</h1><div class="highlight"><pre>
 <span></span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">select</span><span class="o">,</span> <span class="nn">socket</span><span class="o">,</span> <span class="nn">types</span><span class="o">,</span> <span class="nn">struct</span><span class="o">,</span> <span class="nn">errno</span>
+
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 <span class="kn">from</span> <span class="nn">.smb_constants</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">.smb_structs</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">SMB</span><span class="p">,</span> <span class="n">NotConnectedError</span><span class="p">,</span> <span class="n">NotReadyError</span><span class="p">,</span> <span class="n">SMBTimeout</span>
@@ -345,7 +347,7 @@
 
         <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="SMBConnection.retrieveFile"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.retrieveFile">[docs]</a>    <span class="k">def</span> <span class="nf">retrieveFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBConnection.retrieveFile"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.retrieveFile">[docs]</a>    <span class="k">def</span> <span class="nf">retrieveFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="n">show_progress</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">tqdm_kwargs</span> <span class="o">=</span> <span class="p">{}):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.</span>
 
@@ -354,12 +356,13 @@
 <span class="sd">        :param string/unicode service_name: the name of the shared folder for the *path*</span>
 <span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for reading, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be raised.</span>
 <span class="sd">        :param file_obj: A file-like object that has a *write* method. Data will be written continuously to *file_obj* until EOF is received from the remote service. In Python3, this file-like object must have a *write* method which accepts a bytes parameter.</span>
+<span class="sd">        :param bool show_progress: If True, a progress bar will be shown to reflect the current file operation progress.</span>
 <span class="sd">        :return: A 2-element tuple of ( file attributes of the file on server, number of bytes written to *file_obj* ).</span>
 <span class="sd">                 The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieveFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieveFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span><span class="p">,</span> <span class="n">tqdm_kwargs</span> <span class="o">=</span> <span class="n">tqdm_kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SMBConnection.retrieveFileFromOffset"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.retrieveFileFromOffset">[docs]</a>    <span class="k">def</span> <span class="nf">retrieveFileFromOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBConnection.retrieveFileFromOffset"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.retrieveFileFromOffset">[docs]</a>    <span class="k">def</span> <span class="nf">retrieveFileFromOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="n">show_progress</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">tqdm_kwargs</span> <span class="o">=</span> <span class="p">{}):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieve the contents of the file at *path* on the *service_name* and write these contents to the provided *file_obj*.</span>
 
@@ -369,6 +372,7 @@
 <span class="sd">        :param integer/long offset: the offset in the remote *path* where the first byte will be read and written to *file_obj*. Must be either zero or a positive integer/long value.</span>
 <span class="sd">        :param integer/long max_length: maximum number of bytes to read from the remote *path* and write to the *file_obj*. Specify a negative value to read from *offset* to the EOF.</span>
 <span class="sd">                                        If zero, the method returns immediately after the file is opened successfully for reading.</span>
+<span class="sd">        :param bool show_progress: If True, a progress bar will be shown to reflect the current file operation progress.</span>
 <span class="sd">        :return: A 2-element tuple of ( file attributes of the file on server, number of bytes written to *file_obj* ).</span>
 <span class="sd">                 The file attributes is an integer value made up from a bitwise-OR of *SMB_FILE_ATTRIBUTE_xxx* bits (see smb_constants.py)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -386,8 +390,9 @@
             <span class="k">raise</span> <span class="n">failure</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span> <span class="o">=</span> <span class="kc">True</span>
+        
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_retrieveFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">eb</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_retrieveFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">eb</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">max_length</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span> <span class="n">tqdm_kwargs</span><span class="o">=</span><span class="n">tqdm_kwargs</span><span class="p">)</span>
             <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_pollForNetBIOSPacket</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
@@ -395,7 +400,7 @@
 
         <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="SMBConnection.storeFile"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.storeFile">[docs]</a>    <span class="k">def</span> <span class="nf">storeFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBConnection.storeFile"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.storeFile">[docs]</a>    <span class="k">def</span> <span class="nf">storeFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="n">show_progress</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">tqdm_kwargs</span> <span class="o">=</span> <span class="p">{}):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Store the contents of the *file_obj* at *path* on the *service_name*.</span>
 <span class="sd">        If the file already exists on the remote server, it will be truncated and overwritten.</span>
@@ -404,11 +409,12 @@
 <span class="sd">        :param string/unicode path: Path of the file on the remote server. If the file at *path* does not exist, it will be created. Otherwise, it will be overwritten.</span>
 <span class="sd">                                    If the *path* refers to a folder or the file cannot be opened for writing, an :doc:`OperationFailure&lt;smb_exceptions&gt;` will be raised.</span>
 <span class="sd">        :param file_obj: A file-like object that has a *read* method. Data will read continuously from *file_obj* until EOF. In Python3, this file-like object must have a *read* method which returns a bytes parameter.</span>
+<span class="sd">        :param bool show_progress: If True, a progress bar will be shown to reflect the current file operation progress.</span>
 <span class="sd">        :return: Number of bytes uploaded</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">storeFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">storeFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span><span class="p">,</span> <span class="n">tqdm_kwargs</span> <span class="o">=</span> <span class="n">tqdm_kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SMBConnection.storeFileFromOffset"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.storeFileFromOffset">[docs]</a>    <span class="k">def</span> <span class="nf">storeFileFromOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">truncate</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">):</span>
+<div class="viewcode-block" id="SMBConnection.storeFileFromOffset"><a class="viewcode-back" href="../../api/smb_SMBConnection.html#smb.SMBConnection.SMBConnection.storeFileFromOffset">[docs]</a>    <span class="k">def</span> <span class="nf">storeFileFromOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">truncate</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="n">show_progress</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">tqdm_kwargs</span> <span class="o">=</span> <span class="p">{}):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Store the contents of the *file_obj* at *path* on the *service_name*.</span>
 
@@ -418,6 +424,7 @@
 <span class="sd">        :param file_obj: A file-like object that has a *read* method. Data will read continuously from *file_obj* until EOF.</span>
 <span class="sd">        :param offset: Long integer value which specifies the offset in the remote server to start writing. First byte of the file is 0.</span>
 <span class="sd">        :param truncate: Boolean value. If True and the file exists on the remote server, it will be truncated first before writing. Default is False.</span>
+<span class="sd">        :param bool show_progress: If True, a progress bar will be shown to reflect the current file operation progress.</span>
 <span class="sd">        :return: the file position where the next byte will be written.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="p">:</span>
@@ -435,7 +442,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_storeFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">eb</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">truncate</span> <span class="o">=</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_storeFileFromOffset</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">eb</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">truncate</span> <span class="o">=</span> <span class="n">truncate</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span> <span class="n">tqdm_kwargs</span><span class="o">=</span><span class="n">tqdm_kwargs</span><span class="p">)</span>
             <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_busy</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_pollForNetBIOSPacket</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
@@ -710,7 +717,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.8 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.9 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">smb.SMBConnection</a></li> 
       </ul>
