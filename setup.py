@@ -17,7 +17,7 @@ setup(
     url = "https://miketeo.net/projects/pysmb",
     package_dir = pkgdir,
     packages = [ 'smb', 'smb.utils', 'nmb' ],
-    install_requires = [ 'pyasn1' ],
+    install_requires = [ 'pyasn1', 'tqdm' ],
     long_description="""pysmb is an experimental SMB/CIFS library written in Python. It implements the client-side SMB/CIFS protocol which allows your Python application to access and transfer files to/from SMB/CIFS shared folders like your Windows file sharing and Samba folders.""",
     classifiers = [
         "Development Status :: 5 - Production/Stable",
