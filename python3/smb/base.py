@@ -1,8 +1,8 @@
 
 import logging, binascii, time, hmac
 from datetime import datetime
-
 from tqdm import tqdm
+
 from .smb_constants import *
 from .smb2_constants import *
 from .smb_structs import *
@@ -95,6 +95,9 @@ class SMB(NMBSession):
         self.max_write_size = 0     #: Similar to MaxWriteSize as described in [MS-SMB2] 2.2.4
         self.max_transact_size = 0  #: Similar to MaxTransactSize as described in [MS-SMB2] 2.2.4
         self.session_id = 0         #: Similar to SessionID as described in [MS-SMB2] 2.2.4. This will be set in _updateState_SMB2 method
+
+        # tqdm attributes for tracking progress
+        self.pbar = None            #: If not None, it means there is an active tqdm progress bar being shown
 
         self._setupSMB1Methods()
 
@@ -960,8 +963,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if info_message.status == 0:
                 file_len = struct.unpack('<Q', info_message.payload.data[8:16])[0]
                 if max_length == 0 or starting_offset > file_len:
-                    if show_progress:
+                    if self.pbar:
                         self.pbar.close()
+                        self.pbar = None
                     closeFid(info_message.tid, kwargs['fid'])
                     callback(( file_obj, kwargs['file_attributes'], 0 ))  # Note that this is a tuple of 3-elements
                 else:
@@ -971,8 +975,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     if starting_offset + remaining_len > file_len:
                         remaining_len = file_len - starting_offset
                     if show_progress:
-                        self.__pbar_total = remaining_len
-                        self.__pbar_last_len = 0
                         self.pbar = tqdm(
                             total = remaining_len,
                             unit="B",
@@ -1006,11 +1008,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
                 if remaining_len > 0:
                     sendRead(kwargs['tid'], kwargs['fid'], kwargs['offset'] + data_len, remaining_len, kwargs['read_len'] + data_len, kwargs['file_attributes'])
-                    if show_progress:
+                    if self.pbar:
                         self.pbar.update(data_len)
                 else:
-                    if show_progress:
+                    if self.pbar:
                         self.pbar.close()
+                        self.pbar = None
                     closeFid(kwargs['tid'], kwargs['fid'], ret = ( file_obj, kwargs['file_attributes'], kwargs['read_len'] + data_len ))
             else:
                 messages_history.append(read_message)
@@ -1100,7 +1103,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             messages_history.append(create_message)
             if create_message.status == 0:
                 sendWrite(create_message.tid, create_message.payload.fid, starting_offset)
-            
             else:
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
@@ -1112,10 +1114,13 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m = SMB2Message(SMB2WriteRequest(fid, data, offset))
                 m.tid = tid
                 self._sendSMBMessage(m)
-                if show_progress:
+                if self.pbar:
                     self.pbar.update(data_len)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, writeCB, errback, tid = tid, fid = fid, offset = offset+data_len)
             else:
+                if self.pbar:
+                    self.pbar.close()
+                    self.pbar = None
                 closeFid(tid, fid, offset = offset)
 
         def writeCB(write_message, **kwargs):
@@ -1123,6 +1128,9 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if write_message.status == 0:
                 sendWrite(kwargs['tid'], kwargs['fid'], kwargs['offset'])
             else:
+                if self.pbar:
+                    self.pbar.close()
+                    self.pbar = None
                 messages_history.append(write_message)
                 closeFid(kwargs['tid'], kwargs['fid'])
                 errback(OperationFailure('Failed to store %s on %s: Write failed' % ( path, service_name ), messages_history))
@@ -1133,8 +1141,6 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback, fid = fid, offset = offset, error = error)
             messages_history.append(m)
-            if show_progress:
-                self.pbar.close()
 
         def closeCB(close_message, **kwargs):
             if kwargs['offset'] is not None:
@@ -2443,10 +2449,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
     def _getSecurity_SMB1(self, service_name, path_file_pattern, callback, errback, timeout = 30):
         raise NotReadyError('getSecurity is not yet implemented for SMB1')
 
-    def _retrieveFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
-        return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0, -1, timeout)
+    def _retrieveFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30, show_progress = False, tqdm_kwargs = { }):
+        return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0, -1, timeout, show_progress, tqdm_kwargs)
 
-    def _retrieveFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, max_length, timeout = 30):
+    def _retrieveFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, max_length, timeout = 30, show_progress = False, tqdm_kwargs = { }):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -2471,6 +2477,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     closeFid(open_message.tid, open_message.payload.fid)
                     callback(( file_obj, open_message.payload.file_attributes, 0 ))
                 else:
+                    if show_progress and max_length > 0:
+                        self.pbar = tqdm(
+                            total=max_length,
+                            unit="B",
+                            unit_scale=True,
+                            unit_divisor=1024,
+                            desc = f"Downloading {path}",
+                            **tqdm_kwargs
+                        )
                     sendRead(open_message.tid, open_message.payload.fid, starting_offset, open_message.payload.file_attributes, 0, max_length)
             else:
                 errback(OperationFailure('Failed to retrieve %s on %s: Unable to open file' % ( path, service_name ), messages_history))
@@ -2505,12 +2520,21 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                     file_obj.write(read_message.payload.data)
                     read_len += data_len
 
+                if self.pbar:
+                    self.pbar.update(data_len)
+
                 if (max_length > 0 and remaining_len <= 0) or data_len < (self.max_raw_size - 2):
+                    if self.pbar:
+                        self.pbar.close()
+                        self.pbar = None
                     closeFid(read_message.tid, kwargs['fid'])
                     callback(( file_obj, kwargs['file_attributes'], read_len ))  # Note that this is a tuple of 3-elements
                 else:
                     sendRead(read_message.tid, kwargs['fid'], kwargs['offset']+data_len, kwargs['file_attributes'], read_len, remaining_len)
             else:
+                if self.pbar:
+                    self.pbar.close()
+                    self.pbar = None
                 messages_history.append(read_message)
                 closeFid(read_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to retrieve %s on %s: Read failed' % ( path, service_name ), messages_history))
@@ -2537,10 +2561,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         else:
             sendOpen(self.connected_trees[service_name])
 
-    def _storeFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30):
-        self._storeFileFromOffset_SMB1(service_name, path, file_obj, callback, errback, 0, True, timeout)
+    def _storeFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30, show_progress = False, tqdm_kwargs = { }):
+        self._storeFileFromOffset_SMB1(service_name, path, file_obj, callback, errback, 0, True, timeout, show_progress, tqdm_kwargs)
 
-    def _storeFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, truncate = False, timeout = 30):
+    def _storeFileFromOffset_SMB1(self, service_name, path, file_obj, callback, errback, starting_offset, truncate = False, timeout = 30, show_progress = False, tqdm_kwargs = { }):
         if not self.has_authenticated:
             raise NotReadyError('SMB connection not authenticated')
 
@@ -2561,6 +2585,14 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         def openCB(open_message, **kwargs):
             messages_history.append(open_message)
             if not open_message.status.hasError:
+                if show_progress:
+                    self.pbar = tqdm(
+                        unit="B",
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        desc = f"Uploading {path}",
+                        **tqdm_kwargs
+                    )
                 sendWrite(open_message.tid, open_message.payload.fid, starting_offset)
             else:
                 errback(OperationFailure('Failed to store %s on %s: Unable to open file' % ( path, service_name ), messages_history))
@@ -2576,14 +2608,22 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, writeCB, errback, fid = fid, offset = offset+data_len)
             else:
+                if self.pbar:
+                    self.pbar.close()
+                    self.pbar = None
                 closeFid(tid, fid)
                 callback(( file_obj, offset ))  # Note that this is a tuple of 2-elements
 
         def writeCB(write_message, **kwargs):
             # To avoid crazy memory usage when saving large files, we do not save every write_message in messages_history.
             if not write_message.status.hasError:
+                if self.pbar:
+                    self.pbar.update(kwargs['offset'])
                 sendWrite(write_message.tid, kwargs['fid'], kwargs['offset'])
             else:
+                if self.pbar:
+                    self.pbar.close()
+                    self.pbar = None
                 messages_history.append(write_message)
                 closeFid(write_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to store %s on %s: Write failed' % ( path, service_name ), messages_history))
