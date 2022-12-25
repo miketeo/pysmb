@@ -117,7 +117,7 @@ class SMBConnection(SMB):
             self.sock.settimeout(timeout)
             self.sock.connect(( ip, port ))
         else:
-            self.sock = socket.create_connection(( ip, port ))
+            self.sock = socket.create_connection(( ip, port ), timeout = timeout)
 
         self.is_busy = True
         try:
