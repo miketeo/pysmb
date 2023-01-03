@@ -1,3 +1,9 @@
+pysmb-1.2.9, 25 Dec 2022
+========================
+
+- Add support for tqdm progress display (#205)
+- Fix bug where timeout parameter was not passed to socket.createConnection() (#202)
+
 pysmb-1.2.8, 12 Jun 2022
 ========================
 
