@@ -472,7 +472,7 @@ class SMB2WriteRequest(Structure):
                                    self.remaining_len,  # RemainingBytes
                                    0,  # WriteChannelInfoOffset,
                                    0,  # WriteChannelInfoLength
-                                   self.flags) + self.data
+                                   self.flags) + self.data.encode()
 
 
 class SMB2WriteResponse(Structure):
