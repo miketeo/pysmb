@@ -1,5 +1,6 @@
 
 import os, sys, struct, types, logging, binascii, time
+from copy import copy
 from io import StringIO
 from .smb_constants import *
 from .strategy import DataFaultToleranceStrategy
@@ -60,7 +61,8 @@ class OperationFailure(Exception):
 
     def __init__(self, message, smb_messages):
         self.message = message
-        self.smb_messages = smb_messages
+        self.smb_messages = [copy(msg) for msg in smb_messages]
+        self.args = (message, self.smb_messages)
 
     def __str__(self):
         b = StringIO()
