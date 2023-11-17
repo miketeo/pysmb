@@ -1676,7 +1676,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             if create_message.status == 0:
                 sendEnumSnapshots(kwargs['tid'], create_message.payload.fid)
             else:
-                errback(OperationFailure('Failed to list snapshots %s on %s: Unable to open file/directory' % ( old_path, service_name ), messages_history))
+                errback(OperationFailure('Failed to list snapshots %s on %s: Unable to open file/directory' % ( path, service_name ), messages_history))
 
         def sendEnumSnapshots(tid, fid):
             m = SMB2Message(SMB2IoctlRequest(fid,
@@ -2690,7 +2690,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 callback(path)
             elif delete_message.status.internal_value == 0xC000000FL: # [MS-ERREF]: STATUS_NO_SUCH_FILE
                 # If there are no matching files, we just treat as success instead of failing
-                callback(path_file_pattern)
+                callback(path)
             elif delete_message.status.internal_value == 0xC00000BAL: # [MS-ERREF]: STATUS_FILE_IS_A_DIRECTORY
                 errback(OperationFailure('Failed to delete %s on %s: Cannot delete a folder. Please use deleteDirectory() method or append "/*" to your path if you wish to delete all files in the folder.' % ( path, service_name ), messages_history))
             elif delete_message.status.internal_value == 0xC0000034L: # [MS-ERREF]: STATUS_OBJECT_NAME_INVALID
