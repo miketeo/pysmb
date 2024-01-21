@@ -1,17 +1,19 @@
 
-<!DOCTYPE html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>smb.security_descriptors &#8212; pysmb 1.2.7 documentation</title>
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>smb.security_descriptors &#8212; pysmb 1.2.9 documentation</title>
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/doctools.js"></script>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -24,11 +26,26 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">smb.security_descriptors</a></li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.9 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
-    </div>  
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
 
     <div class="document">
       <div class="documentwrapper">
@@ -190,7 +207,7 @@
 
 <span class="sd">    See [MS-DTYP]: 2.4.2</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revision</span><span class="p">,</span> <span class="n">identifier_authority</span><span class="p">,</span> <span class="n">subauthorities</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revision</span><span class="p">,</span> <span class="n">identifier_authority</span><span class="p">,</span> <span class="n">subauthorities</span><span class="p">):</span>
         <span class="c1">#: Revision, should always be 1.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revision</span> <span class="o">=</span> <span class="n">revision</span>
         <span class="c1">#: An integer representing the identifier authority.</span>
@@ -198,7 +215,7 @@
         <span class="c1">#: A list of integers representing all subauthorities.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subauthorities</span> <span class="o">=</span> <span class="n">subauthorities</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        String representation, as specified in [MS-DTYP]: 2.4.2.1</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -209,7 +226,7 @@
         <span class="n">auths</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">revision</span><span class="p">,</span> <span class="n">id_auth</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">subauthorities</span>
         <span class="k">return</span> <span class="s1">&#39;S-&#39;</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">subauth</span><span class="p">)</span> <span class="k">for</span> <span class="n">subauth</span> <span class="ow">in</span> <span class="n">auths</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;SID(</span><span class="si">%r</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),)</span>
 
     <span class="nd">@classmethod</span>
@@ -233,7 +250,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">HEADER_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;BBH&#39;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">sid</span><span class="p">,</span> <span class="n">additional_data</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">sid</span><span class="p">,</span> <span class="n">additional_data</span><span class="p">):</span>
         <span class="c1">#: An integer representing the type of the ACE. One of the</span>
         <span class="c1">#: ``ACE_TYPE_*`` constants. Corresponds to the ``AceType`` field</span>
         <span class="c1">#: from [MS-DTYP] 2.4.4.1.</span>
@@ -256,7 +273,7 @@
         <span class="c1">#: * ``attribute_data``</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">additional_data</span> <span class="o">=</span> <span class="n">additional_data</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;ACE(type=</span><span class="si">%#04x</span><span class="s2">, flags=</span><span class="si">%#04x</span><span class="s2">, mask=</span><span class="si">%#010x</span><span class="s2">, sid=</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sid</span><span class="p">,</span>
         <span class="p">)</span>
@@ -325,13 +342,13 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">HEADER_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;BBHHH&#39;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revision</span><span class="p">,</span> <span class="n">aces</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">revision</span><span class="p">,</span> <span class="n">aces</span><span class="p">):</span>
         <span class="c1">#: Integer value of the revision.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revision</span> <span class="o">=</span> <span class="n">revision</span>
         <span class="c1">#: List of :class:`ACE` instances.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aces</span> <span class="o">=</span> <span class="n">aces</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;ACL(</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aces</span><span class="p">,)</span>
 
     <span class="nd">@classmethod</span>
@@ -362,7 +379,7 @@
 
     <span class="n">HEADER_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;BBHIIII&#39;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">dacl</span><span class="p">,</span> <span class="n">sacl</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">dacl</span><span class="p">,</span> <span class="n">sacl</span><span class="p">):</span>
         <span class="c1">#: Integer bitmask of control flags. Corresponds to the</span>
         <span class="c1">#: ``Control`` field in [MS-DTYP] 2.4.6.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
@@ -405,22 +422,7 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">dacl</span><span class="p">,</span> <span class="n">sacl</span><span class="p">)</span></div>
 </pre></div>
 
-            <div class="clearer"></div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -434,14 +436,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.7 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">smb.security_descriptors</a></li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.9 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.4.3.
+        &#169; Copyright 2001-2024, Michael Teo https://miketeo.net/.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
     </div>
   </body>
 </html>

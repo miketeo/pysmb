@@ -56,6 +56,88 @@ This allows you to perform name query asynchronously without having your applica
 </ol>
 </dd>
 </dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="nmb.NetBIOSProtocol.NBNSProtocol">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmb.NetBIOSProtocol.</span></span><span class="sig-name descname"><span class="pre">NBNSProtocol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">broadcast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">listen_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="nmb.NetBIOSProtocol.NBNSProtocol.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">broadcast</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">listen_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiate a NBNSProtocol instance.</p>
+<p>This automatically calls reactor.listenUDP method to start listening for incoming packets, so you <strong>must not</strong> call the listenUDP method again.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>broadcast</strong> (<em>boolean</em>) – A boolean flag to indicate if we should setup the listening UDP port in broadcast mode</p></li>
+<li><p><strong>listen_port</strong> (<em>integer</em>) – Specifies the UDP port number to bind to for listening. If zero, OS will automatically select a free port number.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmb.NetBIOSProtocol.NBNSProtocol.datagramReceived">
+<span class="sig-name descname"><span class="pre">datagramReceived</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_info</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol.datagramReceived"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol.datagramReceived" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a datagram is received.</p>
+<p>&#64;param datagram: the bytes received from the transport.
+&#64;param addr: tuple of source of datagram.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmb.NetBIOSProtocol.NBNSProtocol.queryIPForName">
+<span class="sig-name descname"><span class="pre">queryIPForName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">137</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol.queryIPForName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol.queryIPForName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a query to the machine with <em>ip</em> and hopes that the machine will reply back with its name.</p>
+<p>The implementation of this function is contributed by Jason Anderson.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ip</strong> (<em>string</em>) – If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.
+If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</p></li>
+<li><p><strong>port</strong> (<em>integer</em>) – The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.</p></li>
+<li><p><strong>timeout</strong> (<em>integer/float</em>) – Number of seconds to wait for a reply, after which the method will return None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a list of names of the machine at <em>ip</em>.
+On timeout, the errback function will be called with a Failure instance wrapping around a NetBIOSTimeout exception</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmb.NetBIOSProtocol.NBNSProtocol.queryName">
+<span class="sig-name descname"><span class="pre">queryName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">137</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol.queryName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol.queryName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a query on the network and hopes that if machine matching the <em>name</em> will reply with its IP address.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ip</strong> (<em>string</em>) – If the NBNSProtocol instance was instianted with broadcast=True, then this parameter can be an empty string. We will leave it to the OS to determine an appropriate broadcast address.
+If the NBNSProtocol instance was instianted with broadcast=False, then you should provide a target IP to send the query.</p></li>
+<li><p><strong>port</strong> (<em>integer</em>) – The NetBIOS-NS port (IANA standard defines this port to be 137). You should not touch this parameter unless you know what you are doing.</p></li>
+<li><p><strong>timeout</strong> (<em>integer/float</em>) – Number of seconds to wait for a reply, after which the returned Deferred instance will be called with a NetBIOSTimeout exception.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <em>twisted.internet.defer.Deferred</em> instance. The callback function will be called with a list of IP addresses in dotted notation (aaa.bbb.ccc.ddd).
+On timeout, the errback function will be called with a Failure instance wrapping around a NetBIOSTimeout exception</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmb.NetBIOSProtocol.NBNSProtocol.stopProtocol">
+<span class="sig-name descname"><span class="pre">stopProtocol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NBNSProtocol.stopProtocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NBNSProtocol.stopProtocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the transport is disconnected.</p>
+<p>Will only be called once, after all ports are disconnected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="nmb.NetBIOSProtocol.NetBIOSTimeout">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmb.NetBIOSProtocol.</span></span><span class="sig-name descname"><span class="pre">NetBIOSTimeout</span></span><a class="reference internal" href="../_modules/nmb/NetBIOSProtocol.html#NetBIOSTimeout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nmb.NetBIOSProtocol.NetBIOSTimeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised in NBNSProtocol via Deferred.errback method when queryName method has timeout waiting for reply</p>
+</dd></dl>
+
 </section>
 
 
@@ -116,7 +198,7 @@ This allows you to perform name query asynchronously without having your applica
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2001-2021, Michael Teo https://miketeo.net/.
+        &#169; Copyright 2001-2024, Michael Teo https://miketeo.net/.
       Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
