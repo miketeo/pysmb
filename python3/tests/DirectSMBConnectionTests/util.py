@@ -1,10 +1,10 @@
 
 import os
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 def getConnectionInfo():
     config_filename = os.path.join(os.path.dirname(__file__), os.path.pardir, 'connection.ini')
-    cp = SafeConfigParser()
+    cp = ConfigParser()
     cp.read(config_filename)
 
     info = {
