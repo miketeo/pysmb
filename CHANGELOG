@@ -1,5 +1,10 @@
+pysmb-1.2.11, 25 Mar 2025
+=========================
+
+- Fix out-of-memory issues during large file operations (due to accumulation of messages in message_history).
+
 pysmb-1.2.10, 25 Sep 2024
-========================
+=========================
 
 - Fix a bug where the OperationFailure exceptions do not contain the error messages that were thrown when the exception occurred (#212)
 - Update test cases to replace SafeConfigParser with ConfigParser (#219)
