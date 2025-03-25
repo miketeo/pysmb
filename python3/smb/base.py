@@ -436,10 +436,10 @@ class SMB(NMBSession):
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectSrvSvcCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def connectSrvSvcCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 call_id = self._getNextRPCCallID()
                 # The data_bytes are binding call to Server Service RPC using DCE v1.1 RPC over SMB. See [MS-SRVS] and [C706]
@@ -460,23 +460,23 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcBindCB, errback, tid = kwargs['tid'], fid = create_message.payload.fid)
-                messages_history.append(m)
+                self._pushToArray(messages_history, m)
             else:
                 errback(OperationFailure('Failed to list shares: Unable to locate Server Service RPC endpoint', messages_history))
 
         def rpcBindCB(trans_message, **kwargs):
-            messages_history.append(trans_message)
+            self._pushToArray(messages_history, trans_message)
             if trans_message.status == 0:
                 m = SMB2Message(SMB2ReadRequest(kwargs['fid'], read_len = 1024, read_offset = 0))
                 m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcReadCB, errback, tid = kwargs['tid'], fid = kwargs['fid'])
-                messages_history.append(m)
+                self._pushToArray(messages_history, m)
             else:
                 closeFid(kwargs['tid'], kwargs['fid'], error = 'Failed to list shares: Unable to read from Server Service RPC endpoint')
 
         def rpcReadCB(read_message, **kwargs):
-            messages_history.append(read_message)
+            self._pushToArray(messages_history, read_message)
             if read_message.status == 0:
                 call_id = self._getNextRPCCallID()
 
@@ -504,12 +504,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, listShareResultsCB, errback, tid = kwargs['tid'], fid = kwargs['fid'])
-                messages_history.append(m)
+                self._pushToArray(messages_history, m)
             else:
                 closeFid(kwargs['tid'], kwargs['fid'], error = 'Failed to list shares: Unable to bind to Server Service RPC endpoint')
 
         def listShareResultsCB(result_message, **kwargs):
-            messages_history.append(result_message)
+            self._pushToArray(messages_history, result_message)
             if result_message.status == 0:
                 # The payload.data_bytes will contain the results of the RPC call to NetrShareEnum (Opnum 15) at Server Service RPC.
                 data_bytes = result_message.payload.out_data
@@ -561,7 +561,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                            tid = tid, fid = fid, data_bytes = data_bytes)
 
         def readCB(read_message, **kwargs):
-            messages_history.append(read_message)
+            self._pushToArray(messages_history, read_message)
             if read_message.status == 0:
                 data_bytes = read_message.payload.data
 
@@ -578,7 +578,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, results = results, error = error)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['results'] is not None:
@@ -588,7 +588,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if path not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[path] = connect_message.tid
                     connectSrvSvc(connect_message.tid)
@@ -598,7 +598,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), path )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = path)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             connectSrvSvc(self.connected_trees[path])
 
@@ -636,10 +636,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 sendQuery(kwargs['tid'], create_message.payload.fid, b'')
             elif create_message.status == 0xC0000034: # [MS-ERREF]: STATUS_OBJECT_NAME_INVALID
@@ -655,10 +655,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, tid = tid, fid = fid, data_buf = data_buf)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def queryCB(query_message, **kwargs):
-            messages_history.append(query_message)
+            self._pushToArray(messages_history, query_message)
             if query_message.status == 0:
                 data_buf = decodeQueryStruct(kwargs['data_buf'] + query_message.payload.data)
                 sendQuery(kwargs['tid'], kwargs['fid'], data_buf)
@@ -714,7 +714,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, results = results, error = error)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['results'] is not None:
@@ -728,7 +728,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -738,7 +738,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -775,10 +775,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 p = create_message.payload
                 filename = self._extractLastPathComponent(path)
@@ -794,7 +794,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, info = info, error = error)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['info'] is not None:
@@ -804,7 +804,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -814,7 +814,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -843,10 +843,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 m = SMB2Message(SMB2QueryInfoRequest(create_message.payload.fid,
                                                      flags = 0,
@@ -858,12 +858,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m.tid = kwargs['tid']
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback, tid = kwargs['tid'], fid = create_message.payload.fid)
-                messages_history.append(m)
+                self._pushToArray(messages_history, m)
             else:
                 errback(OperationFailure('Failed to get the security descriptor of %s on %s: Unable to open file or directory' % ( path, service_name ), messages_history))
 
         def queryCB(query_message, **kwargs):
-            messages_history.append(query_message)
+            self._pushToArray(messages_history, query_message)
             if query_message.status == 0:
                 security = SecurityDescriptor.from_bytes(query_message.payload.data)
                 closeFid(kwargs['tid'], kwargs['fid'], result = security)
@@ -875,7 +875,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, result = result, error = error)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['result'] is not None:
@@ -885,7 +885,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -895,7 +895,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -936,10 +936,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 m = SMB2Message(SMB2QueryInfoRequest(create_message.payload.fid,
                                                      flags = 0,
@@ -954,12 +954,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                                                                tid = kwargs['tid'],
                                                                fid = create_message.payload.fid,
                                                                file_attributes = create_message.payload.file_attributes)
-                messages_history.append(m)
+                self._pushToArray(messages_history, m)
             else:
                 errback(OperationFailure('Failed to retrieve %s on %s: Unable to open file' % ( path, service_name ), messages_history))
 
         def infoCB(info_message, **kwargs):
-            messages_history.append(info_message)
+            self._pushToArray(messages_history, info_message)
             if info_message.status == 0:
                 file_len = struct.unpack('<Q', info_message.payload.data[8:16])[0]
                 if max_length == 0 or starting_offset > file_len:
@@ -1014,7 +1014,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                         self.pbar = None
                     closeFid(kwargs['tid'], kwargs['fid'], ret = ( file_obj, kwargs['file_attributes'], kwargs['read_len'] + data_len ))
             else:
-                messages_history.append(read_message)
+                self._pushToArray(messages_history, read_message)
                 closeFid(kwargs['tid'], kwargs['fid'], error = read_message.status)
 
         def closeFid(tid, fid, ret = None, error = None):
@@ -1022,7 +1022,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, ret = ret, error = error)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['ret'] is not None:
@@ -1032,7 +1032,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -1042,7 +1042,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -1092,11 +1092,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
             create_message.tid = kwargs['tid']
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 sendWrite(create_message.tid, create_message.payload.fid, starting_offset)
             else:
@@ -1127,7 +1127,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if self.pbar:
                     self.pbar.close()
                     self.pbar = None
-                messages_history.append(write_message)
+                self._pushToArray(messages_history, write_message)
                 closeFid(kwargs['tid'], kwargs['fid'])
                 errback(OperationFailure('Failed to store %s on %s: Write failed' % ( path, service_name ), messages_history))
 
@@ -1136,7 +1136,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback, fid = fid, offset = offset, error = error)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['offset'] is not None:
@@ -1146,7 +1146,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -1156,7 +1156,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -1204,7 +1204,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     if files_queue:
@@ -1217,7 +1217,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             if files_queue:
                 deleteCB(None)
@@ -1277,11 +1277,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(open_message, **kwargs):
             open_message.tid = kwargs['tid']
-            messages_history.append(open_message)
+            self._pushToArray(messages_history, open_message)
             if open_message.status == 0:
                 sendDelete(open_message.tid, open_message.payload.fid)
             elif open_message.status == 0xc0000034:  # STATUS_OBJECT_NAME_NOT_FOUND
@@ -1301,10 +1301,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback, tid = tid, fid = fid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def deleteCB(delete_message, **kwargs):
-            messages_history.append(delete_message)
+            self._pushToArray(messages_history, delete_message)
             if delete_message.status == 0:
                 closeFid(kwargs['tid'], kwargs['fid'], status = 0)
             else:
@@ -1315,7 +1315,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback, status = status)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['status'] == 0:
@@ -1359,10 +1359,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(open_message, **kwargs):
-            messages_history.append(open_message)
+            self._pushToArray(messages_history, open_message)
             if open_message.status == 0:
                 sendReset(kwargs['tid'], open_message.payload.fid)
             else:
@@ -1378,10 +1378,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, resetCB, errback, tid = tid, fid = fid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def resetCB(reset_message, **kwargs):
-            messages_history.append(reset_message)
+            self._pushToArray(messages_history, reset_message)
             if reset_message.status == 0:
                 closeFid(kwargs['tid'], kwargs['fid'], status = 0)
             else:
@@ -1392,7 +1392,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback, status = status)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['status'] == 0:
@@ -1402,7 +1402,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -1412,7 +1412,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -1449,10 +1449,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 closeFid(kwargs['tid'], create_message.payload.fid)
             else:
@@ -1463,14 +1463,14 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, closeCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             callback(path)
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -1480,7 +1480,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -1517,10 +1517,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(open_message, **kwargs):
-            messages_history.append(open_message)
+            self._pushToArray(messages_history, open_message)
             if open_message.status == 0:
                 sendDelete(kwargs['tid'], open_message.payload.fid)
             else:
@@ -1535,10 +1535,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback, tid = tid, fid = fid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def deleteCB(delete_message, **kwargs):
-            messages_history.append(delete_message)
+            self._pushToArray(messages_history, delete_message)
             if delete_message.status == 0:
                 closeFid(kwargs['tid'], kwargs['fid'], status = 0)
             else:
@@ -1549,7 +1549,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, status = status)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['status'] == 0:
@@ -1559,7 +1559,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -1569,7 +1569,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -1613,10 +1613,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 sendRename(kwargs['tid'], create_message.payload.fid)
             else:
@@ -1632,10 +1632,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, renameCB, errback, tid = tid, fid = fid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def renameCB(rename_message, **kwargs):
-            messages_history.append(rename_message)
+            self._pushToArray(messages_history, rename_message)
             if rename_message.status == 0:
                 closeFid(kwargs['tid'], kwargs['fid'], status = 0)
             else:
@@ -1646,7 +1646,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, status = status)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['status'] == 0:
@@ -1656,7 +1656,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -1666,7 +1666,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -1701,10 +1701,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback, tid = tid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if create_message.status == 0:
                 sendEnumSnapshots(kwargs['tid'], create_message.payload.fid)
             else:
@@ -1718,10 +1718,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, enumSnapshotsCB, errback, tid = tid, fid = fid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def enumSnapshotsCB(enum_message, **kwargs):
-            messages_history.append(enum_message)
+            self._pushToArray(messages_history, enum_message)
             if enum_message.status == 0:
                 results = [ ]
                 snapshots_count = struct.unpack('<I', enum_message.payload.out_data[4:8])[0]
@@ -1737,7 +1737,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, closeCB, errback, status = status, results = results)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def closeCB(close_message, **kwargs):
             if kwargs['results'] is not None:
@@ -1747,7 +1747,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if connect_message.status == 0:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -1757,7 +1757,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMB2Message(SMB2TreeConnectRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name )))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -1765,7 +1765,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         messages_history = [ ]
 
         def echoCB(echo_message, **kwargs):
-            messages_history.append(echo_message)
+            self._pushToArray(messages_history, echo_message)
             if echo_message.status == 0:
                 callback(data)
             else:
@@ -1774,7 +1774,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         m = SMB2Message(SMB2EchoRequest())
         self._sendSMBMessage(m)
         self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, echoCB, errback)
-        messages_history.append(m)
+        self._pushToArray(messages_history, m)
 
 
     #
@@ -2014,10 +2014,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectSrvSvcCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def connectSrvSvcCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if not create_message.status.hasError:
                 call_id = self._getNextRPCCallID()
                 # See [MS-CIFS]: 2.2.5.6.1 for more information on TRANS_TRANSACT_NMPIPE (0x0026) parameters
@@ -2040,12 +2040,12 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m.tid = create_message.tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, rpcBindCB, errback, fid = create_message.payload.fid)
-                messages_history.append(m)
+                self._pushToArray(messages_history, m)
             else:
                 errback(OperationFailure('Failed to list shares: Unable to locate Server Service RPC endpoint', messages_history))
 
         def rpcBindCB(trans_message, **kwargs):
-            messages_history.append(trans_message)
+            self._pushToArray(messages_history, trans_message)
             if not trans_message.status.hasError:
                 call_id = self._getNextRPCCallID()
 
@@ -2078,13 +2078,13 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m.tid = trans_message.tid
                 self._sendSMBMessage(m)
                 self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, listShareResultsCB, errback, fid = kwargs['fid'])
-                messages_history.append(m)
+                self._pushToArray(messages_history, m)
             else:
                 closeFid(trans_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to list shares: Unable to bind to Server Service RPC endpoint', messages_history))
 
         def listShareResultsCB(result_message, **kwargs):
-            messages_history.append(result_message)
+            self._pushToArray(messages_history, result_message)
             if not result_message.status.hasError:
                 # The payload.data_bytes will contain the results of the RPC call to NetrShareEnum (Opnum 15) at Server Service RPC.
                 data_bytes = result_message.payload.data_bytes
@@ -2138,7 +2138,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, readCB, errback, fid = fid, data_bytes = data_bytes)
 
         def readCB(read_message, **kwargs):
-            messages_history.append(read_message)
+            self._pushToArray(messages_history, read_message)
             if not read_message.status.hasError:
                 data_bytes = read_message.payload.data
 
@@ -2154,10 +2154,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComCloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def connectCB(connect_message, **kwargs):
-            messages_history.append(connect_message)
+            self._pushToArray(messages_history, connect_message)
             if not connect_message.status.hasError:
                 self.connected_trees[path] = connect_message.tid
                 connectSrvSvc(connect_message.tid)
@@ -2167,7 +2167,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), path ), SERVICE_ANY, ''))
         self._sendSMBMessage(m)
         self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = path)
-        messages_history.append(m)
+        self._pushToArray(messages_history, m)
 
     def _listPath_SMB1(self, service_name, path, callback, errback, search, pattern, timeout = 30):
         if not self.has_authenticated:
@@ -2204,7 +2204,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m.flags2 |= SMB_FLAGS2_DFS
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, findFirstCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def decodeFindStruct(data_bytes):
             # SMB_FIND_FILE_BOTH_DIRECTORY_INFO structure. See [MS-CIFS]: 2.2.8.1.7 and [MS-SMB]: 2.2.8.1.1
@@ -2246,7 +2246,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             return b''
 
         def findFirstCB(find_message, **kwargs):
-            messages_history.append(find_message)
+            self._pushToArray(messages_history, find_message)
             if not find_message.status.hasError:
                 if 'total_count' not in kwargs:
                     # TRANS2_FIND_FIRST2 response. [MS-CIFS]: 2.2.6.2.2
@@ -2306,10 +2306,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 m.flags2 |= SMB_FLAGS2_DFS
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, findNextCB, errback, sid = sid, support_dfs = support_dfs)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def findNextCB(find_message, **kwargs):
-            messages_history.append(find_message)
+            self._pushToArray(messages_history, find_message)
             if not find_message.status.hasError:
                 if 'total_count' not in kwargs:
                     # TRANS2_FIND_NEXT2 response. [MS-CIFS]: 2.2.6.3.2
@@ -2357,14 +2357,14 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, dfsReferralCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def dfsReferralCB(dfs_message, **kwargs):
             sendFindFirst(dfs_message.tid, True)
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     if connect_message.payload.optional_support & SMB_TREE_CONNECTX_SUPPORT_DFS:
@@ -2377,7 +2377,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendFindFirst(self.connected_trees[service_name])
 
@@ -2409,10 +2409,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, queryCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def queryCB(query_message, **kwargs):
-            messages_history.append(query_message)
+            self._pushToArray(messages_history, query_message)
             if not query_message.status.hasError:
                 info_format = '<QQQQIIQQ'
                 info_size = struct.calcsize(info_format)
@@ -2428,7 +2428,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     sendQuery(connect_message.tid)
@@ -2438,7 +2438,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendQuery(self.connected_trees[service_name])
 
@@ -2464,10 +2464,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, openCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def openCB(open_message, **kwargs):
-            messages_history.append(open_message)
+            self._pushToArray(messages_history, open_message)
             if not open_message.status.hasError:
                 if max_length == 0:
                     closeFid(open_message.tid, open_message.payload.fid)
@@ -2529,7 +2529,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if self.pbar:
                     self.pbar.close()
                     self.pbar = None
-                messages_history.append(read_message)
+                self._pushToArray(messages_history, read_message)
                 closeFid(read_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to retrieve %s on %s: Read failed' % ( path, service_name ), messages_history))
 
@@ -2537,11 +2537,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComCloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     sendOpen(connect_message.tid)
@@ -2551,7 +2551,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendOpen(self.connected_trees[service_name])
 
@@ -2574,10 +2574,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, openCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def openCB(open_message, **kwargs):
-            messages_history.append(open_message)
+            self._pushToArray(messages_history, open_message)
             if not open_message.status.hasError:
                 if show_progress:
                     tqdm_kwargs.setdefault("unit", "B")
@@ -2616,7 +2616,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if self.pbar:
                     self.pbar.close()
                     self.pbar = None
-                messages_history.append(write_message)
+                self._pushToArray(messages_history, write_message)
                 closeFid(write_message.tid, kwargs['fid'])
                 errback(OperationFailure('Failed to store %s on %s: Write failed' % ( path, service_name ), messages_history))
 
@@ -2624,11 +2624,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComCloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     sendOpen(connect_message.tid)
@@ -2638,7 +2638,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendOpen(self.connected_trees[service_name])
 
@@ -2685,7 +2685,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     if files_queue:
@@ -2698,7 +2698,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             if files_queue:
                 deleteCB(None)
@@ -2743,10 +2743,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def deleteCB(delete_message, **kwargs):
-            messages_history.append(delete_message)
+            self._pushToArray(messages_history, delete_message)
             if not delete_message.status.hasError:
                 callback(path)
             elif delete_message.status.internal_value == 0xC000000F: # [MS-ERREF]: STATUS_NO_SUCH_FILE
@@ -2776,10 +2776,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, createCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def createCB(create_message, **kwargs):
-            messages_history.append(create_message)
+            self._pushToArray(messages_history, create_message)
             if not create_message.status.hasError:
                 callback(path)
             else:
@@ -2787,7 +2787,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     sendCreate(connect_message.tid)
@@ -2797,7 +2797,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendCreate(self.connected_trees[service_name])
 
@@ -2813,10 +2813,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, deleteCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def deleteCB(delete_message, **kwargs):
-            messages_history.append(delete_message)
+            self._pushToArray(messages_history, delete_message)
             if not delete_message.status.hasError:
                 callback(path)
             else:
@@ -2824,7 +2824,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     sendDelete(connect_message.tid)
@@ -2834,7 +2834,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendDelete(self.connected_trees[service_name])
 
@@ -2853,10 +2853,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, renameCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def renameCB(rename_message, **kwargs):
-            messages_history.append(rename_message)
+            self._pushToArray(messages_history, rename_message)
             if not rename_message.status.hasError:
                 callback(( old_path, new_path ))  # Note that this is a tuple of 2-elements
             else:
@@ -2864,7 +2864,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     sendRename(connect_message.tid)
@@ -2874,7 +2874,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendRename(self.connected_trees[service_name])
 
@@ -2898,10 +2898,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, openCB, errback)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def openCB(open_message, **kwargs):
-            messages_history.append(open_message)
+            self._pushToArray(messages_history, open_message)
             if not open_message.status.hasError:
                 sendEnumSnapshots(open_message.tid, open_message.payload.fid)
             else:
@@ -2923,10 +2923,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m.tid = tid
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, enumSnapshotsCB, errback, tid = tid, fid = fid)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         def enumSnapshotsCB(enum_message, **kwargs):
-            messages_history.append(enum_message)
+            self._pushToArray(messages_history, enum_message)
             if not enum_message.status.hasError:
                 results = [ ]
                 snapshots_count = struct.unpack('<I', enum_message.payload.data_bytes[4:8])[0]
@@ -2943,11 +2943,11 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComCloseRequest(fid))
             m.tid = tid
             self._sendSMBMessage(m)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
 
         if service_name not in self.connected_trees:
             def connectCB(connect_message, **kwargs):
-                messages_history.append(connect_message)
+                self._pushToArray(messages_history, connect_message)
                 if not connect_message.status.hasError:
                     self.connected_trees[service_name] = connect_message.tid
                     sendOpen(connect_message.tid)
@@ -2957,7 +2957,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             m = SMBMessage(ComTreeConnectAndxRequest(r'\\%s\%s' % ( self.remote_name.upper(), service_name ), SERVICE_ANY, ''))
             self._sendSMBMessage(m)
             self.pending_requests[m.mid] = _PendingRequest(m.mid, expiry_time, connectCB, errback, path = service_name)
-            messages_history.append(m)
+            self._pushToArray(messages_history, m)
         else:
             sendOpen(self.connected_trees[service_name])
 
@@ -2968,7 +2968,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             raise TypeError('Echo data must be %s not %s' % (type(b'').__name__, type(data).__name__))
 
         def echoCB(echo_message, **kwargs):
-            messages_history.append(echo_message)
+            self._pushToArray(messages_history, echo_message)
             if not echo_message.status.hasError:
                 callback(echo_message.payload.data)
             else:
@@ -2977,11 +2977,15 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         m = SMBMessage(ComEchoRequest(echo_data = data))
         self._sendSMBMessage(m)
         self.pending_requests[m.mid] = _PendingRequest(m.mid, int(time.time()) + timeout, echoCB, errback)
-        messages_history.append(m)
+        self._pushToArray(messages_history, m)
 
     def _extractLastPathComponent(self, path):
         return path.replace('\\', '/').split('/')[-1]
 
+    def _pushToArray(self, messages_history, message):
+        if len(messages_history) > 10:
+            messages_history.pop(0)
+        messages_history.append(message)
 
 class SharedDevice:
     """
