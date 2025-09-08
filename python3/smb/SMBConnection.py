@@ -1,5 +1,5 @@
 
-import os, logging, select, socket, types, struct, errno
+import os, logging, select, socket, types, typing, struct, errno
 
 from tqdm import tqdm
 from .smb_constants import *
@@ -598,7 +598,7 @@ class SMBConnection(SMB):
         read_len: int,
         data: bytes,
         timeout: int,
-        poller: select.poll | None = None,
+        poller: typing.Optional[select.poll] = None,
     ) -> tuple[bytes, int]:
         while read_len > 0:
             try:
