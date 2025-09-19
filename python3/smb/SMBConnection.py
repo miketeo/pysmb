@@ -1,5 +1,5 @@
 
-import os, logging, select, socket, types, struct, errno
+import os, logging, select, socket, types, typing, struct, errno
 
 from tqdm import tqdm
 from .smb_constants import *
@@ -592,58 +592,64 @@ class SMBConnection(SMB):
     # Protected Methods
     #
 
-    def _pollForNetBIOSPacket(self, timeout):
-        expiry_time = time.time() + timeout
-        read_len = 4
-        data = b''
-
+    def _poll_for_data(
+        self,
+        expiry_time: float,
+        read_len: int,
+        data: bytes,
+        timeout: int,
+        poller: typing.Optional[select.poll] = None,
+    ) -> tuple[bytes, int]:
         while read_len > 0:
             try:
                 if expiry_time < time.time():
                     raise SMBTimeout
 
-                ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], timeout)
+                if poller:
+                    ready = poller.poll(timeout * 1000)
+                else:
+                    ready, _, _ = select.select([self.sock.fileno()], [], [], timeout)
                 if not ready:
                     raise SMBTimeout
 
                 d = self.sock.recv(read_len)
                 if len(d) == 0:
                     raise NotConnectedError
-
-                data = data + d
+                data += d
                 read_len -= len(d)
             except select.error as ex:
-                if isinstance(ex, tuple):
-                    if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
-                        raise ex
-                else:
+                if getattr(ex, "errno", None) not in (errno.EINTR, errno.EAGAIN):
                     raise ex
+        return data, read_len
 
-        type, flags, length = struct.unpack('>BBH', data)
+    def _pollForNetBIOSPacket(self, timeout):
+        if os.name == "posix":
+            poller = select.poll()
+            poller.register(self.sock, select.POLLIN)
+        else:
+            poller = None
+        expiry_time = time.time() + timeout
+        read_len = 4
+        data = b""
+
+        data, read_len = self._poll_for_data(
+            expiry_time=expiry_time,
+            read_len=read_len,
+            data=data,
+            timeout=timeout,
+            poller=poller,
+        )
+
+        type, flags, length = struct.unpack(">BBH", data)
         if flags & 0x01:
             length = length | 0x10000
 
-        read_len = length
-        while read_len > 0:
-            try:
-                if expiry_time < time.time():
-                    raise SMBTimeout
-
-                ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], timeout)
-                if not ready:
-                    raise SMBTimeout
-
-                d = self.sock.recv(read_len)
-                if len(d) == 0:
-                    raise NotConnectedError
-
-                data = data + d
-                read_len -= len(d)
-            except select.error as ex:
-                if isinstance(ex, tuple):
-                    if ex[0] != errno.EINTR and ex[0] != errno.EAGAIN:
-                        raise ex
-                else:
-                    raise ex
+        data, read_len = self._poll_for_data(
+            expiry_time=expiry_time,
+            read_len=length,
+            data=data,
+            timeout=timeout,
+            poller=poller,
+        )
 
         self.feedData(data)
