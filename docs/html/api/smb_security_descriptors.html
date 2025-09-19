@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Security Descriptors &#8212; pysmb 1.2.11 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
+    <title>Security Descriptors &#8212; pysmb 1.2.12 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
+    <script src="../_static/documentation_options.js?v=817200f7"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Extending pysmb For Other Frameworks" href="../extending.html" />
@@ -34,7 +31,7 @@
         <li class="right" >
           <a href="smb_exceptions.html" title="SMB Exceptions"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.11 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.12 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Security Descriptors</a></li> 
       </ul>
     </div>  
@@ -45,31 +42,31 @@
           <div class="body" role="main">
             
   <section id="module-smb.security_descriptors">
-<span id="security-descriptors"></span><h1>Security Descriptors<a class="headerlink" href="#module-smb.security_descriptors" title="Permalink to this heading">¶</a></h1>
+<span id="security-descriptors"></span><h1>Security Descriptors<a class="headerlink" href="#module-smb.security_descriptors" title="Link to this heading">¶</a></h1>
 <p>This module implements security descriptors, and associated data
 structures, as specified in <a class="reference external" href="https://msdn.microsoft.com/en-us/library/cc230273.aspx">[MS-DTYP]</a>.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="smb.security_descriptors.SID">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.security_descriptors.</span></span><span class="sig-name descname"><span class="pre">SID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">identifier_authority</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subauthorities</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/security_descriptors.html#SID"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.security_descriptors.SID" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.security_descriptors.</span></span><span class="sig-name descname"><span class="pre">SID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">identifier_authority</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subauthorities</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/security_descriptors.html#SID"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.security_descriptors.SID" title="Link to this definition">¶</a></dt>
 <dd><p>A Windows security identifier. Represents a single principal, such a
 user or a group, as a sequence of numbers consisting of the revision,
 identifier authority, and a variable-length list of subauthorities.</p>
 <p>See [MS-DTYP]: 2.4.2</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.SID.identifier_authority">
-<span class="sig-name descname"><span class="pre">identifier_authority</span></span><a class="headerlink" href="#smb.security_descriptors.SID.identifier_authority" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">identifier_authority</span></span><a class="headerlink" href="#smb.security_descriptors.SID.identifier_authority" title="Link to this definition">¶</a></dt>
 <dd><p>An integer representing the identifier authority.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.SID.revision">
-<span class="sig-name descname"><span class="pre">revision</span></span><a class="headerlink" href="#smb.security_descriptors.SID.revision" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">revision</span></span><a class="headerlink" href="#smb.security_descriptors.SID.revision" title="Link to this definition">¶</a></dt>
 <dd><p>Revision, should always be 1.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.SID.subauthorities">
-<span class="sig-name descname"><span class="pre">subauthorities</span></span><a class="headerlink" href="#smb.security_descriptors.SID.subauthorities" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">subauthorities</span></span><a class="headerlink" href="#smb.security_descriptors.SID.subauthorities" title="Link to this definition">¶</a></dt>
 <dd><p>A list of integers representing all subauthorities.</p>
 </dd></dl>
 
@@ -77,12 +74,12 @@ identifier authority, and a variable-length list of subauthorities.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.security_descriptors.</span></span><span class="sig-name descname"><span class="pre">ACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">additional_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/security_descriptors.html#ACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.security_descriptors.ACE" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.security_descriptors.</span></span><span class="sig-name descname"><span class="pre">ACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">additional_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/security_descriptors.html#ACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.security_descriptors.ACE" title="Link to this definition">¶</a></dt>
 <dd><p>Represents a single access control entry.</p>
 <p>See [MS-DTYP]: 2.4.4</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACE.additional_data">
-<span class="sig-name descname"><span class="pre">additional_data</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.additional_data" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">additional_data</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.additional_data" title="Link to this definition">¶</a></dt>
 <dd><p>A dictionary of additional fields present in the ACE, depending
 on the type. The following fields can be present:</p>
 <ul class="simple">
@@ -96,34 +93,34 @@ on the type. The following fields can be present:</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACE.flags">
-<span class="sig-name descname"><span class="pre">flags</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.flags" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">flags</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.flags" title="Link to this definition">¶</a></dt>
 <dd><p>An integer bitmask with ACE flags, corresponds to the
 <code class="docutils literal notranslate"><span class="pre">AceFlags</span></code> field.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACE.isInheritOnly">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isInheritOnly</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.isInheritOnly" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isInheritOnly</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.isInheritOnly" title="Link to this definition">¶</a></dt>
 <dd><p>Convenience property which indicates if this ACE is inherit
 only, meaning that it doesn’t apply to the object itself.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACE.mask">
-<span class="sig-name descname"><span class="pre">mask</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.mask" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">mask</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.mask" title="Link to this definition">¶</a></dt>
 <dd><p>An integer representing the <code class="docutils literal notranslate"><span class="pre">ACCESS_MASK</span></code> as specified in
 [MS-DTYP] 2.4.3.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACE.sid">
-<span class="sig-name descname"><span class="pre">sid</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.sid" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">sid</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.sid" title="Link to this definition">¶</a></dt>
 <dd><p>The <a class="reference internal" href="#smb.security_descriptors.SID" title="smb.security_descriptors.SID"><code class="xref py py-class docutils literal notranslate"><span class="pre">SID</span></code></a> of a trustee.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACE.type">
-<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.type" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#smb.security_descriptors.ACE.type" title="Link to this definition">¶</a></dt>
 <dd><p>An integer representing the type of the ACE. One of the
 <code class="docutils literal notranslate"><span class="pre">ACE_TYPE_*</span></code> constants. Corresponds to the <code class="docutils literal notranslate"><span class="pre">AceType</span></code> field
 from [MS-DTYP] 2.4.4.1.</p>
@@ -133,19 +130,19 @@ from [MS-DTYP] 2.4.4.1.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACL">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.security_descriptors.</span></span><span class="sig-name descname"><span class="pre">ACL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aces</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/security_descriptors.html#ACL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.security_descriptors.ACL" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.security_descriptors.</span></span><span class="sig-name descname"><span class="pre">ACL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aces</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/security_descriptors.html#ACL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.security_descriptors.ACL" title="Link to this definition">¶</a></dt>
 <dd><p>Access control list, encapsulating a sequence of access control
 entries.</p>
 <p>See [MS-DTYP]: 2.4.5</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACL.aces">
-<span class="sig-name descname"><span class="pre">aces</span></span><a class="headerlink" href="#smb.security_descriptors.ACL.aces" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">aces</span></span><a class="headerlink" href="#smb.security_descriptors.ACL.aces" title="Link to this definition">¶</a></dt>
 <dd><p>List of <a class="reference internal" href="#smb.security_descriptors.ACE" title="smb.security_descriptors.ACE"><code class="xref py py-class docutils literal notranslate"><span class="pre">ACE</span></code></a> instances.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.ACL.revision">
-<span class="sig-name descname"><span class="pre">revision</span></span><a class="headerlink" href="#smb.security_descriptors.ACL.revision" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">revision</span></span><a class="headerlink" href="#smb.security_descriptors.ACL.revision" title="Link to this definition">¶</a></dt>
 <dd><p>Integer value of the revision.</p>
 </dd></dl>
 
@@ -153,38 +150,38 @@ entries.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="smb.security_descriptors.SecurityDescriptor">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.security_descriptors.</span></span><span class="sig-name descname"><span class="pre">SecurityDescriptor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dacl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sacl</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/security_descriptors.html#SecurityDescriptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.security_descriptors.</span></span><span class="sig-name descname"><span class="pre">SecurityDescriptor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dacl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sacl</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/security_descriptors.html#SecurityDescriptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor" title="Link to this definition">¶</a></dt>
 <dd><p>Represents a security descriptor.</p>
 <p>See [MS-DTYP]: 2.4.6</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.SecurityDescriptor.dacl">
-<span class="sig-name descname"><span class="pre">dacl</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.dacl" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dacl</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.dacl" title="Link to this definition">¶</a></dt>
 <dd><p>Instance of <a class="reference internal" href="#smb.security_descriptors.ACL" title="smb.security_descriptors.ACL"><code class="xref py py-class docutils literal notranslate"><span class="pre">ACL</span></code></a> representing the discretionary access
 control list, which specifies access restrictions of an object.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.SecurityDescriptor.flags">
-<span class="sig-name descname"><span class="pre">flags</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.flags" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">flags</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.flags" title="Link to this definition">¶</a></dt>
 <dd><p>Integer bitmask of control flags. Corresponds to the
 <code class="docutils literal notranslate"><span class="pre">Control</span></code> field in [MS-DTYP] 2.4.6.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.SecurityDescriptor.group">
-<span class="sig-name descname"><span class="pre">group</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.group" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">group</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.group" title="Link to this definition">¶</a></dt>
 <dd><p>Instance of <a class="reference internal" href="#smb.security_descriptors.SID" title="smb.security_descriptors.SID"><code class="xref py py-class docutils literal notranslate"><span class="pre">SID</span></code></a> representing the owner group.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.SecurityDescriptor.owner">
-<span class="sig-name descname"><span class="pre">owner</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.owner" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">owner</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.owner" title="Link to this definition">¶</a></dt>
 <dd><p>Instance of <a class="reference internal" href="#smb.security_descriptors.SID" title="smb.security_descriptors.SID"><code class="xref py py-class docutils literal notranslate"><span class="pre">SID</span></code></a> representing the owner user.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="smb.security_descriptors.SecurityDescriptor.sacl">
-<span class="sig-name descname"><span class="pre">sacl</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.sacl" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">sacl</span></span><a class="headerlink" href="#smb.security_descriptors.SecurityDescriptor.sacl" title="Link to this definition">¶</a></dt>
 <dd><p>Instance of <a class="reference internal" href="#smb.security_descriptors.ACL" title="smb.security_descriptors.ACL"><code class="xref py py-class docutils literal notranslate"><span class="pre">ACL</span></code></a> representing the system access control
 list, which specifies audit logging of an object.</p>
 </dd></dl>
@@ -200,6 +197,43 @@ list, which specifies audit logging of an object.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Security Descriptors</a><ul>
+<li><a class="reference internal" href="#smb.security_descriptors.SID"><code class="docutils literal notranslate"><span class="pre">SID</span></code></a><ul>
+<li><a class="reference internal" href="#smb.security_descriptors.SID.identifier_authority"><code class="docutils literal notranslate"><span class="pre">SID.identifier_authority</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.SID.revision"><code class="docutils literal notranslate"><span class="pre">SID.revision</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.SID.subauthorities"><code class="docutils literal notranslate"><span class="pre">SID.subauthorities</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#smb.security_descriptors.ACE"><code class="docutils literal notranslate"><span class="pre">ACE</span></code></a><ul>
+<li><a class="reference internal" href="#smb.security_descriptors.ACE.additional_data"><code class="docutils literal notranslate"><span class="pre">ACE.additional_data</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.ACE.flags"><code class="docutils literal notranslate"><span class="pre">ACE.flags</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.ACE.isInheritOnly"><code class="docutils literal notranslate"><span class="pre">ACE.isInheritOnly</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.ACE.mask"><code class="docutils literal notranslate"><span class="pre">ACE.mask</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.ACE.sid"><code class="docutils literal notranslate"><span class="pre">ACE.sid</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.ACE.type"><code class="docutils literal notranslate"><span class="pre">ACE.type</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#smb.security_descriptors.ACL"><code class="docutils literal notranslate"><span class="pre">ACL</span></code></a><ul>
+<li><a class="reference internal" href="#smb.security_descriptors.ACL.aces"><code class="docutils literal notranslate"><span class="pre">ACL.aces</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.ACL.revision"><code class="docutils literal notranslate"><span class="pre">ACL.revision</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#smb.security_descriptors.SecurityDescriptor"><code class="docutils literal notranslate"><span class="pre">SecurityDescriptor</span></code></a><ul>
+<li><a class="reference internal" href="#smb.security_descriptors.SecurityDescriptor.dacl"><code class="docutils literal notranslate"><span class="pre">SecurityDescriptor.dacl</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.SecurityDescriptor.flags"><code class="docutils literal notranslate"><span class="pre">SecurityDescriptor.flags</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.SecurityDescriptor.group"><code class="docutils literal notranslate"><span class="pre">SecurityDescriptor.group</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.SecurityDescriptor.owner"><code class="docutils literal notranslate"><span class="pre">SecurityDescriptor.owner</span></code></a></li>
+<li><a class="reference internal" href="#smb.security_descriptors.SecurityDescriptor.sacl"><code class="docutils literal notranslate"><span class="pre">SecurityDescriptor.sacl</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
   <div>
     <h4>Previous topic</h4>
     <p class="topless"><a href="smb_exceptions.html"
@@ -246,13 +280,13 @@ list, which specifies audit logging of an object.</p>
         <li class="right" >
           <a href="smb_exceptions.html" title="SMB Exceptions"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.11 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.12 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Security Descriptors</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2001-2025, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
+    &#169; Copyright 2001-2025, Michael Teo https://miketeo.net/.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
     </div>
   </body>
 </html>

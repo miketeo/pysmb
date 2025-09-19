@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>SMB Exceptions &#8212; pysmb 1.2.11 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
+    <title>SMB Exceptions &#8212; pysmb 1.2.12 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
+    <script src="../_static/documentation_options.js?v=817200f7"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Security Descriptors" href="smb_security_descriptors.html" />
@@ -34,7 +31,7 @@
         <li class="right" >
           <a href="smb_SharedFile.html" title="SharedFile Class"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.11 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.12 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SMB Exceptions</a></li> 
       </ul>
     </div>  
@@ -45,40 +42,22 @@
           <div class="body" role="main">
             
   <section id="smb-exceptions">
-<h1>SMB Exceptions<a class="headerlink" href="#smb-exceptions" title="Permalink to this heading">¶</a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="smb.base.SMBTimeout">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.base.</span></span><span class="sig-name descname"><span class="pre">SMBTimeout</span></span><a class="reference internal" href="../_modules/smb/base.html#SMBTimeout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.base.SMBTimeout" title="Permalink to this definition">¶</a></dt>
-<dd><p>Raised when a timeout has occurred while waiting for a response or for a SMB/CIFS operation to complete.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="smb.base.NotReadyError">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.base.</span></span><span class="sig-name descname"><span class="pre">NotReadyError</span></span><a class="reference internal" href="../_modules/smb/base.html#NotReadyError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.base.NotReadyError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Raised when SMB connection is not ready (i.e. not authenticated or authentication failed)</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="smb.base.NotConnectedError">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.base.</span></span><span class="sig-name descname"><span class="pre">NotConnectedError</span></span><a class="reference internal" href="../_modules/smb/base.html#NotConnectedError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.base.NotConnectedError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Raised when underlying SMB connection has been disconnected or not connected yet</p>
-</dd></dl>
-
+<h1>SMB Exceptions<a class="headerlink" href="#smb-exceptions" title="Link to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="smb.smb_structs.UnsupportedFeature">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.smb_structs.</span></span><span class="sig-name descname"><span class="pre">UnsupportedFeature</span></span><a class="reference internal" href="../_modules/smb/smb_structs.html#UnsupportedFeature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.smb_structs.UnsupportedFeature" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.smb_structs.</span></span><span class="sig-name descname"><span class="pre">UnsupportedFeature</span></span><a class="reference internal" href="../_modules/smb/smb_structs.html#UnsupportedFeature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.smb_structs.UnsupportedFeature" title="Link to this definition">¶</a></dt>
 <dd><p>Raised when an supported feature is present/required in the protocol but is not
 currently supported by pysmb</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="smb.smb_structs.ProtocolError">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.smb_structs.</span></span><span class="sig-name descname"><span class="pre">ProtocolError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_buf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smb_message</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/smb_structs.html#ProtocolError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.smb_structs.ProtocolError" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.smb_structs.</span></span><span class="sig-name descname"><span class="pre">ProtocolError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_buf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smb_message</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/smb_structs.html#ProtocolError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.smb_structs.ProtocolError" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="smb.smb_structs.OperationFailure">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.smb_structs.</span></span><span class="sig-name descname"><span class="pre">OperationFailure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smb_messages</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/smb_structs.html#OperationFailure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.smb_structs.OperationFailure" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smb.smb_structs.</span></span><span class="sig-name descname"><span class="pre">OperationFailure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smb_messages</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/smb/smb_structs.html#OperationFailure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smb.smb_structs.OperationFailure" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </section>
@@ -90,6 +69,18 @@ currently supported by pysmb</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">SMB Exceptions</a><ul>
+<li><a class="reference internal" href="#smb.smb_structs.UnsupportedFeature"><code class="docutils literal notranslate"><span class="pre">UnsupportedFeature</span></code></a></li>
+<li><a class="reference internal" href="#smb.smb_structs.ProtocolError"><code class="docutils literal notranslate"><span class="pre">ProtocolError</span></code></a></li>
+<li><a class="reference internal" href="#smb.smb_structs.OperationFailure"><code class="docutils literal notranslate"><span class="pre">OperationFailure</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
   <div>
     <h4>Previous topic</h4>
     <p class="topless"><a href="smb_SharedFile.html"
@@ -136,13 +127,13 @@ currently supported by pysmb</p>
         <li class="right" >
           <a href="smb_SharedFile.html" title="SharedFile Class"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.11 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pysmb 1.2.12 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">SMB Exceptions</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2001-2025, Michael Teo https://miketeo.net/.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
+    &#169; Copyright 2001-2025, Michael Teo https://miketeo.net/.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
     </div>
   </body>
 </html>
