@@ -592,14 +592,7 @@ class SMBConnection(SMB):
     # Protected Methods
     #
 
-    def _poll_for_data(
-        self,
-        expiry_time: float,
-        read_len: int,
-        data: bytes,
-        timeout: int,
-        poller: typing.Optional[select.poll] = None,
-    ) -> tuple[bytes, int]:
+    def _poll_for_data(self, expiry_time, read_len, data, timeout, poller):
         while read_len > 0:
             try:
                 if expiry_time < time.time():
