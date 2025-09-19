@@ -1,19 +1,15 @@
+<!DOCTYPE html>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" data-content_root="../../">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>smb.smb_structs &#8212; pysmb 1.2.10 documentation</title>
-    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>smb.smb_structs &#8212; pysmb 1.2.12 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinxdoc.css?v=d59dc883" />
+    <script src="../../_static/documentation_options.js?v=817200f7"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -26,26 +22,11 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.10 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.12 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">smb.smb_structs</a></li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -55,10 +36,10 @@
   <h1>Source code for smb.smb_structs</h1><div class="highlight"><pre>
 <span></span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">struct</span><span class="o">,</span> <span class="nn">types</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">binascii</span><span class="o">,</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
-<span class="kn">from</span> <span class="nn">io</span> <span class="k">import</span> <span class="n">StringIO</span>
-<span class="kn">from</span> <span class="nn">.smb_constants</span> <span class="k">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">.strategy</span> <span class="k">import</span> <span class="n">DataFaultToleranceStrategy</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span> <span class="nn">.smb_constants</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.strategy</span> <span class="kn">import</span> <span class="n">DataFaultToleranceStrategy</span>
 
 <span class="c1"># Set to True if you want to enable support for extended security. Required for Windows Vista and later</span>
 <span class="n">SUPPORT_EXTENDED_SECURITY</span> <span class="o">=</span> <span class="kc">True</span>
@@ -78,22 +59,27 @@
     <span class="nb">globals</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">DIALECTS</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="UnsupportedFeature"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.UnsupportedFeature">[docs]</a><span class="k">class</span> <span class="nc">UnsupportedFeature</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="UnsupportedFeature">
+<a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.UnsupportedFeature">[docs]</a>
+<span class="k">class</span> <span class="nc">UnsupportedFeature</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Raised when an supported feature is present/required in the protocol but is not</span>
 <span class="sd">    currently supported by pysmb</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span></div>
 
 
-<div class="viewcode-block" id="ProtocolError"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.ProtocolError">[docs]</a><span class="k">class</span> <span class="nc">ProtocolError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">data_buf</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">smb_message</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ProtocolError">
+<a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.ProtocolError">[docs]</a>
+<span class="k">class</span> <span class="nc">ProtocolError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">data_buf</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">smb_message</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_buf</span> <span class="o">=</span> <span class="n">data_buf</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span> <span class="o">=</span> <span class="n">smb_message</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
         <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">smb_message</span><span class="p">:</span>
@@ -107,19 +93,22 @@
 
         <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span></div>
 
+
 <span class="k">class</span> <span class="nc">SMB2ProtocolHeaderError</span><span class="p">(</span><span class="n">ProtocolError</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">ProtocolError</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Packet header belongs to SMB2&quot;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="OperationFailure"><a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.OperationFailure">[docs]</a><span class="k">class</span> <span class="nc">OperationFailure</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="viewcode-block" id="OperationFailure">
+<a class="viewcode-back" href="../../api/smb_exceptions.html#smb.smb_structs.OperationFailure">[docs]</a>
+<span class="k">class</span> <span class="nc">OperationFailure</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">smb_messages</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">smb_messages</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">smb_messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">smb_messages</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">smb_messages</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
         <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">)</span>
 
@@ -136,16 +125,17 @@
         <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span></div>
 
 
+
 <span class="k">class</span> <span class="nc">SMBError</span><span class="p">:</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">internal_value</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_ntstatus</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_ntstatus</span><span class="p">:</span>
             <span class="k">return</span> <span class="s1">&#39;NTSTATUS=0x</span><span class="si">%08X</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_value</span>
         <span class="k">else</span><span class="p">:</span>
@@ -164,13 +154,13 @@
     <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;SMB.SMBMessage&#39;</span><span class="p">)</span>
     <span class="n">protocol</span> <span class="o">=</span> <span class="mi">1</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">payload</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
         <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Command: 0x</span><span class="si">%02X</span><span class="s1"> (</span><span class="si">%s</span><span class="s1">) </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">SMB_COMMAND_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="s1">&#39;&lt;unknown&gt;&#39;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
         <span class="n">b</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Status: </span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span> <span class="p">))</span>
@@ -213,7 +203,7 @@
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags2</span> <span class="o">&amp;</span> <span class="n">SMB_FLAGS2_EXTENDED_SECURITY</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Encode this SMB message into a series of bytes suitable to be embedded with a NetBIOS session message.</span>
 <span class="sd">        AssertionError will be raised if this SMB message has not been initialized with a Payload instance</span>
 
@@ -234,7 +224,7 @@
         <span class="k">return</span> <span class="n">headers_data</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters_data</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&lt;H&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
 
     <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Decodes the SMB message in buf.</span>
 <span class="sd">        All fields of the SMBMessage object will be reset to default values before decoding.</span>
 <span class="sd">        On errors, do not assume that the fields will be reinstated back to what they are before</span>
@@ -336,7 +326,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComNegotiateRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.52.1</span>
@@ -357,7 +347,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComNegotiateResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Contains information on the SMB_COM_NEGOTIATE response from server</span>
 
 <span class="sd">    After calling the decode method, each instance will contain the following attributes,</span>
@@ -452,7 +442,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComSessionSetupAndxRequest__WithSecurityExtension</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-SMB]: 2.2.4.6.1</span>
@@ -460,7 +450,7 @@
 
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;HHHIHII&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_key</span><span class="p">,</span> <span class="n">security_blob</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_key</span><span class="p">,</span> <span class="n">security_blob</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session_key</span> <span class="o">=</span> <span class="n">session_key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">security_blob</span> <span class="o">=</span> <span class="n">security_blob</span>
 
@@ -487,7 +477,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComSessionSetupAndxRequest__NoSecurityExtension</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.53.1</span>
@@ -495,7 +485,7 @@
 
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;HHHIHHII&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_key</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">is_unicode</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_key</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">is_unicode</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session_key</span> <span class="o">=</span> <span class="n">session_key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
@@ -543,7 +533,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComSessionSetupAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Contains information on the SMB_COM_SESSION_SETUP_ANDX response from server</span>
 
 <span class="sd">    If the underlying SMB message&#39;s flags2 does not have SMB_FLAGS2_EXTENDED_SECURITY bit enabled,</span>
@@ -592,7 +582,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComTreeConnectAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.55.1</span>
@@ -602,7 +592,7 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;HH&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">service</span> <span class="o">=</span> <span class="n">service</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\0</span><span class="s1">&#39;</span>
@@ -630,7 +620,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComTreeConnectAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Contains information about the SMB_COM_TREE_CONNECT_ANDX response from the server.</span>
 
 <span class="sd">    If the message has no errors, each instance contains the following attributes:</span>
@@ -655,7 +645,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComNTCreateAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.64.1</span>
@@ -665,7 +655,7 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;BHIIIQIIIIIB&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">root_fid</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">access_mask</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">allocation_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ext_attr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">root_fid</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">access_mask</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">allocation_size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ext_attr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                  <span class="n">share_access</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">create_disp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">create_options</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">impersonation</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">security_flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\0</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;UTF-16LE&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
@@ -710,7 +700,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComNTCreateAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Contains (partial) information about the SMB_COM_NT_CREATE_ANDX response from the server.</span>
 
 <span class="sd">    Each instance contains the following attributes after decoding:</span>
@@ -735,7 +725,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComTransactionRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.33.1</span>
@@ -744,7 +734,7 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;HHHHBBHIHHHHHH&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_params_count</span><span class="p">,</span> <span class="n">max_data_count</span><span class="p">,</span> <span class="n">max_setup_count</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_params_count</span><span class="p">,</span> <span class="n">max_data_count</span><span class="p">,</span> <span class="n">max_setup_count</span><span class="p">,</span>
                  <span class="n">total_params_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_data_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                  <span class="n">params_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">data_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">setup_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
                  <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">PIPE</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">):</span>
@@ -821,7 +811,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComTransactionResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Contains information about a SMB_COM_TRANSACTION response from the server</span>
 
 <span class="sd">    After decoding, each instance contains the following attributes:</span>
@@ -875,7 +865,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComTransaction2Request</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.46.1</span>
@@ -884,7 +874,7 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;HHHHBBHIHHHHHH&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_params_count</span><span class="p">,</span> <span class="n">max_data_count</span><span class="p">,</span> <span class="n">max_setup_count</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_params_count</span><span class="p">,</span> <span class="n">max_data_count</span><span class="p">,</span> <span class="n">max_setup_count</span><span class="p">,</span>
                  <span class="n">total_params_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_data_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                  <span class="n">params_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">data_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">setup_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
                  <span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
@@ -957,7 +947,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComTransaction2Response</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Contains information about a SMB_COM_TRANSACTION2 response from the server</span>
 
 <span class="sd">    After decoding, each instance contains the following attributes:</span>
@@ -1011,7 +1001,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComCloseRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.5.1</span>
@@ -1020,7 +1010,7 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;HI&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">last_modified_time</span> <span class="o">=</span> <span class="mh">0xFFFFFFFF</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">last_modified_time</span> <span class="o">=</span> <span class="mh">0xFFFFFFFF</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fid</span> <span class="o">=</span> <span class="n">fid</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_modified_time</span> <span class="o">=</span> <span class="n">last_modified_time</span>
 
@@ -1034,7 +1024,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComOpenAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.41.1</span>
@@ -1043,8 +1033,8 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;HHHHIHIII&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">access_mode</span><span class="p">,</span> <span class="n">open_mode</span><span class="p">,</span> <span class="n">flags</span> <span class="o">=</span> <span class="mh">0x0000</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">file_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">create_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">access_mode</span><span class="p">,</span> <span class="n">open_mode</span><span class="p">,</span> <span class="n">flags</span> <span class="o">=</span> <span class="mh">0x0000</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">file_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">create_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        @param create_time: Epoch time value to indicate the time of creation for this file. If zero, we will automatically assign the current time</span>
 <span class="sd">        @type create_time: int</span>
 <span class="sd">        @param timeout: Number of milliseconds to wait for blocked open request before failing</span>
@@ -1081,7 +1071,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComOpenAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Contains information about a SMB_COM_OPEN_ANDX response from the server</span>
 
 <span class="sd">    After decoding, each instance will contain the following attributes:</span>
@@ -1114,7 +1104,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComWriteAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.43.1</span>
@@ -1124,8 +1114,8 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;HIIHHHHHI&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">data_bytes</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">write_mode</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">data_bytes</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">write_mode</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        @param timeout: Number of milliseconds to wait for blocked write request before failing. Must be zero for writing to regular file</span>
 <span class="sd">        @type timeout: int</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1162,7 +1152,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComWriteAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.43.2</span>
@@ -1184,7 +1174,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComReadAndxRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.42.1</span>
@@ -1194,8 +1184,8 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;HIHHIHI&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">max_return_bytes_count</span><span class="p">,</span> <span class="n">min_return_bytes_count</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fid</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">max_return_bytes_count</span><span class="p">,</span> <span class="n">min_return_bytes_count</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        @param timeout: If reading from a regular file, this parameter must be 0.</span>
 <span class="sd">        @type timeout: int</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1226,7 +1216,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComReadAndxResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.42.2</span>
@@ -1252,13 +1242,13 @@
 
 
 <span class="k">class</span> <span class="nc">ComDeleteRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.7.1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename_pattern</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename_pattern</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename_pattern</span> <span class="o">=</span> <span class="n">filename_pattern</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">search_attributes</span> <span class="o">=</span> <span class="n">search_attributes</span>
 
@@ -1272,7 +1262,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComCreateDirectoryRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Although this command has been marked deprecated in [MS-CIFS], we continue to use it for its simplicity</span>
 <span class="sd">    as compared to its replacement TRANS2_CREATE_DIRECTORY sub-command [MS-CIFS]: 2.2.6.14</span>
 
@@ -1281,7 +1271,7 @@
 <span class="sd">    - [MS-CIFS]: 2.2.4.1.1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
 
     <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
@@ -1294,13 +1284,13 @@
 
 
 <span class="k">class</span> <span class="nc">ComDeleteDirectoryRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.2.1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
 
     <span class="k">def</span> <span class="nf">initMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
@@ -1313,13 +1303,13 @@
 
 
 <span class="k">class</span> <span class="nc">ComRenameRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.8.1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">new_path</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_path</span><span class="p">,</span> <span class="n">new_path</span><span class="p">,</span> <span class="n">search_attributes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">old_path</span> <span class="o">=</span> <span class="n">old_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">new_path</span> <span class="o">=</span> <span class="n">new_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">search_attributes</span> <span class="o">=</span> <span class="n">search_attributes</span>
@@ -1334,13 +1324,13 @@
 
 
 <span class="k">class</span> <span class="nc">ComEchoRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.39.1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">echo_data</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">echo_count</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">echo_data</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">echo_count</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">echo_count</span> <span class="o">=</span> <span class="n">echo_count</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">echo_data</span> <span class="o">=</span> <span class="n">echo_data</span>
 
@@ -1355,7 +1345,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComEchoResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.39.2</span>
@@ -1367,7 +1357,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComNTTransactRequest</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    References:</span>
 <span class="sd">    ===========</span>
 <span class="sd">    - [MS-CIFS]: 2.2.4.62.1</span>
@@ -1375,7 +1365,7 @@
     <span class="n">PAYLOAD_STRUCT_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;&lt;BHIIIIIIIIBH&#39;</span>
     <span class="n">PAYLOAD_STRUCT_SIZE</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PAYLOAD_STRUCT_FORMAT</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">max_params_count</span><span class="p">,</span> <span class="n">max_data_count</span><span class="p">,</span> <span class="n">max_setup_count</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">max_params_count</span><span class="p">,</span> <span class="n">max_data_count</span><span class="p">,</span> <span class="n">max_setup_count</span><span class="p">,</span>
                  <span class="n">total_params_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_data_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                  <span class="n">params_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">setup_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">data_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">function</span> <span class="o">=</span> <span class="n">function</span>
@@ -1439,7 +1429,7 @@
 
 
 <span class="k">class</span> <span class="nc">ComNTTransactResponse</span><span class="p">(</span><span class="n">Payload</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Contains information about a SMB_COM_NT_TRANSACT response from the server</span>
 
 <span class="sd">    After decoding, each instance contains the following attributes:</span>
@@ -1480,7 +1470,22 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">data_bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span>
 </pre></div>
 
+            <div class="clearer"></div>
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -1494,13 +1499,14 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.10 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">pysmb 1.2.12 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">smb.smb_structs</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2001-2024, Michael Teo https://miketeo.net/.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    &#169; Copyright 2001-2025, Michael Teo https://miketeo.net/.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
     </div>
   </body>
 </html>
