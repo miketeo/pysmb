@@ -1,3 +1,8 @@
+pysmb-1.2.12, 19 Sep 2025
+=========================
+
+- Add support for NetBIOS packet polling on Linux (#229)
+
 pysmb-1.2.11, 25 Mar 2025
 =========================
 
