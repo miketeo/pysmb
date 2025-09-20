@@ -1,3 +1,8 @@
+pysmb-1.2.13, 20 Sep 2025
+=========================
+
+- Fix type hinting issues on Python versions prior to 3.9. (#230)
+
 pysmb-1.2.12, 19 Sep 2025
 =========================
 
