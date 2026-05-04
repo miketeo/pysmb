@@ -475,7 +475,35 @@ class SMBConnection(SMB):
                 self._pollForNetBIOSPacket(timeout)
         finally:
             self.is_busy = False
-
+    
+    def setLastWriteTime(self, service_name, path, last_write_time, timeout = 30):
+        """
+        Set last modification time of a regular file or folder.
+        
+        Note: this function is currently only implemented for SMB2!
+        
+        :param string/unicode service_name: Contains the name of the shared folder.
+        :param string/unicode path: Path of the file on the remote server. If the file cannot be opened for writing, an :doc:`OperationFailure<smb_exceptions>` will be raised.
+        :param float last_write_time: float value in number of seconds since 1970-01-01 00:00:00.
+        """
+        if not self.sock:
+            raise NotConnectedError('Not connected to server')
+        
+        def cb(r):
+            self.is_busy = False
+        
+        def eb(failure):
+            self.is_busy = False
+            raise failure
+        
+        self.is_busy = True
+        try:
+            self._setLastWriteTime(service_name, path, cb, eb, last_write_time, timeout)
+            while self.is_busy:
+                self._pollForNetBIOSPacket(timeout)
+        finally:
+            self.is_busy = False
+    
     def createDirectory(self, service_name, path, timeout = 30):
         """
         Creates a new directory *path* on the *service_name*.
