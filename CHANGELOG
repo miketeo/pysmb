@@ -1,3 +1,8 @@
+pysmb-1.2.14, 09 May 2026
+=========================
+
+- Add setLastWriteTime() method for assigning the last modification time of a file/folder (#233)
+
 pysmb-1.2.13, 20 Sep 2025
 =========================
 
