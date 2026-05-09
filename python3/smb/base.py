@@ -2536,7 +2536,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             sendQuery(self.connected_trees[service_name])
 
     def _getSecurity_SMB1(self, service_name, path_file_pattern, callback, errback, timeout = 30):
-        raise NotReadyError('getSecurity is not yet implemented for SMB1')
+        raise NotImplementedError('getSecurity is not yet implemented for SMB1')
 
     def _retrieveFile_SMB1(self, service_name, path, file_obj, callback, errback, timeout = 30, show_progress = False, tqdm_kwargs = { }):
         return self._retrieveFileFromOffset(service_name, path, file_obj, callback, errback, 0, -1, timeout, show_progress, tqdm_kwargs)
@@ -2855,10 +2855,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
         sendDelete(tid)
 
     def _resetFileAttributes_SMB1(self, service_name, path_file_pattern, callback, errback, file_attributes=ATTR_NORMAL, timeout = 30):
-        raise NotReadyError('resetFileAttributes is not yet implemented for SMB1')
+        raise NotImplementedError('resetFileAttributes is not yet implemented for SMB1')
     
     def _setLastWriteTime_SMB1(self, service_name, path, callback, errback, last_write_time, timeout = 30):
-        raise NotReadyError('setLastWriteTime is not yet implemented for SMB1')
+        raise NotImplementedError('setLastWriteTime is not yet implemented for SMB1')
     
     def _createDirectory_SMB1(self, service_name, path, callback, errback, timeout = 30):
         if not self.has_authenticated:
