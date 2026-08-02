@@ -2287,8 +2287,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             else:
                 params_bytes += (path + pattern + '\0').encode('UTF-16LE')
 
+            # [MS-SMB] 2.2.4.5.2.2: The total SMB message size (inclusive of SMB header) must be not exceed the max_buffer_size.
+            max_data_count = min(self.max_buffer_size - 64, 0xFFFF - 64)
             m = SMBMessage(ComTransaction2Request(max_params_count = 10,
-                                                  max_data_count = 16644,
+                                                  max_data_count = max_data_count,
                                                   max_setup_count = 0,
                                                   params_bytes = params_bytes,
                                                   setup_bytes = setup_bytes))
@@ -2389,8 +2391,10 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                             0x0006)     # Flags: SMB_FIND_RETURN_RESUME_KEYS | SMB_FIND_CLOSE_AT_EOS
             params_bytes += (resume_file+'\0').encode('UTF-16LE')
 
+            # [MS-SMB] 2.2.4.5.2.2: The total SMB message size (inclusive of SMB header) must be not exceed the max_buffer_size.
+            max_data_count = min(self.max_buffer_size - 64, 0xFFFF - 64)
             m = SMBMessage(ComTransaction2Request(max_params_count = 10,
-                                                  max_data_count = 16644,
+                                                  max_data_count = max_data_count,
                                                   max_setup_count = 0,
                                                   params_bytes = params_bytes,
                                                   setup_bytes = setup_bytes))
