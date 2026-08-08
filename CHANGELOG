@@ -1,3 +1,8 @@
+pysmb-1.2.15, 08 Aug 2026
+=========================
+
+- Fix SMB._listPath_SMB1 to honor negotiated max_buffer_size (#235)
+
 pysmb-1.2.14, 09 May 2026
 =========================
 
