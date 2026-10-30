@@ -2272,6 +2272,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
             path += '\\'
         messages_history = [ ]
         results = [ ]
+        # The server cursor must include entries rejected by the client-side filter.
+        last_resume = [0, '']
 
         def sendFindFirst(tid, support_dfs=False):
             setup_bytes = struct.pack('<H', 0x0001)  # TRANS2_FIND_FIRST2 sub-command. See [MS-CIFS]: 2.2.6.2.1
@@ -2312,7 +2314,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 if offset + info_size > data_length:
                     return data_bytes[offset:]
 
-                next_offset, _, \
+                next_offset, file_index, \
                 create_time, last_access_time, last_write_time, last_attr_change_time, \
                 file_size, alloc_size, file_attributes, filename_length, ea_size, \
                 short_name_length, _, short_name = struct.unpack(info_format, data_bytes[offset:offset+info_size])
@@ -2323,6 +2325,8 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
 
                 filename = DataFaultToleranceStrategy.data_bytes_decode(data_bytes[offset2:offset2+filename_length])
                 short_name = DataFaultToleranceStrategy.data_bytes_decode(short_name)
+
+                last_resume[:] = [file_index, filename]
 
                 accept_result = False
                 if (file_attributes & 0xff) in ( 0x00, ATTR_NORMAL ): # Only the first 8-bits are compared. We ignore other bits like temp, compressed, encryption, sparse, indexed, etc
@@ -2372,7 +2376,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 elif end_of_search:
                     callback(results)
                 else:
-                    sendFindNext(find_message.tid, sid, 0, results[-1].filename, kwargs.get('support_dfs', False))
+                    sendFindNext(find_message.tid, sid, last_resume[0], last_resume[1], kwargs.get('support_dfs', False))
             else:
                 if find_message.status.internal_value == 0xC000000F:  # [MS-ERREF]: STATUS_NO_SUCH_FILE
                     # Remote server returns STATUS_NO_SUCH_FILE error so we assume that the search returns no matching files
@@ -2437,7 +2441,7 @@ c8 4f 32 4b 70 16 d3 01 12 78 5a 47 bf 6e e1 88
                 elif end_of_search:
                     callback(results)
                 else:
-                    sendFindNext(find_message.tid, kwargs['sid'], 0, results[-1].filename, kwargs.get('support_dfs', False))
+                    sendFindNext(find_message.tid, kwargs['sid'], last_resume[0], last_resume[1], kwargs.get('support_dfs', False))
             else:
                 errback(OperationFailure('Failed to list %s on %s: Unable to retrieve file list' % ( path, service_name ), messages_history))
 
