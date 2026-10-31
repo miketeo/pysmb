@@ -1,5 +1,5 @@
 
-import os, logging, select, socket, types, typing, struct, errno
+import os, logging, select, socket, types, typing, struct, errno, math
 
 from tqdm import tqdm
 from .smb_constants import *
@@ -623,14 +623,15 @@ class SMBConnection(SMB):
     def _poll_for_data(self, expiry_time, read_len, data, timeout, poller):
         while read_len > 0:
             try:
-                if expiry_time < time.time():
+                remaining = expiry_time - time.time()
+                if remaining <= 0:
                     raise SMBTimeout
 
                 if poller:
-                    ready = poller.poll(timeout * 1000)
+                    ready = poller.poll(int(math.ceil(remaining * 1000)))
                 else:
-                    ready, _, _ = select.select([self.sock.fileno()], [], [], timeout)
-                if not ready:
+                    ready, _, _ = select.select([self.sock.fileno()], [], [], remaining)
+                if not ready or time.time() >= expiry_time:
                     raise SMBTimeout
 
                 d = self.sock.recv(read_len)
