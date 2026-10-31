@@ -615,11 +615,12 @@ class SMBConnection(SMB):
 
         while read_len > 0:
             try:
-                if expiry_time < time.time():
+                remaining = expiry_time - time.time()
+                if remaining <= 0:
                     raise SMBTimeout
 
-                ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], timeout)
-                if not ready:
+                ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], remaining)
+                if not ready or time.time() >= expiry_time:
                     raise SMBTimeout
 
                 d = self.sock.recv(read_len)
@@ -642,11 +643,12 @@ class SMBConnection(SMB):
         read_len = length
         while read_len > 0:
             try:
-                if expiry_time < time.time():
+                remaining = expiry_time - time.time()
+                if remaining <= 0:
                     raise SMBTimeout
 
-                ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], timeout)
-                if not ready:
+                ready, _, _ = select.select([ self.sock.fileno() ], [ ], [ ], remaining)
+                if not ready or time.time() >= expiry_time:
                     raise SMBTimeout
 
                 d = self.sock.recv(read_len)
